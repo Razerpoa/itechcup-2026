@@ -7,8 +7,13 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
+const nextHeadersMockUrl = new URL('./next-headers.mock.mjs', import.meta.url).href
+
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === 'next/headers') {
+      return { url: nextHeadersMockUrl, shortCircuit: true }
+    }
     if (specifier.startsWith('.')) {
       const candidates = [specifier, `${specifier}.ts`, `${specifier}.tsx`, `${specifier}.js`]
       for (const candidate of candidates) {
