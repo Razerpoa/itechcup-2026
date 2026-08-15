@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Hive worktrees live under .hive/ and contain their own .next/build output.
+    ".hive/**",
   ]),
 ]);
 

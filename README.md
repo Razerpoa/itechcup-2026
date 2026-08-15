@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# itechcup-2026 — Device-Adaptive Dashboard
+
+A Next.js 16.3.1 (App Router) web template whose home page renders a **device-specific dashboard view** — mobile, tablet, or desktop — selected by the visitor's device and corrected live on window resize.
+
+> This project is a competition (IteachCup 2026) template. The dashboard views are **empty scaffolds** ready for the team to fill in.
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16.3.1 (App Router, `src/`) |
+| UI | React 19.2.8, Tailwind v4 (CSS-first config in `src/app/globals.css`) |
+| Runtime | Node 26 (native TS type stripping) |
+| Tests | Node's `node:test` + `react-dom/server` `renderToString` — no jsdom, no framework |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Other commands:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build      # production build (must pass; / is dynamic ƒ)
+npm run lint       # eslint
+npm run start      # serve the production build
+node --import ./tsx-hooks.mjs --test   # run ALL tests (no npm test script)
+node --import ./tsx-hooks.mjs --test src/features/dashboard/lib/device.test.ts  # one file
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How the Architecture Works
 
-## Learn More
+**Request flow:**
 
-To learn more about Next.js, take a look at the following resources:
+1. `src/proxy.ts` — reads the User-Agent, normalizes it to `mobile|tablet|desktop`, and sets the `x-device-type` request header. **Must live under `src/`** (Next 16.3.1 only scans `src/` for proxy/middleware files — a root-level `proxy.ts` never executes).
+2. `src/app/page.tsx` (Server Component) — reads `x-device-type` via `await headers()` (fallback `desktop`), fetches dashboard data, and renders `<DashboardView data initialDeviceType />`.
+3. `src/features/dashboard/components/DashboardView.tsx` — client dispatcher. Calls `useLiveDeviceType(initialDeviceType)` and renders the matching `DashboardMobile` / `DashboardTablet` / `DashboardDesktop` scaffold.
+4. `src/features/dashboard/hooks/use-live-device-type.ts` — `useSyncExternalStore` over `matchMedia` breakpoints. The third argument (server snapshot = `initialDeviceType`) makes the server HTML and first client render identical → **no hydration mismatch**; after hydration the store re-renders on resize.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Feature module** — `src/features/dashboard/`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+types.ts                          # DeviceType, DashboardData, DashboardViewProps
+lib/device.ts                     # normalizeDeviceType, deviceTypeFromWidth, breakpoint constants
+lib/get-dashboard-data.ts         # mock data provider (seam for a real API later)
+hooks/use-dashboard.ts            # shared client state: { data, viewState, actions }
+hooks/use-live-device-type.ts     # live viewport → device type (matchMedia)
+components/DashboardView.tsx      # client dispatcher (owns the views record)
+components/Dashboard{Mobile,Tablet,Desktop}.tsx   # one view per developer (empty scaffolds)
+```
 
-## Deploy on Vercel
+## Design Rules
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only; Desktop = `lg:` only. All breakpoint logic lives in `use-live-device-type.ts` + `lib/device.ts`.
+- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH` (768) / `DESKTOP_MIN_WIDTH` (1024) from `lib/device.ts`.
+- Views stay **presentational**: no `headers()`, no data fetching inside view components.
+- **TDD**: write the failing test first, verify RED, implement, verify GREEN, commit.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing (Tests)
+
+- `*.test.ts`/`*.test.tsx` live next to source, imported with explicit `.ts`/`.tsx` extensions.
+- `tsx-hooks.mjs` transpiles `.tsx` and redirects `next/headers` → `next-headers.mock.mjs`.
+- Control the mocked `x-device-type` header with `globalThis.__TEST_DEVICE_TYPE` (`undefined` = absent).
+- Assert view dispatch via `data-view="mobile|tablet|desktop"` in the rendered HTML.
+- Full check before a PR: `node --import ./tsx-hooks.mjs --test` → exit 0; `npm run lint` → exit 0; `npm run build` → exit 0.
+
+## Known Issues
+
+- **Hive worktrees** reject symlinked `node_modules` (Turbopack). Run a real `npm ci` in each `.hive/.worktrees/<feature>/<task>/`.
+- **`npm run lint` from the repo root** will scan `.hive/.worktrees/**/.next` unless `eslint.config.mjs` ignores `.hive/**` — keep that entry.
+
+## Verification Notes
+
+- Server-side UA detection is verified with a real running server, not by grepping the compiled bundle: `npm run build && npm run start`, then e.g. `curl -s -H "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1" http://localhost:3000/ | grep -o 'data-view="[a-z]*"'` → `mobile`.
+- The proxy is registered under `/_middleware` in `.next/server/functions-config-manifest.json`; `.next/server/middleware-manifest.json` stays empty in Next 16.3.1 — don't use it as a check.
