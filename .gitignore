@@ -43,5 +43,6 @@ next-env.d.ts
 
 # opencode
 /.hive/
+/.opencode/
 
 /src/generated/prisma

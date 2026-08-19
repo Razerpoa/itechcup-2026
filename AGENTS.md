@@ -12,6 +12,40 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Next.js 16.3.1 (App Router under `src/`, Tailwind v4 CSS-first config in `src/app/globals.css`, React 19.2.8, Node 26, `@/*` → `./src/*`). The home page renders a device-specific dashboard view; views are currently **empty scaffolds** for the team to fill in.
 
+## Project Structure
+
+```
+src/
+├── app/                          # App Router — pages & API routes
+│   ├── page.tsx                  # Home page (Server Component, reads device type)
+│   ├── layout.tsx                # Root layout (Geist fonts)
+│   ├── globals.css               # Tailwind v4 config
+│   └── api/
+│       ├── sekolah/route.ts      # Schools CRUD
+│       └── siswa/route.ts        # Students CRUD
+├── components/                   # React components (all 'use client')
+│   ├── DashboardView.tsx         # Device dispatcher — picks mobile/tablet/desktop
+│   ├── DashboardMobile.tsx       # Mobile view scaffold
+│   ├── DashboardTablet.tsx       # Tablet view scaffold
+│   └── DashboardDesktop.tsx      # Desktop view scaffold
+├── hooks/                        # React hooks
+│   ├── use-live-device-type.ts   # Live viewport → device type (matchMedia)
+│   └── use-dashboard.ts          # Client state: data, period, actions
+├── lib/                          # Shared utilities & server-side code
+│   ├── device.ts                 # normalizeDeviceType, breakpoint constants
+│   ├── prisma.ts                 # Prisma client singleton
+│   ├── get-dashboard-data.ts     # Mock data provider
+│   ├── seed.ts                   # DB seed script
+│   └── test-db.ts                # Quick DB connection test
+├── types.ts                      # Shared TypeScript types
+└── proxy.ts                      # UA → x-device-type header (middleware)
+
+prisma/
+└── schema.prisma                 # Database schema (Sekolah, Siswa)
+```
+
+**Import convention:** Always use `@/` aliases (e.g. `@/lib/prisma`, `@/types`), not relative paths (`../lib/prisma`).
+
 ## Build & Test Commands
 
 - `npm run dev` — dev server
@@ -66,16 +100,16 @@ All responses use `{ data?, error? }` format.
 
 1. `src/proxy.ts` — reads `userAgent(request).device.type`, normalizes to `mobile|tablet|desktop`, sets the `x-device-type` request header. **Must live under `src/`** — a root-level `proxy.ts` compiles but never executes (Next 16.3.1 scans only `src/` for proxy/middleware files).
 2. `src/app/page.tsx` — Server Component: `await headers()` → `normalizeDeviceType()` (fallback `desktop`) → `getDashboardData()` → renders `<DashboardView data initialDeviceType />`. Server decides the **initial** device only.
-3. `src/features/dashboard/components/DashboardView.tsx` — `'use client'` dispatcher; owns the `views` record; calls `useLiveDeviceType(initialDeviceType)` and renders the matching view.
-4. `src/features/dashboard/hooks/use-live-device-type.ts` — `useSyncExternalStore(subscribeToViewport, getViewportDeviceType, () => initialDeviceType)`. The third arg (server snapshot) makes SSR/hydration match → **no hydration mismatch**; after hydration, `matchMedia` re-renders the view on resize.
+3. `src/components/DashboardView.tsx` — `'use client'` dispatcher; owns the `views` record; calls `useLiveDeviceType(initialDeviceType)` and renders the matching view.
+4. `src/hooks/use-live-device-type.ts` — `useSyncExternalStore(subscribeToViewport, getViewportDeviceType, () => initialDeviceType)`. The third arg (server snapshot) makes SSR/hydration match → **no hydration mismatch**; after hydration, `matchMedia` re-renders the view on resize.
 5. `DashboardMobile.tsx` / `DashboardTablet.tsx` / `DashboardDesktop.tsx` — `'use client'` view scaffolds, each receives `data: DashboardData` and calls the shared `useDashboard(data)` hook.
 
-Shared contract: `src/features/dashboard/types.ts` (`DeviceType`, `DashboardData`, `DashboardViewProps`), `lib/device.ts` (normalizer + `deviceTypeFromWidth` + `TABLET_MIN_WIDTH=768`/`DESKTOP_MIN_WIDTH=1024`), `lib/get-dashboard-data.ts` (mock data seam), `hooks/use-dashboard.ts` (client state: `{ data, viewState, actions }`).
+Shared contract: `src/types.ts` (`DeviceType`, `DashboardData`, `DashboardViewProps`, `DashboardDispatcherProps`), `src/lib/device.ts` (normalizer + `deviceTypeFromWidth` + `TABLET_MIN_WIDTH=768`/`DESKTOP_MIN_WIDTH=1024`), `src/lib/get-dashboard-data.ts` (mock data seam), `src/hooks/use-dashboard.ts` (client state: `{ data, viewState, actions }`).
 
 ## Rules
 
-- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only (768–1023); Desktop = `lg:` only (≥1024). The only breakpoint logic in the codebase lives in `use-live-device-type.ts` + `lib/device.ts`.
-- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH`/`DESKTOP_MIN_WIDTH` from `lib/device.ts`.
+- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only (768–1023); Desktop = `lg:` only (≥1024). The only breakpoint logic in the codebase lives in `use-live-device-type.ts` + `src/lib/device.ts`.
+- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH`/`DESKTOP_MIN_WIDTH` from `src/lib/device.ts`.
 - Keep views presentational: no `headers()`, no data fetching inside view components.
 - TDD: write the failing test first, verify RED, implement, verify GREEN, commit.
 

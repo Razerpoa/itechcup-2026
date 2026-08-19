@@ -1,7 +1,7 @@
 'use client'
 
-import { useDashboard } from '../hooks/use-dashboard'
-import type { DashboardViewProps } from '../types'
+import { useDashboard } from '@/hooks/use-dashboard'
+import type { DashboardViewProps } from '@/types'
 
 export function DashboardDesktop({ data }: DashboardViewProps) {
   useDashboard(data)

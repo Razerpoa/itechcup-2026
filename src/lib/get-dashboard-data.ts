@@ -1,4 +1,4 @@
-import type { DashboardData } from '../types'
+import type { DashboardData } from '@/types'
 
 export async function getDashboardData(): Promise<DashboardData> {
   return {

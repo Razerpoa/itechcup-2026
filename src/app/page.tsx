@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
-import { DashboardView } from '../features/dashboard/components/DashboardView'
-import { normalizeDeviceType } from '../features/dashboard/lib/device'
-import { getDashboardData } from '../features/dashboard/lib/get-dashboard-data'
+import { DashboardView } from '@/components/DashboardView'
+import { normalizeDeviceType } from '@/lib/device'
+import { getDashboardData } from '@/lib/get-dashboard-data'
 
 export default async function Home() {
   const header = await headers()

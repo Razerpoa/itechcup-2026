@@ -15,3 +15,7 @@ export interface DashboardData {
 export interface DashboardViewProps {
   data: DashboardData
 }
+
+export interface DashboardDispatcherProps extends DashboardViewProps {
+  initialDeviceType: DeviceType
+}

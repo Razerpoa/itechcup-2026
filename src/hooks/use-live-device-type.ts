@@ -1,8 +1,8 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
-import type { DeviceType } from '../types'
-import { DESKTOP_MIN_WIDTH, TABLET_MIN_WIDTH } from '../lib/device'
+import type { DeviceType } from '@/types'
+import { DESKTOP_MIN_WIDTH, TABLET_MIN_WIDTH } from '@/lib/device'
 
 const desktopQuery = `(min-width: ${DESKTOP_MIN_WIDTH}px)`
 const tabletQuery = `(min-width: ${TABLET_MIN_WIDTH}px)`

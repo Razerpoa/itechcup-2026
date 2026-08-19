@@ -27,7 +27,7 @@ npm run build      # production build (must pass; / is dynamic ƒ)
 npm run lint       # eslint
 npm run start      # serve the production build
 node --import ./tsx-hooks.mjs --test   # run ALL tests (no npm test script)
-node --import ./tsx-hooks.mjs --test src/features/dashboard/lib/device.test.ts  # one file
+node --import ./tsx-hooks.mjs --test src/lib/device.test.ts  # one file
 ```
 
 ## How the Architecture Works
@@ -36,25 +36,25 @@ node --import ./tsx-hooks.mjs --test src/features/dashboard/lib/device.test.ts  
 
 1. `src/proxy.ts` — reads the User-Agent, normalizes it to `mobile|tablet|desktop`, and sets the `x-device-type` request header. **Must live under `src/`** (Next 16.3.1 only scans `src/` for proxy/middleware files — a root-level `proxy.ts` never executes).
 2. `src/app/page.tsx` (Server Component) — reads `x-device-type` via `await headers()` (fallback `desktop`), fetches dashboard data, and renders `<DashboardView data initialDeviceType />`.
-3. `src/features/dashboard/components/DashboardView.tsx` — client dispatcher. Calls `useLiveDeviceType(initialDeviceType)` and renders the matching `DashboardMobile` / `DashboardTablet` / `DashboardDesktop` scaffold.
-4. `src/features/dashboard/hooks/use-live-device-type.ts` — `useSyncExternalStore` over `matchMedia` breakpoints. The third argument (server snapshot = `initialDeviceType`) makes the server HTML and first client render identical → **no hydration mismatch**; after hydration the store re-renders on resize.
+3. `src/components/DashboardView.tsx` — client dispatcher. Calls `useLiveDeviceType(initialDeviceType)` and renders the matching `DashboardMobile` / `DashboardTablet` / `DashboardDesktop` scaffold.
+4. `src/hooks/use-live-device-type.ts` — `useSyncExternalStore` over `matchMedia` breakpoints. The third argument (server snapshot = `initialDeviceType`) makes the server HTML and first client render identical → **no hydration mismatch**; after hydration the store re-renders on resize.
 
-**Feature module** — `src/features/dashboard/`:
+**Flat module layout** — `src/`:
 
 ```
-types.ts                          # DeviceType, DashboardData, DashboardViewProps
-lib/device.ts                     # normalizeDeviceType, deviceTypeFromWidth, breakpoint constants
-lib/get-dashboard-data.ts         # mock data provider (seam for a real API later)
-hooks/use-dashboard.ts            # shared client state: { data, viewState, actions }
-hooks/use-live-device-type.ts     # live viewport → device type (matchMedia)
+types.ts                          # DeviceType, DashboardData, DashboardViewProps, DashboardDispatcherProps
 components/DashboardView.tsx      # client dispatcher (owns the views record)
 components/Dashboard{Mobile,Tablet,Desktop}.tsx   # one view per developer (empty scaffolds)
+hooks/use-dashboard.ts            # shared client state: { data, viewState, actions }
+hooks/use-live-device-type.ts     # live viewport → device type (matchMedia)
+lib/device.ts                     # normalizeDeviceType, deviceTypeFromWidth, breakpoint constants
+lib/get-dashboard-data.ts         # mock data provider (seam for a real API later)
 ```
 
 ## Design Rules
 
-- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only; Desktop = `lg:` only. All breakpoint logic lives in `use-live-device-type.ts` + `lib/device.ts`.
-- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH` (768) / `DESKTOP_MIN_WIDTH` (1024) from `lib/device.ts`.
+- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only; Desktop = `lg:` only. All breakpoint logic lives in `use-live-device-type.ts` + `src/lib/device.ts`.
+- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH` (768) / `DESKTOP_MIN_WIDTH` (1024) from `src/lib/device.ts`.
 - Views stay **presentational**: no `headers()`, no data fetching inside view components.
 - **TDD**: write the failing test first, verify RED, implement, verify GREEN, commit.
 

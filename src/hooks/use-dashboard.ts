@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { DashboardData } from '../types'
+import type { DashboardData } from '@/types'
 
 export type DashboardPeriod = 'day' | 'week' | 'month'
 
