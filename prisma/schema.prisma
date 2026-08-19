@@ -8,6 +8,12 @@ datasource db {
   provider  = "postgresql"
 }
 
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 model Sekolah {
   id                  String   @id @default(uuid())
   namaSekolah         String
@@ -19,6 +25,27 @@ model Sekolah {
   kontakSekolah       String
   jabatanAdmin        String
 
+  // Relasi ke data siswa yang mendaftar verifikasi
+  daftarSiswa         Siswa[]
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model Siswa {
+  id                 String             @id @default(uuid())
+  namaLengkap        String
+  nis                String             @unique
+  kelas              String
+  
+  // Relasi ke Sekolah yang memverifikasi
+  sekolahId          String
+  sekolah            Sekolah            @relation(fields: [sekolahId], references: [id], onDelete: Cascade)
+
+  // Status Verifikasi oleh Admin Sekolah
+  verificationStatus VerificationStatus @default(PENDING)
+  catatanPenolakan   String?            @db.Text
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
