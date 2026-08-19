@@ -1,0 +1,24 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Sekolah {
+  id                  String   @id @default(uuid())
+  namaSekolah         String
+  npsn                String   @unique
+  emailResmi          String   @unique
+  password            String   // Hashed password
+  namaPenanggungJawab String
+  alamatLengkap       String   @db.Text
+  kontakSekolah       String
+  jabatanAdmin        String
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
