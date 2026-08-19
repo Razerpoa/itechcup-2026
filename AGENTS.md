@@ -20,6 +20,39 @@ Next.js 16.3.1 (App Router under `src/`, Tailwind v4 CSS-first config in `src/ap
 - `npm run start` — serve the production build (for manual browser checks)
 - **Tests: `node --import ./tsx-hooks.mjs --test`** — there is NO `npm test` script. Run a single file by appending its path.
 
+## Database
+
+PostgreSQL via Prisma ORM (v7, `prisma-client-js` generator → imports from `@prisma/client`). Connection uses `@prisma/adapter-pg` driver adapter. Prisma client singleton at `src/lib/prisma.ts`.
+
+### DB Scripts
+
+- `npm run db:push` — push schema to database (no migrations)
+- `npm run db:seed` — seed with sample Indonesian school + student data
+- `npm run db:studio` — open Prisma Studio GUI
+- `npx tsx src/lib/test-db.ts` — quick connection test
+
+### Schema
+
+- **Sekolah** — schools with UUID `id`, unique `npsn`/`emailResmi`, hashed `password`, contact info, timestamps. Has `daftarSiswa` relation.
+- **Siswa** — students with UUID `id`, unique `nis`, `kelas`, `sekolahId` FK (cascade delete), `verificationStatus` (enum: `PENDING`/`VERIFIED`/`REJECTED`), optional `catatanPenolakan`, timestamps.
+
+### API Routes (App Router)
+
+All responses use `{ data?, error? }` format.
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/sekolah` | List all schools. `?search=` filters by `namaSekolah`, `npsn`, or `emailResmi` |
+| `POST` | `/api/sekolah` | Create school (body: all required fields) |
+| `GET` | `/api/sekolah/[id]` | Get school by UUID (includes `daftarSiswa`) |
+| `PUT` | `/api/sekolah/[id]` | Update school by UUID |
+| `DELETE` | `/api/sekolah/[id]` | Delete school by UUID (cascades to `Siswa`) |
+| `GET` | `/api/siswa` | List all students. Filters: `?sekolahId=`, `?status=PENDING\|VERIFIED\|REJECTED` |
+| `POST` | `/api/siswa` | Create student (body: `namaLengkap`, `nis`, `kelas`, `sekolahId`) |
+| `GET` | `/api/siswa/[id]` | Get student by UUID (includes `sekolah`) |
+| `PUT` | `/api/siswa/[id]` | Update student (can change `verificationStatus`, `catatanPenolakan`) |
+| `DELETE` | `/api/siswa/[id]` | Delete student by UUID |
+
 ## Test Conventions
 
 - Node's built-in `node:test` + `react-dom/server` `renderToString` — **no jsdom, no test framework**.
