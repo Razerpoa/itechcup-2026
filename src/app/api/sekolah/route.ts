@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Format email tidak valid', errorCode: 'ERR_INVALID_EMAIL' }, { status: 400 })
     }
 
+    const npsnResult = validateNpsn(body.npsn)
+    if (!npsnResult.valid) {
+      return NextResponse.json({ error: npsnResult.error, errorCode: npsnResult.errorCode }, { status: 400 })
+    }
+
     if (typeof body.password !== 'string' || body.password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json({ error: `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter`, errorCode: 'ERR_WEAK_PASSWORD' }, { status: 400 })
     }
@@ -59,11 +64,6 @@ export async function POST(request: NextRequest) {
         error: `Terlalu banyak permintaan. Coba lagi dalam ${Math.ceil(retryMs / 1000)} detik`,
         errorCode: 'ERR_RESOURCE_RATE_LIMITED',
       }, { status: 429 })
-    }
-
-    const npsnResult = validateNpsn(body.npsn)
-    if (!npsnResult.valid) {
-      return NextResponse.json({ error: npsnResult.error, errorCode: npsnResult.errorCode }, { status: 400 })
     }
     const normalizedNpsn = npsnResult.normalized!
 

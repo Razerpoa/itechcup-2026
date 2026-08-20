@@ -4,37 +4,43 @@ import { lookupSchool } from './kemendikdasmen.ts'
 
 const originalFetch = globalThis.fetch
 
+function mockFetch(body: unknown, init?: { ok?: boolean; status?: number }): typeof fetch {
+  const response = {
+    ok: init?.ok ?? true,
+    status: init?.status ?? 200,
+    json: () => Promise.resolve(body),
+  }
+  return mock.fn(() => Promise.resolve(response)) as unknown as typeof fetch
+}
+
 beforeEach(() => {
   globalThis.fetch = originalFetch
 })
 
 describe('lookupSchool', () => {
   it('returns school data on success', async () => {
-    globalThis.fetch = mock.fn(() => Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({
-        status_code: 200,
-        message: 'success',
-        total: 1,
-        data: [{
-          nama: 'SMP NEGERI 133 JAKARTA',
-          npsn: '20106342',
-          sekolah_id: 'C0F5E595-2BF5-E011-B37B-89DFD57B7D37',
-          bentuk_pendidikan: 'SMP',
-          status_sekolah: 'NEGERI',
-          akreditasi: 'B',
-          provinsi: 'Prov. D.K.I. Jakarta',
-          kabupaten: 'Kab. Adm. Kep. Seribu',
-          kecamatan: 'Kec. Kepulauan Seribu Utara',
-          alamat_jalan: 'Jl. Pulau Pramuka Rt. 003 Rw. 05',
-          kode_pos: '14530',
-          nama_dusun: 'Pulau Pramuka',
-          rt: 3,
-          rw: 5,
-          path_file: 'https://file.data.kemendikdasmen.go.id/...'
-        }]
-      })
-    }) as any)
+    globalThis.fetch = mockFetch({
+      status_code: 200,
+      message: 'success',
+      total: 1,
+      data: [{
+        nama: 'SMP NEGERI 133 JAKARTA',
+        npsn: '20106342',
+        sekolah_id: 'C0F5E595-2BF5-E011-B37B-89DFD57B7D37',
+        bentuk_pendidikan: 'SMP',
+        status_sekolah: 'NEGERI',
+        akreditasi: 'B',
+        provinsi: 'Prov. D.K.I. Jakarta',
+        kabupaten: 'Kab. Adm. Kep. Seribu',
+        kecamatan: 'Kec. Kepulauan Seribu Utara',
+        alamat_jalan: 'Jl. Pulau Pramuka Rt. 003 Rw. 05',
+        kode_pos: '14530',
+        nama_dusun: 'Pulau Pramuka',
+        rt: 3,
+        rw: 5,
+        path_file: 'https://file.data.kemendikdasmen.go.id/...'
+      }]
+    })
 
     const result = await lookupSchool('20106342')
     assert.equal(result.success, true)
@@ -42,10 +48,7 @@ describe('lookupSchool', () => {
   })
 
   it('returns error when NPSN not found', async () => {
-    globalThis.fetch = mock.fn(() => Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({ status_code: 200, message: 'success', total: 0, data: [] })
-    }) as any)
+    globalThis.fetch = mockFetch({ status_code: 200, message: 'success', total: 0, data: [] })
 
     const result = await lookupSchool('00000000')
     assert.equal(result.success, false)
@@ -53,7 +56,7 @@ describe('lookupSchool', () => {
   })
 
   it('returns error on API failure', async () => {
-    globalThis.fetch = mock.fn(() => Promise.resolve({ ok: false, status: 500 }) as any)
+    globalThis.fetch = mockFetch(null, { ok: false, status: 500 })
     const result = await lookupSchool('20106342')
     assert.equal(result.success, false)
     assert.equal(result.errorCode, 'ERR_API_UNAVAILABLE')
