@@ -19,16 +19,23 @@ model Sekolah {
   namaSekolah         String
   npsn                String   @unique
   emailResmi          String   @unique
-  password            String   // Hashed password
+  password            String
   namaPenanggungJawab String
   alamatLengkap       String   @db.Text
   kontakSekolah       String
 
-  // Relasi ke data siswa yang mendaftar verifikasi
-  daftarSiswa         Siswa[]
+  verificationStatus       String    @default("UNVERIFIED")
+  officialNama             String?
+  officialSekolahId        String?
+  bentukPendidikan         String?
+  statusSekolah            String?
+  akreditasi               String?
+  lastVerifiedAt           DateTime?
+  verificationCooldownUntil DateTime?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  daftarSiswa         Siswa[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model Siswa {
