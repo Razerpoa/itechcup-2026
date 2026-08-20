@@ -14,7 +14,6 @@ const sekolahData = [
     namaPenanggungJawab: 'Dra. Siti Aminah, M.Pd.',
     alamatLengkap: 'Jl. Besuki No.1, Menteng, Kec. Menteng, Kota Jakarta Pusat, DKI Jakarta 10310',
     kontakSekolah: '021-31906265',
-    jabatanAdmin: 'Kepala Sekolah',
   },
   {
     namaSekolah: 'SMP Negeri 5 Bandung',
@@ -24,7 +23,6 @@ const sekolahData = [
     namaPenanggungJawab: 'Dr. H. Ahmad Fauzi, S.Pd., M.M.',
     alamatLengkap: 'Jl. Belitung No.1, Merdeka, Kec. Sumur Bandung, Kota Bandung, Jawa Barat 40113',
     kontakSekolah: '022-4205367',
-    jabatanAdmin: 'Wakil Kepala Sekolah',
   },
   {
     namaSekolah: 'SMA Negeri 3 Surabaya',
@@ -34,7 +32,6 @@ const sekolahData = [
     namaPenanggungJawab: 'Drs. H. Budi Santoso, M.M.',
     alamatLengkap: 'Jl. Mpu Supodro No.47, Gubeng, Kec. Gubeng, Kota Surabaya, Jawa Timur 60281',
     kontakSekolah: '031-5021888',
-    jabatanAdmin: 'Kepala Sekolah',
   },
   {
     namaSekolah: 'SD Islam Al-Azhar 1 Jakarta',
@@ -44,7 +41,6 @@ const sekolahData = [
     namaPenanggungJawab: 'Hj. Ratna Dewi, S.Pd.I.',
     alamatLengkap: 'Jl. Sisingamangaraja No.1, Kebayoran Baru, Kota Jakarta Selatan, DKI Jakarta 12110',
     kontakSekolah: '021-7203145',
-    jabatanAdmin: 'Kepala Sekolah',
   },
   {
     namaSekolah: 'SMP Islam Terpadu Integral',
@@ -54,7 +50,6 @@ const sekolahData = [
     namaPenanggungJawab: 'Ustadz Muhammad Ridwan, S.Pd.',
     alamatLengkap: 'Jl. Raya Bogor Km.30, Cibinong, Kab. Bogor, Jawa Barat 16914',
     kontakSekolah: '021-87901234',
-    jabatanAdmin: 'Sekretaris',
   },
 ];
 

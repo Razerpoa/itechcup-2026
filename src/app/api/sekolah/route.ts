@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const required = ['namaSekolah', 'npsn', 'emailResmi', 'password', 'namaPenanggungJawab', 'alamatLengkap', 'kontakSekolah', 'jabatanAdmin'];
+    const required = ['namaSekolah', 'npsn', 'emailResmi', 'password', 'namaPenanggungJawab', 'alamatLengkap', 'kontakSekolah'];
     const missing = required.filter((f) => !body[f]);
     if (missing.length > 0) {
       return NextResponse.json({ error: `Field wajib tidak ada: ${missing.join(', ')}` }, { status: 400 });
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
         namaPenanggungJawab: body.namaPenanggungJawab,
         alamatLengkap: body.alamatLengkap,
         kontakSekolah: body.kontakSekolah,
-        jabatanAdmin: body.jabatanAdmin,
       },
     });
 

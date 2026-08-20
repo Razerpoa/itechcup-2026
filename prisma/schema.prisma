@@ -23,7 +23,6 @@ model Sekolah {
   namaPenanggungJawab String
   alamatLengkap       String   @db.Text
   kontakSekolah       String
-  jabatanAdmin        String
 
   // Relasi ke data siswa yang mendaftar verifikasi
   daftarSiswa         Siswa[]

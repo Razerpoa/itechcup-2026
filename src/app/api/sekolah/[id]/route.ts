@@ -40,7 +40,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         namaPenanggungJawab: body.namaPenanggungJawab,
         alamatLengkap: body.alamatLengkap,
         kontakSekolah: body.kontakSekolah,
-        jabatanAdmin: body.jabatanAdmin,
       },
     });
 
