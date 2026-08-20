@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (!apiResult.success) {
       return NextResponse.json({ error: apiResult.error, errorCode: apiResult.errorCode }, { status: 400 })
     }
-    const official = apiResult.data!
+    const official = { ...apiResult.data!, nama: apiResult.data!.nama.toUpperCase() }
 
     const comparison = compareSchoolNames(normalizedName, official.nama)
 
@@ -126,7 +126,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ data: { is_verified: true } }, { status: 201 })
+    return NextResponse.json({
+      data: {
+        is_verified: true,
+        nama_sekolah: official.nama,
+        status: verificationStatus,
+      },
+    }, { status: 201 })
   } catch (error) {
     console.error('POST /api/sekolah error:', error)
     if (error instanceof Object && 'code' in error && error.code === 'P2002') {

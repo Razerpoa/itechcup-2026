@@ -2,7 +2,7 @@
 
 A Next.js 16.3.1 (App Router) web template whose home page renders a **device-specific dashboard view** — mobile, tablet, or desktop — selected by the visitor's device and corrected live on window resize.
 
-> This project is a competition (IteachCup 2026) template. The dashboard views are **empty scaffolds** ready for the team to fill in.
+> This project is a competition (IteachCup 2026). The dashboard views are **empty scaffolds** ready for the team to fill in.
 
 ## Stack
 
