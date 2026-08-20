@@ -1,55 +1,86 @@
 import 'dotenv/config';
 import { PrismaClient, VerificationStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const sekolahData = [
   {
-    namaSekolah: 'SDN 01 Menteng',
+    namaSekolah: 'SDN 01 MENTENG',
     npsn: '20108017',
     emailResmi: 'sdn01menteng@jakarta.go.id',
     password: 'hashed_password_1',
     namaPenanggungJawab: 'Dra. Siti Aminah, M.Pd.',
     alamatLengkap: 'Jl. Besuki No.1, Menteng, Kec. Menteng, Kota Jakarta Pusat, DKI Jakarta 10310',
     kontakSekolah: '021-31906265',
+    verificationStatus: 'VERIFIED',
+    officialNama: 'SDN 01 MENTENG',
+    officialSekolahId: null,
+    bentukPendidikan: 'SD',
+    statusSekolah: 'NEGERI',
+    akreditasi: 'A',
   },
   {
-    namaSekolah: 'SMP Negeri 5 Bandung',
+    namaSekolah: 'SMP NEGERI 5 BANDUNG',
     npsn: '20254602',
     emailResmi: 'smpn5bandung@disdik.jabar.go.id',
     password: 'hashed_password_2',
     namaPenanggungJawab: 'Dr. H. Ahmad Fauzi, S.Pd., M.M.',
     alamatLengkap: 'Jl. Belitung No.1, Merdeka, Kec. Sumur Bandung, Kota Bandung, Jawa Barat 40113',
     kontakSekolah: '022-4205367',
+    verificationStatus: 'VERIFIED',
+    officialNama: 'SMP NEGERI 5 BANDUNG',
+    officialSekolahId: null,
+    bentukPendidikan: 'SMP',
+    statusSekolah: 'NEGERI',
+    akreditasi: 'A',
   },
   {
-    namaSekolah: 'SMA Negeri 3 Surabaya',
+    namaSekolah: 'SMA NEGERI 3 SURABAYA',
     npsn: '20535352',
     emailResmi: 'sman3surabaya@surabaya.go.id',
     password: 'hashed_password_3',
     namaPenanggungJawab: 'Drs. H. Budi Santoso, M.M.',
     alamatLengkap: 'Jl. Mpu Supodro No.47, Gubeng, Kec. Gubeng, Kota Surabaya, Jawa Timur 60281',
     kontakSekolah: '031-5021888',
+    verificationStatus: 'VERIFIED',
+    officialNama: 'SMA NEGERI 3 SURABAYA',
+    officialSekolahId: null,
+    bentukPendidikan: 'SMA',
+    statusSekolah: 'NEGERI',
+    akreditasi: 'A',
   },
   {
-    namaSekolah: 'SD Islam Al-Azhar 1 Jakarta',
+    namaSekolah: 'SD ISLAM AL-AZHAR 1 JAKARTA',
     npsn: '20108154',
     emailResmi: 'sdalazhar1@al-azhar.sch.id',
     password: 'hashed_password_4',
     namaPenanggungJawab: 'Hj. Ratna Dewi, S.Pd.I.',
     alamatLengkap: 'Jl. Sisingamangaraja No.1, Kebayoran Baru, Kota Jakarta Selatan, DKI Jakarta 12110',
     kontakSekolah: '021-7203145',
+    verificationStatus: 'VERIFIED',
+    officialNama: 'SD ISLAM AL-AZHAR 1 JAKARTA',
+    officialSekolahId: null,
+    bentukPendidikan: 'SD',
+    statusSekolah: 'SWASTA',
+    akreditasi: 'A',
   },
   {
-    namaSekolah: 'SMP Islam Terpadu Integral',
+    namaSekolah: 'SMP ISLAM TERPADU INTEGRAL',
     npsn: '20260811',
     emailResmi: 'smpintegral@yayasanintegral.sch.id',
     password: 'hashed_password_5',
     namaPenanggungJawab: 'Ustadz Muhammad Ridwan, S.Pd.',
     alamatLengkap: 'Jl. Raya Bogor Km.30, Cibinong, Kab. Bogor, Jawa Barat 16914',
     kontakSekolah: '021-87901234',
+    verificationStatus: 'VERIFIED',
+    officialNama: 'SMP ISLAM TERPADU INTEGRAL',
+    officialSekolahId: null,
+    bentukPendidikan: 'SMP',
+    statusSekolah: 'SWASTA',
+    akreditasi: 'B',
   },
 ];
 
@@ -68,13 +99,20 @@ async function main() {
   try {
     console.log('🌱 Seeding database...');
 
+    const defaultHash = await bcrypt.hash('password123', 10);
+
     for (const data of sekolahData) {
       const existing = await prisma.sekolah.findUnique({ where: { npsn: data.npsn } });
       if (existing) {
         console.log(`⏭  Sekolah "${data.namaSekolah}" already exists, skipping.`);
         continue;
       }
-      await prisma.sekolah.create({ data });
+      await prisma.sekolah.create({
+        data: {
+          ...data,
+          password: defaultHash,
+        },
+      });
       console.log(`✅ Created sekolah: ${data.namaSekolah}`);
     }
 
