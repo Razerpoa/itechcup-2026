@@ -1,77 +1,207 @@
-# itechcup-2026 — Device-Adaptive Dashboard
+# Mitra Muda
 
-A Next.js 16.3.1 (App Router) web template whose home page renders a **device-specific dashboard view** — mobile, tablet, or desktop — selected by the visitor's device and corrected live on window resize.
+Platform pemberdayaan talenta pelajar Indonesia yang menghubungkan pelajar berpengalaman dengan UMKM melalui marketplace jasa yang aman dan transparan — tanpa syarat KTP atau rekening bank.
 
-> This project is a competition (IteachCup 2026). The dashboard views are **empty scaffolds** ready for the team to fill in.
+## Tentang Mitra Muda
 
-## Stack
+Banyak pelajar Indonesia memiliki bakat luar biasa di bidang desain, coding, video editing, dan lainnya, namun terhalang karena belum memiliki KTP atau rekening bank untuk menerima pembayaran. Di sisi lain, UMKM membutuhkan talenta muda yang segar dan terjangkau untuk menjalankan proyek digital mereka.
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16.3.1 (App Router, `src/`) |
-| UI | React 19.2.8, Tailwind v4 (CSS-first config in `src/app/globals.css`) |
-| Runtime | Node 26 (native TS type stripping) |
-| Tests | Node's `node:test` + `react-dom/server` `renderToString` — no jsdom, no framework |
+**Mitra Muda hadir sebagai solusi:**
+- Pelajar dapat memonetisasi skill mereka tanpa perlu KTP/rekening bank (cukup e-wallet)
+- UMKM dapat merekrut talenta muda dengan sistem pembayaran DP yang aman (escrow)
+- Sekolah dapat memantau portofolio dan kinerja siswanya secara real-time
 
-## Getting Started
+## Tech Stack
+
+| Teknologi | Kegunaan |
+|-----------|----------|
+| **Next.js 16.3.1** | Full-stack framework (App Router) |
+| **React 19** | UI library |
+| **TypeScript** | Type safety |
+| **Tailwind CSS v4** | Styling dengan design tokens |
+| **Prisma ORM v7** | Database schema & queries |
+| **PostgreSQL** | Database utama |
+| **Supabase** | Storage (foto profil, kartu pelajar), Auth OAuth |
+| **Docker** | Containerisasi database lokal |
+| **bcryptjs** | Hashing password |
+
+## Struktur Folder
+
+```
+src/
+├── app/
+│   ├── (auth)/                  ← Halaman login & register
+│   │   ├── login/
+│   │   └── register/
+│   │       ├── pelajar/
+│   │       ├── umkm/
+│   │       └── sekolah/
+│   ├── (dashboard)/             ← Dashboard per role
+│   │   ├── layout.tsx           ← Sidebar + Navbar
+│   │   ├── pelajar/
+│   │   ├── sekolah/
+│   │   └── umkm/
+│   ├── (marketing)/             ← Landing & Onboarding
+│   │   └── page.tsx             ← Pilih peran (Onboarding)
+│   ├── marketplace/             ← Feed proyek & jasa
+│   ├── profil/[id]/             ← Profil publik pelajar
+│   └── api/                     ← REST API endpoints
+│       ├── sekolah/
+│       ├── pelajar/
+│       ├── umkm/
+│       ├── proyek/
+│       └── siswa/
+├── components/
+│   ├── ui/                      ← Atom components (Button, Input, Card, Badge)
+│   ├── layout/                  ← Navbar, Sidebar
+│   └── marketplace/             ← ProyekCard, JasaCard
+├── lib/
+│   ├── prisma.ts                ← Prisma client singleton
+│   ├── supabase.ts              ← Supabase client
+│   ├── utils.ts                 ← cn(), formatRupiah(), dll
+│   ├── kemendikdasmen.ts        ← API lookup NPSN sekolah
+│   ├── rate-limiter.ts          ← Proteksi spam API
+│   └── validate-npsn.ts         ← Validasi format NPSN
+├── hooks/                       ← Custom React hooks
+├── types/
+│   └── index.ts                 ← Semua TypeScript types
+└── proxy.ts                     ← Middleware deteksi device
+```
+
+## Instalasi
+
+### 1. Clone & Install
 
 ```bash
+git clone https://github.com/Razerpoa/itechcup-2026.git
+cd itechcup-2026
 npm install
-npm run dev        # http://localhost:3000
 ```
 
-Other commands:
+### 2. Konfigurasi Environment
+
+Buat file `.env` di root direktori (copy dari `.env.example`):
 
 ```bash
-npm run build      # production build (must pass; / is dynamic ƒ)
-npm run lint       # eslint
-npm run start      # serve the production build
-node --import ./tsx-hooks.mjs --test   # run ALL tests (no npm test script)
-node --import ./tsx-hooks.mjs --test src/lib/device.test.ts  # one file
+cp .env.example .env
 ```
 
-## How the Architecture Works
-
-**Request flow:**
-
-1. `src/proxy.ts` — reads the User-Agent, normalizes it to `mobile|tablet|desktop`, and sets the `x-device-type` request header. **Must live under `src/`** (Next 16.3.1 only scans `src/` for proxy/middleware files — a root-level `proxy.ts` never executes).
-2. `src/app/page.tsx` (Server Component) — reads `x-device-type` via `await headers()` (fallback `desktop`), fetches dashboard data, and renders `<DashboardView data initialDeviceType />`.
-3. `src/components/DashboardView.tsx` — client dispatcher. Calls `useLiveDeviceType(initialDeviceType)` and renders the matching `DashboardMobile` / `DashboardTablet` / `DashboardDesktop` scaffold.
-4. `src/hooks/use-live-device-type.ts` — `useSyncExternalStore` over `matchMedia` breakpoints. The third argument (server snapshot = `initialDeviceType`) makes the server HTML and first client render identical → **no hydration mismatch**; after hydration the store re-renders on resize.
-
-**Flat module layout** — `src/`:
+Isi nilai-nilai berikut di `.env`:
 
 ```
-types.ts                          # DeviceType, DashboardData, DashboardViewProps, DashboardDispatcherProps
-components/DashboardView.tsx      # client dispatcher (owns the views record)
-components/Dashboard{Mobile,Tablet,Desktop}.tsx   # one view per developer (empty scaffolds)
-hooks/use-dashboard.ts            # shared client state: { data, viewState, actions }
-hooks/use-live-device-type.ts     # live viewport → device type (matchMedia)
-lib/device.ts                     # normalizeDeviceType, deviceTypeFromWidth, breakpoint constants
-lib/get-dashboard-data.ts         # mock data provider (seam for a real API later)
+DATABASE_URL="postgresql://postgres:password@localhost:5432/mitramuda"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 ```
 
-## Design Rules
+### 3. Jalankan Database (Docker)
 
-- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only; Desktop = `lg:` only. All breakpoint logic lives in `use-live-device-type.ts` + `src/lib/device.ts`.
-- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH` (768) / `DESKTOP_MIN_WIDTH` (1024) from `src/lib/device.ts`.
-- Views stay **presentational**: no `headers()`, no data fetching inside view components.
-- **TDD**: write the failing test first, verify RED, implement, verify GREEN, commit.
+```bash
+docker compose up -d
+```
 
-## Contributing (Tests)
+### 4. Sinkronisasi Schema Database
 
-- `*.test.ts`/`*.test.tsx` live next to source, imported with explicit `.ts`/`.tsx` extensions.
-- `tsx-hooks.mjs` transpiles `.tsx` and redirects `next/headers` → `next-headers.mock.mjs`.
-- Control the mocked `x-device-type` header with `globalThis.__TEST_DEVICE_TYPE` (`undefined` = absent).
-- Assert view dispatch via `data-view="mobile|tablet|desktop"` in the rendered HTML.
-- Full check before a PR: `node --import ./tsx-hooks.mjs --test` → exit 0; `npm run lint` → exit 0; `npm run build` → exit 0.
+```bash
+npm run db:push
+```
 
-## Known Issues
+### 5. Seed Data Awal (Opsional)
 
-- **Hive worktrees** reject symlinked `node_modules` (Turbopack). Run a real `npm ci` in each `.hive/.worktrees/<feature>/<task>/`.
-- **`npm run lint` from the repo root** will scan `.hive/.worktrees/**/.next` unless `eslint.config.mjs` ignores `.hive/**` — keep that entry.
+```bash
+npm run db:seed
+```
 
-## Verification Notes
+### 6. Jalankan Development Server
 
-- Server-side UA detection is verified with a real running server, not by grepping the compiled bundle: `npm run build && npm run start`, then e.g. `curl -s -H "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1" http://localhost:3000/ | grep -o 'data-view="[a-z]*"'` → `mobile`.
-- The proxy is registered under `/_middleware` in `.next/server/functions-config-manifest.json`; `.next/server/middleware-manifest.json` stays empty in Next 16.3.1 — don't use it as a check.
+```bash
+npm run dev
+```
+
+Buka [http://localhost:3000](http://localhost:3000)
+
+## Perintah Tersedia
+
+| Perintah | Fungsi |
+|----------|--------|
+| `npm run dev` | Development server |
+| `npm run build` | Build produksi |
+| `npm run start` | Jalankan build produksi |
+| `npm run lint` | Cek kode dengan ESLint |
+| `npm run db:push` | Push schema ke database |
+| `npm run db:seed` | Seed dummy data |
+| `npm run db:studio` | Buka Prisma Studio (GUI database) |
+
+## Fitur Platform
+
+### Untuk Pelajar
+- Daftar dan buat profil/portfolio
+- Pasang listing jasa (contoh: Jasa Desain Logo, Jasa Entry Data)
+- Lamar proyek dari UMKM
+- Terima pembayaran via e-wallet (GoPay, OVO, Dana)
+- Dashboard statistik proyek & penghasilan
+
+### Untuk UMKM
+- Daftar dan verifikasi akun
+- Posting proyek dengan budget & sistem DP
+- Browse katalog jasa pelajar
+- Kelola lamaran & transaksi
+- Ruang akad & chat dengan pelajar
+
+### Untuk Sekolah
+- Pantau pelajar yang terdaftar
+- Verifikasi siswa (Approve/Tolak)
+- Dashboard laporan kinerja & prestasi siswa
+- Analitik: jumlah proyek selesai, total pendapatan siswa
+
+## Alur Verifikasi
+
+### Pelajar
+1. Daftar akun → isi data diri + foto kartu pelajar
+2. Kirim nama, NIS, kelas ke dashboard sekolah
+3. Admin sekolah Approve/Tolak verifikasi
+
+### UMKM
+1. Daftar akun basic
+2. Upload bukti legalitas: NIB/NPWP (fast approval) atau foto usaha + link medsos (manual review)
+3. Setelah terverifikasi → bisa posting proyek
+
+### Sekolah
+1. Daftar dengan NPSN (auto-verifikasi via API Kemendikdasmen)
+2. Nama sekolah dicek otomatis terhadap database pemerintah
+
+## Alur Transaksi (Escrow Mock)
+
+1. UMKM buat proyek → Pelajar lamar
+2. UMKM pilih pelajar → Kesepakatan di Ruang Akad
+3. UMKM bayar DP (dana ditahan platform)
+4. Pelajar kerjakan → Submit hasil
+5. UMKM review → Approve/Tolak
+6. Jika Approve → Dana diteruskan ke e-wallet pelajar
+
+## UI Theme
+
+**Nama:** Collaborative Vitality  
+**Font:** Plus Jakarta Sans  
+**Primary:** Pastel Orange `#FF9B71`  
+**Background:** Clean White `#FAFAFA`  
+**Style:** Modern · Bersih · Youthful · Friendly · Professional
+
+## API Reference
+
+Lihat [`API.md.deprecated`](./API.md.deprecated) untuk referensi lama (tidak berlaku untuk versi saat ini).
+
+Endpoint aktif:
+- `GET/POST /api/sekolah` — CRUD sekolah
+- `GET/POST /api/pelajar` — CRUD pelajar  
+- `GET/POST /api/umkm` — CRUD UMKM
+- `GET/POST /api/proyek` — CRUD proyek
+- `GET/POST /api/siswa` — CRUD siswa (verifikasi)
+
+## Kontribusi
+
+Lihat [`CONTRIBUTING.md`](./CONTRIBUTING.md) untuk panduan kontribusi.
+
+## Lisensi
+
+[MIT License](./LICENSE)

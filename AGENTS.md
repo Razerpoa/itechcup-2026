@@ -8,35 +8,68 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Device-Adaptive Dashboard (itechcup-2026)
+# Mitra Muda — Platform Talenta Pelajar Indonesia
 
-Next.js 16.3.1 (App Router under `src/`, Tailwind v4 CSS-first config in `src/app/globals.css`, React 19.2.8, Node 26, `@/*` → `./src/*`). Home page renders a device-specific dashboard; views are scaffolds for the team to fill in.
+Next.js 16.3.1 (App Router under `src/`, Tailwind v4 CSS-first config in `src/app/globals.css`, React 19.2.8, TypeScript 5, `@/*` → `./src/*`).
+
+Mitra Muda adalah platform pemberdayaan talenta pelajar Indonesia yang menghubungkan pelajar dengan UMKM melalui marketplace jasa, sistem verifikasi sekolah, dan sistem transaksi aman tanpa syarat KTP atau rekening bank.
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                  # Home (Server Component, reads device type)
-│   ├── layout.tsx                # Root layout (Geist fonts)
-│   ├── globals.css               # Tailwind v4 config (@theme inline)
-│   └── api/
-│       ├── sekolah/route.ts      # Schools CRUD
-│       └── siswa/route.ts        # Students CRUD
-├── components/                   # All 'use client'
-│   ├── DashboardView.tsx         # Device dispatcher
-│   └── Dashboard{Mobile,Tablet,Desktop}.tsx
-├── hooks/
-│   ├── use-live-device-type.ts   # matchMedia → device type
-│   └── use-dashboard.ts          # Client state
+│   ├── (auth)/
+│   │   ├── layout.tsx            # Auth layout split branding
+│   │   ├── login/page.tsx        # Login page (Google OAuth + manual)
+│   │   └── register/
+│   │       ├── pelajar/page.tsx  # Registrasi Pelajar
+│   │       ├── umkm/page.tsx     # Registrasi UMKM
+│   │       └── sekolah/page.tsx  # Registrasi Sekolah
+│   ├── (dashboard)/
+│   │   ├── layout.tsx            # Dashboard shell (Sidebar + Navbar)
+│   │   ├── pelajar/
+│   │   │   ├── page.tsx          # Dashboard Pelajar
+│   │   │   ├── dompet/page.tsx   # Dompet & Tarik Saldo
+│   │   │   └── transaksi/[id]/   # Ruang Akad Transaksi & Review
+│   │   ├── sekolah/
+│   │   │   ├── page.tsx          # Dashboard Sekolah & Verifikasi
+│   │   │   └── laporan/page.tsx  # Laporan Kinerja & Analytics
+│   │   └── umkm/
+│   │       ├── page.tsx          # Dashboard UMKM
+│   │       └── proyek/buat/      # Form Buat Lowongan Proyek
+│   ├── (marketing)/
+│   │   ├── layout.tsx
+│   │   └── page.tsx              # Onboarding Role Selection
+│   ├── marketplace/
+│   │   ├── page.tsx              # Feed Proyek UMKM & Jasa Pelajar
+│   │   └── [id]/page.tsx         # Detail Proyek & Lamar
+│   ├── profil/[id]/page.tsx      # Portofolio & Profil Publik Siswa
+│   ├── api/
+│   │   ├── sekolah/route.ts      # Sekolah CRUD + NPSN auto-verification
+│   │   ├── pelajar/route.ts      # Pelajar CRUD
+│   │   ├── umkm/route.ts         # UMKM CRUD
+│   │   ├── proyek/route.ts       # Proyek CRUD & Filters
+│   │   └── siswa/route.ts        # Siswa school verification endpoints
+│   ├── globals.css               # Tailwind v4 config & Collaborative Vitality theme tokens
+│   ├── layout.tsx                # Root layout (Plus Jakarta Sans)
+│   └── not-found.tsx             # Custom 404
+├── components/
+│   ├── ui/                       # Atom components: button, input, card, badge
+│   ├── layout/                   # Navbar, Sidebar
+│   └── marketplace/              # ProyekCard, JasaCard
 ├── lib/
-│   ├── device.ts                 # normalizeDeviceType, breakpoints
-│   ├── prisma.ts                 # Prisma client singleton
-│   ├── get-dashboard-data.ts     # Mock data
-│   ├── seed.ts                   # DB seed (npx tsx src/lib/seed.ts)
-│   └── test-db.ts                # Connection test
-├── types.ts                      # Shared types (DeviceType, DashboardData, …)
-└── proxy.ts                      # UA → x-device-type header
+│   ├── prisma.ts                 # Prisma ORM v7 client singleton
+│   ├── supabase.ts               # Supabase storage & auth helper
+│   ├── utils.ts                  # cn(), formatRupiah(), formatDate(), etc.
+│   ├── kemendikdasmen.ts         # Kemendikdasmen API lookup integration
+│   ├── rate-limiter.ts           # IP & NPSN in-memory rate limiter
+│   ├── validate-npsn.ts          # NPSN format validator
+│   ├── normalize-school-name.ts  # School name normalization
+│   └── compare-school-names.ts   # Exact/minor/critical similarity comparison
+├── types/
+│   └── index.ts                  # Shared TypeScript type definitions
+└── proxy.ts                      # Device-type detection middleware
 ```
 
 **Imports:** Always `@/` aliases (`@/lib/prisma`), never relative (`../lib/prisma`).
@@ -46,69 +79,31 @@ src/
 | Task | Command |
 |------|---------|
 | Dev server | `npm run dev` |
-| Production build | `npm run build` (must pass; `/` is dynamic `ƒ`) |
+| Production build | `npm run build` |
 | Lint | `npm run lint` |
-| Tests | `node --import ./tsx-hooks.mjs --test` |
-| Single test file | `node --import ./tsx-hooks.mjs --test src/path/to/file.test.ts` |
 | DB push schema | `npm run db:push` |
 | DB seed | `npm run db:seed` |
-| DB connection test | `npx tsx src/lib/test-db.ts` |
-| Prisma Studio | `npm run db:studio` |
-
-There is **no `npm test` script**. Tests run via Node's built-in test runner with the custom `tsx-hooks.mjs` loader.
+| DB Prisma Studio | `npm run db:studio` |
 
 ## Database
 
-PostgreSQL via Prisma ORM v7 (`prisma-client-js` generator, `@prisma/adapter-pg` driver adapter). Docker Compose provides Postgres 17 on port 5432 (`docker compose up -d`).
+PostgreSQL via Prisma ORM v7 (`@prisma/adapter-pg` driver adapter).
+Entities:
+- `Sekolah`: Profil sekolah, NPSN unik, verifikasi Kemendikdasmen, relasi siswa
+- `Pelajar`: Akun siswa, data diri, NIS, status verifikasi sekolah
+- `PelajarProfile`: Portofolio, skill, rating, statistik proyek, info e-wallet
+- `UMKM`: Profil usaha, nomor WA, verifikasi legalitas (NIB/NPWP/Sosmed)
+- `Proyek`: Lowongan proyek dari UMKM, budget, DP, tags, pelamar
+- `Jasa`: Katalog listing keahlian pelajar (Basic/Standard/Premium)
+- `Lamaran`: Pengajuan proposal proyek dari pelajar ke UMKM
+- `Transaksi`: Akad kesepakatan, sistem DP escrow, submit review, status pembayaran
 
-### Schema
+## Design System (Collaborative Vitality)
 
-- **Sekolah** — UUID `id`, unique `npsn`/`emailResmi`, hashed `password`, `namaSekolah`, `namaPenanggungJawab`, `alamatLengkap` (Text), `kontakSekolah`, timestamps. Has `daftarSiswa` relation.
-- **Siswa** — UUID `id`, unique `nis`, `kelas`, `sekolahId` FK (cascade delete), `verificationStatus` (enum: `PENDING`/`VERIFIED`/`REJECTED`), optional `catatanPenolakan` (Text), timestamps.
-
-> **Note:** `API.md` still references a removed `jabatanAdmin` field — trust the schema and API route handlers, not `API.md`.
-
-## API Routes
-
-All responses: `{ data?, error? }`. Routes under `src/app/api/`.
-
-| Method | Route | Notes |
-|--------|-------|-------|
-| GET | `/api/sekolah` | `?search=` filters `namaSekolah`/`npsn`/`emailResmi` |
-| POST | `/api/sekolah` | Creates school; validates required fields |
-| GET/PUT/DELETE | `/api/sekolah/[id]` | GET includes `daftarSiswa`; DELETE cascades |
-| GET | `/api/siswa` | `?sekolahId=` and `?status=` filters |
-| POST | `/api/siswa` | Creates student; `verificationStatus` defaults `PENDING` |
-| GET/PUT/DELETE | `/api/siswa/[id]` | GET includes `sekolah` |
-
-## Test Conventions
-
-- **Node built-in `node:test`** + `react-dom/server` `renderToString` — no jsdom, no test framework.
-- Test files sit next to source (`device.test.ts` beside `device.ts`); imports use explicit `.ts`/`.tsx` extensions (`allowImportingTsExtensions`).
-- `tsx-hooks.mjs` transpiles `.tsx` (`.ts` handled by Node 26 native type stripping); also redirects `next/headers` → `next-headers.mock.mjs`.
-- Mock device type per test via `globalThis.__TEST_DEVICE_TYPE` (set to `undefined` for "header absent").
-- Assert view dispatch with `data-view="mobile|tablet|desktop"` in rendered HTML.
-- **Verification checklist:** `node --import ./tsx-hooks.mjs --test` → exit 0; `npm run lint` → exit 0; `npm run build` → exit 0.
-
-## Architecture (request flow)
-
-1. `src/proxy.ts` — reads `userAgent(request).device.type`, normalizes to `mobile|tablet|desktop`, sets `x-device-type` header. **Must live under `src/`** — root-level file compiles but never executes.
-2. `src/app/page.tsx` — Server Component: `await headers()` → `normalizeDeviceType()` (fallback `desktop`) → `getDashboardData()` → renders `<DashboardView data initialDeviceType />`.
-3. `src/components/DashboardView.tsx` — `'use client'` dispatcher; calls `useLiveDeviceType(initialDeviceType)` and renders the matching view.
-4. `src/hooks/use-live-device-type.ts` — `useSyncExternalStore(subscribeToViewport, getViewportDeviceType, () => initialDeviceType)`. Third arg (server snapshot) prevents hydration mismatch; after hydration, `matchMedia` re-renders on resize.
-
-Shared contract: `src/types.ts`, `src/lib/device.ts` (`TABLET_MIN_WIDTH=768`, `DESKTOP_MIN_WIDTH=1024`), `src/lib/get-dashboard-data.ts`, `src/hooks/use-dashboard.ts`.
-
-## Design Rules
-
-- **Never mix responsive breakpoints in a view file.** Mobile = base/`max-*` only; Tablet = `md:` only (768–1023); Desktop = `lg:` only (≥1024). Breakpoint logic lives only in `use-live-device-type.ts` + `src/lib/device.ts`.
-- **Never hard-code breakpoint numbers** — import `TABLET_MIN_WIDTH`/`DESKTOP_MIN_WIDTH` from `@/lib/device.ts`.
-- Views stay presentational: no `headers()`, no data fetching inside view components.
-
-## Gotchas
-
-- **`proxy.ts` must live under `src/`** — Next 16.3.1 scans only `src/` (`rootDir = join(appDir, '..')`) for `proxy.*`/`middleware.*`. Root-level compiles but manifest stays empty → no header set. Verify with a running server (`curl -H "User-Agent: ...iPhone..." http://localhost:3000/`), not by grepping the compiled bundle. The proxy registers under `/_middleware` in `.next/server/functions-config-manifest.json` (`middleware-manifest.json` stays empty in 16.3.1).
-- **Turbopack rejects symlinked `node_modules`** in worktrees. Run `npm ci` in each worktree, don't symlink.
-- **`npm run lint` scans `.hive/.worktrees/**/.next`** and reports build-artifact errors unless `eslint.config.mjs` ignores `.hive/**`. Keep both the ignore entry and `/.hive/` in `.gitignore`.
-- **Hive worktrees** branch off `main`. Before a dependent task, merge the dependency branch first (`git merge --no-ff hive/<feature>/<NN>-<task>`); commit only the task's own files.
-- **`pkill -f "next dev"`** may leave a `next-server (v1)` child holding port 3000 — check `ss -ltnp` and kill the child PID before restarting.
+- **Primary Color:** `#FF9B71` (Pastel Orange)
+- **Primary Dark:** `#964825`
+- **Background:** `#FAFAFA`
+- **Surface:** `#FFFFFF`
+- **Typography:** Plus Jakarta Sans
+- **Pill Radius:** `rounded-full` for buttons, badges, chips
+- **Card Radius:** `rounded-2xl` for containers and cards

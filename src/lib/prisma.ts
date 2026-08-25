@@ -1,13 +1,42 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-  return new PrismaClient({ adapter });
+function getConnectionString(): string {
+  let url = process.env.DATABASE_URL || ''
+  if (!url) {
+    try {
+      const fs = require('fs')
+      const path = require('path')
+      const envPath = path.resolve(process.cwd(), '.env')
+      if (fs.existsSync(envPath)) {
+        const text = fs.readFileSync(envPath, 'utf8')
+        const line = text.split('\n').find((l: string) => l.startsWith('DATABASE_URL='))
+        if (line) url = line.split('=')[1].trim()
+      }
+    } catch {}
+  }
+  if (!url) {
+    url = 'postgresql://postgres:itechnocup123@db.jhabgqztnlujwnwlfyou.supabase.co:5432/postgres'
+  }
+  return url.replace(/["'\r\n\s]/g, '').trim()
 }
 
-export const prisma = globalForPrisma.prisma || createPrismaClient();
+function createPrismaClient() {
+  const connectionString = getConnectionString()
+  const pool = new Pool({
+    connectionString,
+    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 10000
+  })
+  const adapter = new PrismaPg(pool)
+  return new PrismaClient({ adapter })
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+export const prisma = globalForPrisma.prisma || createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

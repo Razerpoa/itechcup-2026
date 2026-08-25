@@ -1,4 +1,4 @@
-import type { NormalizedNameResult } from '@/types.ts'
+import type { NormalizedNameResult } from '@/types'
 
 const ALLOWED_ROOTS = ['SD', 'SMP', 'SMA', 'SMK', 'SLB', 'MA', 'MTS', 'MI', 'SKB']
 

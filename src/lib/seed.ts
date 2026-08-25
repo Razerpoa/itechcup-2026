@@ -1,39 +1,35 @@
-import 'dotenv/config';
-import { PrismaClient, VerificationStatus } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import bcrypt from 'bcryptjs';
+import 'dotenv/config'
+import { PrismaClient, VerificationStatus } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import bcrypt from 'bcryptjs'
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+const prisma = new PrismaClient({ adapter })
 
 const sekolahData = [
   {
-    namaSekolah: 'SDN 01 MENTENG',
-    npsn: '20108017',
-    emailResmi: 'sdn01menteng@jakarta.go.id',
-    password: 'hashed_password_1',
-    namaPenanggungJawab: 'Dra. Siti Aminah, M.Pd.',
-    alamatLengkap: 'Jl. Besuki No.1, Menteng, Kec. Menteng, Kota Jakarta Pusat, DKI Jakarta 10310',
-    kontakSekolah: '021-31906265',
+    namaSekolah: 'SMK NEGERI 2 TASIKMALAYA',
+    npsn: '20224591',
+    emailResmi: 'smkn2tsm@disdik.jabar.go.id',
+    namaPenanggungJawab: 'Drs. H. Ahmad Junaedi, M.Pd.',
+    alamatLengkap: 'Jl. Noenoeng Tisnasaputra, Kahuripan, Kec. Tawang, Kota Tasikmalaya, Jawa Barat 46115',
+    kontakSekolah: '0265-331839',
     verificationStatus: 'VERIFIED',
-    officialNama: 'SDN 01 MENTENG',
-    officialSekolahId: null,
-    bentukPendidikan: 'SD',
+    officialNama: 'SMK NEGERI 2 TASIKMALAYA',
+    bentukPendidikan: 'SMK',
     statusSekolah: 'NEGERI',
     akreditasi: 'A',
   },
   {
-    namaSekolah: 'SMP NEGERI 5 BANDUNG',
-    npsn: '20254602',
-    emailResmi: 'smpn5bandung@disdik.jabar.go.id',
-    password: 'hashed_password_2',
-    namaPenanggungJawab: 'Dr. H. Ahmad Fauzi, S.Pd., M.M.',
-    alamatLengkap: 'Jl. Belitung No.1, Merdeka, Kec. Sumur Bandung, Kota Bandung, Jawa Barat 40113',
-    kontakSekolah: '022-4205367',
+    namaSekolah: 'SMK NEGERI 1 JAKARTA',
+    npsn: '20100142',
+    emailResmi: 'smkn1jakarta@disdik.dki.go.id',
+    namaPenanggungJawab: 'Dr. Dra. Siti Rahmah, M.Pd.',
+    alamatLengkap: 'Jl. Budi Utomo No.7, Ps. Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta 10710',
+    kontakSekolah: '021-3841123',
     verificationStatus: 'VERIFIED',
-    officialNama: 'SMP NEGERI 5 BANDUNG',
-    officialSekolahId: null,
-    bentukPendidikan: 'SMP',
+    officialNama: 'SMK NEGERI 1 JAKARTA',
+    bentukPendidikan: 'SMK',
     statusSekolah: 'NEGERI',
     akreditasi: 'A',
   },
@@ -41,111 +37,78 @@ const sekolahData = [
     namaSekolah: 'SMA NEGERI 3 SURABAYA',
     npsn: '20535352',
     emailResmi: 'sman3surabaya@surabaya.go.id',
-    password: 'hashed_password_3',
     namaPenanggungJawab: 'Drs. H. Budi Santoso, M.M.',
     alamatLengkap: 'Jl. Mpu Supodro No.47, Gubeng, Kec. Gubeng, Kota Surabaya, Jawa Timur 60281',
     kontakSekolah: '031-5021888',
     verificationStatus: 'VERIFIED',
     officialNama: 'SMA NEGERI 3 SURABAYA',
-    officialSekolahId: null,
     bentukPendidikan: 'SMA',
     statusSekolah: 'NEGERI',
     akreditasi: 'A',
   },
-  {
-    namaSekolah: 'SD ISLAM AL-AZHAR 1 JAKARTA',
-    npsn: '20108154',
-    emailResmi: 'sdalazhar1@al-azhar.sch.id',
-    password: 'hashed_password_4',
-    namaPenanggungJawab: 'Hj. Ratna Dewi, S.Pd.I.',
-    alamatLengkap: 'Jl. Sisingamangaraja No.1, Kebayoran Baru, Kota Jakarta Selatan, DKI Jakarta 12110',
-    kontakSekolah: '021-7203145',
-    verificationStatus: 'VERIFIED',
-    officialNama: 'SD ISLAM AL-AZHAR 1 JAKARTA',
-    officialSekolahId: null,
-    bentukPendidikan: 'SD',
-    statusSekolah: 'SWASTA',
-    akreditasi: 'A',
-  },
-  {
-    namaSekolah: 'SMP ISLAM TERPADU INTEGRAL',
-    npsn: '20260811',
-    emailResmi: 'smpintegral@yayasanintegral.sch.id',
-    password: 'hashed_password_5',
-    namaPenanggungJawab: 'Ustadz Muhammad Ridwan, S.Pd.',
-    alamatLengkap: 'Jl. Raya Bogor Km.30, Cibinong, Kab. Bogor, Jawa Barat 16914',
-    kontakSekolah: '021-87901234',
-    verificationStatus: 'VERIFIED',
-    officialNama: 'SMP ISLAM TERPADU INTEGRAL',
-    officialSekolahId: null,
-    bentukPendidikan: 'SMP',
-    statusSekolah: 'SWASTA',
-    akreditasi: 'B',
-  },
-];
+]
 
 const siswaData = [
-  { namaLengkap: 'Andi Pratama', nis: '2024001', kelas: '6A', index: 0, status: VerificationStatus.VERIFIED },
-  { namaLengkap: 'Siti Nurhaliza', nis: '2024002', kelas: '6A', index: 0, status: VerificationStatus.PENDING },
-  { namaLengkap: 'Budi Kurniawan', nis: '2024003', kelas: '9B', index: 1, status: VerificationStatus.VERIFIED },
-  { namaLengkap: 'Dewi Anggraini', nis: '2024004', kelas: '9A', index: 1, status: VerificationStatus.REJECTED, catatanPenolakan: 'Data NIS tidak sesuai' },
-  { namaLengkap: 'Rizki Ramadhan', nis: '2024005', kelas: '12 IPA 1', index: 2, status: VerificationStatus.PENDING },
-  { namaLengkap: 'Putri Maharani', nis: '2024006', kelas: '12 IPS 2', index: 2, status: VerificationStatus.VERIFIED },
-  { namaLengkap: 'Fajar Nugroho', nis: '2024007', kelas: '5B', index: 3, status: VerificationStatus.PENDING },
-  { namaLengkap: 'Aisyah Putri', nis: '2024008', kelas: '8A', index: 4, status: VerificationStatus.REJECTED, catatanPenolakan: 'Usia tidak memenuhi syarat' },
-];
+  { namaLengkap: 'Raffa Maulana', email: 'raffa@example.com', nis: '2024001', kelas: 'XII RPL 1', index: 0, status: VerificationStatus.VERIFIED },
+  { namaLengkap: 'Siti Nurhaliza', email: 'siti@example.com', nis: '2024002', kelas: 'XII MM 2', index: 0, status: VerificationStatus.PENDING },
+  { namaLengkap: 'Budi Kurniawan', email: 'budi@example.com', nis: '2024003', kelas: 'XI RPL 2', index: 1, status: VerificationStatus.VERIFIED },
+  { namaLengkap: 'Dewi Anggraini', email: 'dewi@example.com', nis: '2024004', kelas: 'XI DKV 1', index: 1, status: VerificationStatus.REJECTED, catatanPenolakan: 'Data NIS tidak sesuai' },
+  { namaLengkap: 'Rizky Ramadhan', email: 'rizky@example.com', nis: '2024005', kelas: 'XII IPA 1', index: 2, status: VerificationStatus.PENDING },
+  { namaLengkap: 'Putri Maharani', email: 'putri@example.com', nis: '2024006', kelas: 'XII IPS 2', index: 2, status: VerificationStatus.VERIFIED },
+]
 
 async function main() {
   try {
-    console.log('🌱 Seeding database...');
-
-    const defaultHash = await bcrypt.hash('password123', 10);
+    const defaultHash = await bcrypt.hash('password123', 10)
 
     for (const data of sekolahData) {
-      const existing = await prisma.sekolah.findUnique({ where: { npsn: data.npsn } });
-      if (existing) {
-        console.log(`⏭  Sekolah "${data.namaSekolah}" already exists, skipping.`);
-        continue;
-      }
+      const existing = await prisma.sekolah.findUnique({ where: { npsn: data.npsn } })
+      if (existing) continue
       await prisma.sekolah.create({
         data: {
           ...data,
           password: defaultHash,
         },
-      });
-      console.log(`✅ Created sekolah: ${data.namaSekolah}`);
+      })
     }
 
-    const allSekolah = await prisma.sekolah.findMany();
+    const allSekolah = await prisma.sekolah.findMany()
 
     for (const siswa of siswaData) {
-      const existing = await prisma.siswa.findUnique({ where: { nis: siswa.nis } });
-      if (existing) {
-        console.log(`⏭  Siswa "${siswa.namaLengkap}" already exists, skipping.`);
-        continue;
-      }
-      const sekolah = allSekolah[siswa.index];
-      if (!sekolah) continue;
-      await prisma.siswa.create({
+      const existing = await prisma.pelajar.findUnique({ where: { email: siswa.email } })
+      if (existing) continue
+      const sekolah = allSekolah[siswa.index]
+      if (!sekolah) continue
+      await prisma.pelajar.create({
         data: {
           namaLengkap: siswa.namaLengkap,
+          email: siswa.email,
+          password: defaultHash,
           nis: siswa.nis,
           kelas: siswa.kelas,
           sekolahId: sekolah.id,
           verificationStatus: siswa.status,
           catatanPenolakan: siswa.catatanPenolakan,
+          profil: {
+            create: {
+              displayName: siswa.namaLengkap.split(' ')[0],
+              bio: 'Talenta pelajar siap berkarya dan membantu UMKM Indonesia berkembang.',
+              bidangKeahlian: ['Web Development', 'UI/UX Design'],
+              skills: ['React', 'Tailwind CSS', 'Figma'],
+              ratingRata: 4.9,
+              jumlahProyekSelesai: 5,
+              totalPendapatan: 2500000,
+            },
+          },
         },
-      });
-      console.log(`✅ Created siswa: ${siswa.namaLengkap} (${siswa.status})`);
+      })
     }
-
-    console.log('🎉 Seeding complete!');
   } catch (error) {
-    console.error('❌ Seeding failed:', error);
-    process.exit(1);
+    console.error('Seeding failed:', error)
+    process.exit(1)
   } finally {
-    await prisma.$disconnect();
+    await prisma.$disconnect()
   }
 }
 
-main();
+main()

@@ -46,3 +46,4 @@ next-env.d.ts
 /.opencode/
 
 /src/generated/prisma
+/supabase/.temp/

@@ -72,6 +72,37 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    const updateData: Record<string, unknown> = {}
+
+    if (body.verificationStatus !== undefined) {
+      updateData.verificationStatus = body.verificationStatus
+    }
+    if (body.officialNama !== undefined) {
+      updateData.officialNama = body.officialNama
+    }
+    if (body.akreditasi !== undefined) {
+      updateData.akreditasi = body.akreditasi
+    }
+    if (body.lastVerifiedAt !== undefined) {
+      updateData.lastVerifiedAt = new Date()
+    }
+
+    const data = await prisma.sekolah.update({
+      where: { id },
+      data: updateData
+    })
+
+    return NextResponse.json({ data })
+  } catch {
+    return NextResponse.json({ error: 'Gagal memperbarui verifikasi sekolah' }, { status: 500 })
+  }
+}
+
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

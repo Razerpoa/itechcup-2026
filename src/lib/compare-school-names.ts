@@ -1,4 +1,4 @@
-import type { NameComparisonResult } from '@/types.ts'
+import type { NameComparisonResult } from '@/types'
 
 const SCHOOL_LEVELS = ['SD', 'SMP', 'SMA', 'SMK', 'SLB', 'MA', 'MTS', 'MI', 'SKB']
 
@@ -10,32 +10,45 @@ function extractSchoolLevel(name: string): string | null {
   return null
 }
 
+function cleanName(name: string): string {
+  return name
+    .toUpperCase()
+    .replace(/\bSMKN\b/g, 'SMK NEGERI')
+    .replace(/\bSMAN\b/g, 'SMA NEGERI')
+    .replace(/\bSMPN\b/g, 'SMP NEGERI')
+    .replace(/\bSDN\b/g, 'SD NEGERI')
+    .replace(/[^A-Z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function compareSchoolNames(userNormalized: string, officialName: string): NameComparisonResult {
-  if (userNormalized === officialName) {
+  const cleanUser = cleanName(userNormalized)
+  const cleanOfficial = cleanName(officialName)
+
+  if (cleanUser === cleanOfficial) {
     return { match: 'EXACT' }
   }
 
-  const collapsedUser = userNormalized.replace(/\s+/g, ' ').trim()
-  const collapsedOfficial = officialName.replace(/\s+/g, ' ').trim()
-
-  if (collapsedUser === collapsedOfficial) {
+  if (cleanUser.includes(cleanOfficial) || cleanOfficial.includes(cleanUser)) {
     return { match: 'MINOR' }
   }
 
-  if (collapsedUser.startsWith(collapsedOfficial) || collapsedOfficial.startsWith(collapsedUser)) {
+  // Token similarity check
+  const userTokens = cleanUser.split(' ')
+  const officialTokens = cleanOfficial.split(' ')
+  const commonTokens = userTokens.filter((t) => officialTokens.includes(t))
+
+  if (commonTokens.length >= 2) {
     return { match: 'MINOR' }
   }
 
-  const userLevel = extractSchoolLevel(collapsedUser)
-  const officialLevel = extractSchoolLevel(collapsedOfficial)
+  const userLevel = extractSchoolLevel(cleanUser)
+  const officialLevel = extractSchoolLevel(cleanOfficial)
 
   if (userLevel && officialLevel && userLevel !== officialLevel) {
     return { match: 'CRITICAL' }
   }
 
-  if (!userLevel && !officialLevel) {
-    return collapsedUser.length > 0 && collapsedOfficial.length > 0 ? { match: 'MINOR' } : { match: 'CRITICAL' }
-  }
-
-  return { match: 'CRITICAL' }
+  return { match: 'MINOR' }
 }

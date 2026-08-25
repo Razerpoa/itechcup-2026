@@ -1,29 +1,37 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Plus_Jakarta_Sans } from 'next/font/google'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: '--font-plus-jakarta',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "itechcup-2026 — Device-Adaptive Dashboard",
-  description: "A device-adaptive dashboard for the IteachCup 2026 competition",
-};
+  title: 'Mitra Muda — Platform Talenta Pelajar Indonesia',
+  description: 'Platform pemberdayaan talenta pelajar Indonesia. Dapatkan penghasilan dari karya tanpa syarat KTP atau rekening bank. Terhubung dengan UMKM yang membutuhkan talenta muda.',
+  keywords: ['pelajar', 'UMKM', 'freelance', 'marketplace', 'talenta muda', 'Indonesia'],
+  openGraph: {
+    title: 'Mitra Muda',
+    description: 'Platform pemberdayaan talenta pelajar Indonesia',
+    locale: 'id_ID',
+    type: 'website',
+  },
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/favicon.ico',
+    apple: '/logo.png',
+  },
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id" className={plusJakarta.variable} data-scroll-behavior="smooth">
+      <body className="min-h-screen bg-neutral-50 antialiased">
+        {children}
+      </body>
     </html>
-  );
+  )
 }

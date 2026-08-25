@@ -1,11 +1,9 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 enum VerificationStatus {
@@ -14,44 +12,253 @@ enum VerificationStatus {
   REJECTED
 }
 
-model Sekolah {
-  id                  String   @id @default(uuid())
-  namaSekolah         String
-  npsn                String   @unique
-  emailResmi          String   @unique
-  password            String
-  namaPenanggungJawab String
-  alamatLengkap       String   @db.Text
-  kontakSekolah       String
-
-  verificationStatus       String    @default("UNVERIFIED")
-  officialNama             String?
-  officialSekolahId        String?
-  bentukPendidikan         String?
-  statusSekolah            String?
-  akreditasi               String?
-  lastVerifiedAt           DateTime?
-  verificationCooldownUntil DateTime?
-
-  daftarSiswa         Siswa[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+enum SchoolVerificationStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  VERIFIED
+  AUTO_CORRECTED
+  REJECTED
 }
 
-model Siswa {
+enum ProyekStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum LamaranStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TransaksiStatus {
+  MENUNGGU_PEMBAYARAN
+  DP_DIBAYAR
+  DIKERJAKAN
+  MENUNGGU_REVIEW
+  SELESAI
+  DIBATALKAN
+}
+
+enum JenisKelamin {
+  LAKI_LAKI
+  PEREMPUAN
+}
+
+enum UkuranBisnis {
+  MIKRO
+  KECIL
+  MENENGAH
+}
+
+model Sekolah {
+  id                        String                  @id @default(uuid())
+  namaSekolah               String
+  npsn                      String                  @unique
+  emailResmi                String                  @unique
+  password                  String
+  namaPenanggungJawab       String
+  jabatanAdmin              String?
+  alamatLengkap             String                  @db.Text
+  kontakSekolah             String
+
+  verificationStatus        String                  @default("UNVERIFIED")
+  officialNama              String?
+  officialSekolahId         String?
+  bentukPendidikan          String?
+  statusSekolah             String?
+  akreditasi                String?
+  lastVerifiedAt            DateTime?
+  verificationCooldownUntil DateTime?
+
+  daftarSiswa               Pelajar[]
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+}
+
+model Pelajar {
   id                 String             @id @default(uuid())
   namaLengkap        String
-  nis                String             @unique
-  kelas              String
-  
-  // Relasi ke Sekolah yang memverifikasi
-  sekolahId          String
-  sekolah            Sekolah            @relation(fields: [sekolahId], references: [id], onDelete: Cascade)
+  email              String             @unique
+  password           String
+  jenisKelamin       JenisKelamin?
+  tempatLahir        String?
+  tanggalLahir       DateTime?
+  namaIbu            String?
+  fotoKartuPelajar   String?
 
-  // Status Verifikasi oleh Admin Sekolah
+  nis                String?            @unique
+  kelas              String?
+  sekolahId          String?
+  sekolah            Sekolah?           @relation(fields: [sekolahId], references: [id])
+
   verificationStatus VerificationStatus @default(PENDING)
   catatanPenolakan   String?            @db.Text
 
+  profil             PelajarProfile?
+  lamaran            Lamaran[]
+  jasa               Jasa[]
+
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+}
+
+model PelajarProfile {
+  id                   String   @id @default(uuid())
+  pelajarId            String   @unique
+  pelajar              Pelajar  @relation(fields: [pelajarId], references: [id], onDelete: Cascade)
+
+  displayName          String?
+  fotoProfil           String?
+  fotoBanner           String?
+  bio                  String?  @db.Text
+  alamat               String?
+  bidangKeahlian       String[]
+  skills               String[]
+  githubUrl            String?
+  websiteUrl           String?
+  kontakWa             String?
+  kontakTelegram       String?
+  socialMedia          Json?
+
+  eWalletType          String?
+  eWalletNomor         String?
+
+  ratingRata           Float    @default(0)
+  jumlahUlasan         Int      @default(0)
+  jumlahProyekSelesai  Int      @default(0)
+  totalPendapatan      Int      @default(0)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model UMKM {
+  id              String       @id @default(uuid())
+  namaPemilik     String
+  namaUsaha       String
+  email           String       @unique
+  password        String
+  nomorWa         String       @unique
+  isWaVerified    Boolean      @default(false)
+
+  npwp            String?
+  nib             String?
+  fotoUsaha       String?
+  bannerUsaha     String?
+  bioUsaha        String?      @db.Text
+  alamat          String?      @db.Text
+  websiteUrl      String?
+  tahunBerdiri    Int?
+  ukuranBisnis    UkuranBisnis?
+  kategori        String?
+  subkategori     String?
+  socialMedia     Json?
+
+  isVerified      Boolean      @default(false)
+  verifikasiType  String?
+  buktiLegalitas  String?
+
+  proyek          Proyek[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Proyek {
+  id                 String       @id @default(uuid())
+  umkmId             String
+  umkm               UMKM         @relation(fields: [umkmId], references: [id])
+
+  judul              String
+  keteranganSingkat  String
+  keteranganPanjang  String       @db.Text
+  tema               String?
+  fotoProfil         String?
+  fotoBanner         String?
+  ketentuan          String?      @db.Text
+  tags               String[]
+
+  budgetMin          Int
+  budgetMax          Int
+  dpPersen           Int          @default(30)
+
+  status             ProyekStatus @default(OPEN)
+
+  lamaran            Lamaran[]
+  transaksi          Transaksi?
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Jasa {
+  id                String      @id @default(uuid())
+  pelajarId         String
+  pelajar           Pelajar     @relation(fields: [pelajarId], references: [id])
+
+  judul             String
+  keteranganSingkat String
+  keteranganPanjang String      @db.Text
+  kategori          String
+  tags              String[]
+  foto              String?
+
+  hargaBasic        Int
+  deskripsiBasic    String?
+  hargaStandard     Int?
+  deskripsiStandard String?
+  hargaPremium      Int?
+  deskripsiPremium  String?
+
+  isActive          Boolean     @default(true)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Lamaran {
+  id         String        @id @default(uuid())
+  proyekId   String
+  proyek     Proyek        @relation(fields: [proyekId], references: [id])
+  pelajarId  String
+  pelajar    Pelajar       @relation(fields: [pelajarId], references: [id])
+
+  pesanMotivasi String?   @db.Text
+  portofolioUrl String?
+  hargaTawar    Int?
+
+  status     LamaranStatus @default(PENDING)
+  transaksi  Transaksi?
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([proyekId, pelajarId])
+}
+
+model Transaksi {
+  id          String          @id @default(uuid())
+  proyekId    String          @unique
+  proyek      Proyek          @relation(fields: [proyekId], references: [id])
+  lamaranId   String          @unique
+  lamaran     Lamaran         @relation(fields: [lamaranId], references: [id])
+
+  totalAmount Int
+  dpAmount    Int
+  dpPaid      Boolean         @default(false)
+  fullPaid    Boolean         @default(false)
+
+  status      TransaksiStatus @default(MENUNGGU_PEMBAYARAN)
+
+  submitUrl   String?
+  catatanPelajar String?      @db.Text
+  catatanUMKM    String?      @db.Text
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
