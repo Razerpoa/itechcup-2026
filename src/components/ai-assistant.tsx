@@ -1,14 +1,105 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Bot, X, Send, Headphones, MessageCircle, Mail, Sparkles, PhoneCall } from 'lucide-react'
+import { Bot, X, Send, Headphones, MessageCircle, Mail, Sparkles, PhoneCall, AlertCircle } from 'lucide-react'
 import { useAuthUser } from '@/lib/auth-client'
+
+interface MessageItem {
+  id: string
+  role: 'user' | 'assistant'
+  text: string
+  isError?: boolean
+}
+
+function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) {
+    return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>
+  }
+
+  // Clean raw symbols & extra dashes
+  const cleaned = text
+    .replace(/^---\s*$/gm, '')
+    .replace(/---\s*###/g, '\n###')
+    .replace(/\r\n/g, '\n')
+    .trim()
+
+  const paragraphs = cleaned.split(/\n{2,}/)
+
+  const renderInline = (str: string) => {
+    const parts = str.split(/(\*\*.*?\*\*)/g)
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={idx} className="font-bold text-[#2D2319]">
+            {part.slice(2, -2)}
+          </strong>
+        )
+      }
+      return <span key={idx}>{part}</span>
+    })
+  }
+
+  return (
+    <div className="space-y-2.5 text-[12.5px] leading-relaxed text-gray-800">
+      {paragraphs.map((para, pIdx) => {
+        const lines = para.split('\n').map((l) => l.trim()).filter(Boolean)
+
+        return (
+          <div key={pIdx} className="space-y-1.5">
+            {lines.map((line, lIdx) => {
+              // Header line: ### or ## or #
+              if (/^#+\s/.test(line)) {
+                const title = line.replace(/^#+\s*/, '')
+                return (
+                  <div key={lIdx} className="font-bold text-[13px] text-[#964825] mt-2 mb-1 flex items-center gap-1.5">
+                    {renderInline(title)}
+                  </div>
+                )
+              }
+
+              // Numbered list: 1. or 1)
+              const numMatch = line.match(/^(\d+[\.\)])\s*(.*)/)
+              if (numMatch) {
+                return (
+                  <div key={lIdx} className="flex items-start gap-2 my-1">
+                    <span className="font-bold text-[#964825] bg-[#FFF1EB] border border-[#FFD9CA] px-1.5 py-0.5 rounded-md text-[10px] shrink-0 mt-0.5">
+                      {numMatch[1]}
+                    </span>
+                    <div className="flex-1 leading-relaxed text-gray-800">{renderInline(numMatch[2])}</div>
+                  </div>
+                )
+              }
+
+              // Bullet list: * or -
+              if (line.startsWith('* ') || line.startsWith('- ')) {
+                const content = line.replace(/^[\*\-]\s*/, '')
+                return (
+                  <div key={lIdx} className="flex items-start gap-2 ml-1 my-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF9B71] shrink-0 mt-1.5" />
+                    <div className="flex-1 leading-relaxed text-gray-800">{renderInline(content)}</div>
+                  </div>
+                )
+              }
+
+              // Normal paragraph line
+              return (
+                <p key={lIdx} className="leading-relaxed">
+                  {renderInline(line)}
+                </p>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function AiAssistant() {
   const user = useAuthUser()
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat')
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<MessageItem[]>([
     {
       id: 'welcome',
       role: 'assistant',
@@ -25,51 +116,10 @@ export default function AiAssistant() {
     }
   }, [messages, isOpen, activeTab])
 
-  function getAIResponse(message: string, userRole?: string): string {
-    const msg = message.toLowerCase()
-
-    if (msg.includes('daftar') || msg.includes('registrasi') || msg.includes('register')) {
-      return 'Untuk mendaftar, pilih peran Anda di halaman utama: Pelajar, UMKM, atau Sekolah. Isi formulir pendaftaran, unggah bukti identitas (kartu pelajar untuk siswa / NIB bukti usaha untuk UMKM), lalu tunggu proses verifikasi.'
-    }
-    if (msg.includes('verif')) {
-      if (userRole === 'pelajar') return 'Verifikasi akun pelajar dilakukan oleh pihak sekolah atau admin Mitra Muda. Pastikan data nama dan NIS sesuai dengan data sekolah.'
-      if (userRole === 'umkm') return 'Verifikasi UMKM dilakukan oleh admin Mitra Muda setelah meninjau bukti usaha (NIB/foto toko). Setelah disetujui, Anda dapat langsung membuat lowongan proyek dan top up saldo escrow.'
-      return 'Verifikasi akun menjamin keamanan seluruh pihak di Mitra Muda. Pelajar diverifikasi status sekolahnya, dan UMKM diverifikasi legalitas usahanya oleh admin.'
-    }
-    if (msg.includes('proyek') || msg.includes('lowongan')) {
-      if (userRole === 'pelajar') return 'Sebagai pelajar, buka halaman Marketplace untuk menemukan proyek yang sesuai keahlianmu, baca detail ketentuan, lalu klik "Lamar Proyek".'
-      if (userRole === 'umkm') return 'Untuk membuat proyek, masuk ke Dashboard UMKM lalu klik tombol "Buat Proyek". Pastikan akun Anda sudah diverifikasi oleh admin terlebih dahulu.'
-      return 'Proyek adalah lowongan pekerjaan dari UMKM untuk talenta pelajar. Anda bisa melihat semua proyek aktif di menu Marketplace.'
-    }
-    if (msg.includes('escrow') || msg.includes('dp') || msg.includes('bayar') || msg.includes('pembayaran') || msg.includes('rekber')) {
-      return 'Sistem DP Escrow Mitra Muda menjamin keamanan transaksi tanpa perlu rekening bank untuk pelajar. UMKM menyetor DP ke rekening bersama resmi Mitra Muda, dan dana baru dicairkan ke dompet siswa setelah hasil kerja disetujui UMKM.'
-    }
-    if (msg.includes('saldo') || msg.includes('tarik') || msg.includes('dompet') || msg.includes('withdraw')) {
-      return 'Saldo siswa tersimpan aman di Dompet Mitra Muda. Anda bisa menarik saldo langsung ke e-wallet seperti GoPay, OVO, atau Dana tanpa syarat memiliki rekening bank.'
-    }
-    if (msg.includes('lamaran') || msg.includes('lamar') || msg.includes('proposal')) {
-      return 'Untuk melamar: (1) Buka Marketplace, (2) Pilih proyek yang cocok, (3) Tuliskan penawaran dan deskripsi solusi Anda, (4) Kirim proposal. Pemilik UMKM akan meninjau dan menerima proposal Anda di ruang akad.'
-    }
-    if (msg.includes('npsn') || msg.includes('sekolah')) {
-      return 'NPSN (Nomor Pokok Sekolah Nasional) adalah 8 digit kode unik sekolah. Mitra Muda terintegrasi dengan database Kemendikdasmen untuk memvalidasi legalitas sekolah secara otomatis.'
-    }
-    if (msg.includes('kontak') || msg.includes('bantuan') || msg.includes('support') || msg.includes('hubungi') || msg.includes('cs')) {
-      return 'Anda bisa langsung beralih ke tab "Hubungi CS" di bagian atas jendela ini, atau hubungi WhatsApp Customer Care kami di 0895-6224-94773.'
-    }
-    if (msg.includes('halo') || msg.includes('hi') || msg.includes('hello') || msg.includes('hai') || msg.includes('pagi') || msg.includes('siang') || msg.includes('malam')) {
-      return 'Halo! Senang bisa membantu. Ada yang bisa saya jelaskan mengenai fitur, alur verifikasi, atau transaksi di Mitra Muda?'
-    }
-    if (msg.includes('mitra muda') || msg.includes('apa itu')) {
-      return 'Mitra Muda adalah platform pemberdayaan talenta pelajar Indonesia yang menghubungkan siswa berbakat dengan UMKM lokal melalui marketplace jasa dan sistem transaksi aman tanpa syarat KTP/rekening bank.'
-    }
-
-    return 'Pertanyaan yang bagus! Untuk panduan lengkap silakan akses menu Panduan, atau hubungi tim Customer Support kami melalui tab "Hubungi CS" di atas.'
-  }
-
   const handleSend = async (textToSend?: string) => {
     const query = textToSend || input
     if (!query.trim() || isLoading) return
-    const userMsg = { id: Date.now().toString(), role: 'user', text: query.trim() }
+    const userMsg: MessageItem = { id: Date.now().toString(), role: 'user', text: query.trim() }
     setMessages((prev) => [...prev, userMsg])
     if (!textToSend) setInput('')
     setIsLoading(true)
@@ -87,25 +137,36 @@ export default function AiAssistant() {
       })
 
       const data = await res.json()
-      const replyText = data.reply || getAIResponse(userMsg.text, user?.role)
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          text: replyText
-        }
-      ])
+      if (res.ok && data.success && data.reply) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: data.reply
+          }
+        ])
+      } else {
+        const errorText = data.error || 'Mohon maaf, kuota token AI saat ini sedang penuh atau mencapai batas penggunaan. Silakan coba beberapa saat lagi atau hubungi CS di tab "Hubungi CS".'
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: errorText,
+            isError: true
+          }
+        ])
+      }
     } catch {
-      // Local graceful fallback
-      const fallbackReply = getAIResponse(userMsg.text, user?.role)
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          text: fallbackReply
+          text: 'Terjadi gangguan jaringan sementara pada layanan AI. Silakan coba lagi atau hubungi CS via tab "Hubungi CS".',
+          isError: true
         }
       ])
     } finally {
@@ -200,15 +261,33 @@ export default function AiAssistant() {
               <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3 bg-[#FAFAFA]">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div
-                      className={`px-3.5 py-2.5 text-xs max-w-[85%] leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'bg-[#FF9B71] text-white rounded-2xl rounded-tr-xs shadow-xs'
-                          : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-xs shadow-2xs'
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
+                    {msg.isError ? (
+                      <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl rounded-tl-xs p-3 text-xs max-w-[88%] shadow-2xs space-y-2">
+                        <div className="flex items-center gap-1.5 font-bold text-rose-900">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                          <span>Pemberitahuan Sistem</span>
+                        </div>
+                        <p className="leading-relaxed">{msg.text}</p>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('support')}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-white hover:bg-emerald-50 border border-emerald-300 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <MessageCircle className="w-3 h-3 text-emerald-600" />
+                          <span>Hubungi CS WhatsApp</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className={`px-3.5 py-2.5 text-xs max-w-[88%] leading-relaxed ${
+                          msg.role === 'user'
+                            ? 'bg-[#FF9B71] text-white rounded-2xl rounded-tr-xs shadow-xs'
+                            : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-xs shadow-2xs'
+                        }`}
+                      >
+                        <FormattedMessage text={msg.text} isUser={msg.role === 'user'} />
+                      </div>
+                    )}
                   </div>
                 ))}
                 {isLoading && (

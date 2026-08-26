@@ -19,9 +19,13 @@ Konteks Utama Platform:
    - WhatsApp CS: 0895-6224-94773 (Raffa)
    - Email: raffaxzee@gmail.com / noreply@mitramuda.raffzdigital.biz.id
 
-Gaya Jawaban:
-- Gunakan Bahasa Indonesia yang ramah, sopan, ringkas, dan jelas.
-- Jika relevan, gunakan poin-poin terstruktur agar mudah dibaca pengguna.
+Aturan Format & Kerapian Jawaban (WAJIB DIPATUHI):
+- Tulis jawaban dengan rapi, terstruktur, dan enak dibaca.
+- Selalu beri pemisah baris baru antar paragraf atau antar poin.
+- DILARANG menumpuk simbol markdown dalam satu baris (seperti '--- ### 💡').
+- Jika memberikan langkah-langkah, gunakan penomoran rapi (1. 2. 3.) dengan penjelasan di baris baru setelah judul poin.
+- Gunakan cetak tebal (**teks tebal**) hanya untuk kata kunci penting.
+- Buat jawaban ringkas, padat, dan langsung menjawab pertanyaan pengguna.
 - Sesuaikan jawaban dengan peran pengguna (Pelajar / UMKM / Sekolah) jika diketahui.
 `
 
@@ -38,9 +42,9 @@ export async function POST(request: NextRequest) {
 
     if (!apiKey) {
       return NextResponse.json({
-        success: true,
-        reply: 'Halo! Saya asisten Mitra Muda. Saat ini saya siap membantu Anda seputar pendaftaran, sistem escrow, pencairan saldo dompet, verifikasi NPSN sekolah, atau lowongan proyek di Marketplace!'
-      })
+        success: false,
+        error: 'Kunci API AI belum dikonfigurasi.'
+      }, { status: 500 })
     }
 
     // Format chat history for Gemini API
@@ -68,8 +72,18 @@ export async function POST(request: NextRequest) {
       parts: [{ text: `${userContextPrefix}${message.trim()}` }]
     })
 
-    const candidateModels = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash']
+    // Mulai dari model paling bawah/hemat token terlebih dahulu.
+    // Jika token/kuota habis atau error, naik ke model berikutnya.
+    // Jika semua model habis, return error ke user.
+    const candidateModels = [
+      'gemini-3.1-flash-lite', // Paling bawah & paling hemat token
+      'gemini-3.5-flash',      // Tier menengah
+      'gemini-3.6-flash',      // Tier tinggi
+      'gemini-3.7-flash'       // Tier teratas
+    ]
+
     let replyText: string | null = null
+    let lastErrorMsg = ''
 
     for (const model of candidateModels) {
       try {
@@ -96,22 +110,26 @@ export async function POST(request: NextRequest) {
           const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text
           if (candidateText && candidateText.trim()) {
             replyText = candidateText.trim()
+            console.log(`[AI Assistant] Successfully responded using model: ${model}`)
             break
           }
         } else {
           const errBody = await res.text().catch(() => '')
-          console.warn(`Model ${model} returned status ${res.status}:`, errBody.slice(0, 150))
+          lastErrorMsg = errBody
+          console.warn(`[AI Assistant] Model ${model} failed (${res.status}):`, errBody.slice(0, 120))
         }
-      } catch (err) {
-        console.warn(`Error attempting model ${model}:`, err)
+      } catch (err: any) {
+        lastErrorMsg = err?.message || ''
+        console.warn(`[AI Assistant] Error calling ${model}:`, err)
       }
     }
 
+    // Jika semua model gagal / token habis
     if (!replyText) {
       return NextResponse.json({
-        success: true,
-        reply: 'Halo! Saya asisten resmi Mitra Muda. Ada yang bisa saya bantu terkait pembuatan proyek UMKM, pendaftaran pelajar, verifikasi NPSN sekolah, atau sistem pembayaran DP escrow?'
-      })
+        success: false,
+        error: 'Mohon maaf, kuota token AI saat ini sedang penuh atau mencapai batas penggunaan. Silakan coba beberapa saat lagi atau hubungi CS di tab "Hubungi CS".'
+      }, { status: 429 })
     }
 
     return NextResponse.json({
@@ -121,8 +139,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error handling AI chat assistant:', error)
     return NextResponse.json({
-      success: true,
-      reply: 'Terjadi gangguan jaringan sementara pada layanan AI. Silakan tanyakan kembali atau hubungi Customer Support di WhatsApp 0895-6224-94773.'
-    })
+      success: false,
+      error: 'Terjadi gangguan jaringan sementara pada layanan AI. Silakan coba lagi.'
+    }, { status: 500 })
   }
 }
