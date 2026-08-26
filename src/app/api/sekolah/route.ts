@@ -161,6 +161,14 @@ export async function POST(request: NextRequest) {
       role: 'sekolah'
     }).catch(() => {})
 
+    // Kirim email verifikasi pendaftaran via Resend
+    const { sendConfirmationEmail } = await import('@/lib/mail')
+    sendConfirmationEmail({
+      to: body.emailResmi,
+      userNama: body.namaPenanggungJawab || official.nama,
+      role: 'Sekolah'
+    }).catch((e) => console.error('Gagal kirim email konfirmasi sekolah:', e))
+
     return NextResponse.json({
       data: {
         id: sekolah.id,

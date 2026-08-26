@@ -116,6 +116,14 @@ export async function POST(request: NextRequest) {
       role: 'umkm'
     }).catch(() => {})
 
+    // Kirim email verifikasi pendaftaran via Resend
+    const { sendConfirmationEmail } = await import('@/lib/mail')
+    sendConfirmationEmail({
+      to: body.email.trim().toLowerCase(),
+      userNama: body.namaPemilik || body.namaUsaha,
+      role: 'UMKM'
+    }).catch((e) => console.error('Gagal kirim email konfirmasi UMKM:', e))
+
     const token = signJwt({
       id: umkm.id,
       email: umkm.email,

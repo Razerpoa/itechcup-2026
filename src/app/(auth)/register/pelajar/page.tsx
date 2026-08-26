@@ -32,6 +32,7 @@ export default function RegisterPelajarPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
+  const [isRegisteredSuccess, setIsRegisteredSuccess] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
 
   const [formData, setFormData] = useState({
@@ -150,24 +151,8 @@ export default function RegisterPelajarPage() {
         return
       }
 
-      const userSession = {
-        id: data.data?.id || 'p-' + Date.now(),
-        nama: formData.nama,
-        email: formData.email,
-        role: 'pelajar' as const,
-        sekolah: formData.sekolah,
-        nisn: formData.nisn,
-        nomorWa: formData.nomorWa,
-        skills: selectedSkills,
-        proyekSelesai: 0,
-        totalPendapatan: 0,
-        onTimeRate: 100,
-        verificationStatus: 'PENDING' as const,
-        isVerified: false
-      }
-
-      setCurrentUser(userSession)
-      router.push('/pelajar')
+      setIsSubmitting(false)
+      setIsRegisteredSuccess(true)
     } catch {
       setErrorMessage('Koneksi bermasalah. Silakan coba lagi.')
       setIsSubmitting(false)
@@ -180,6 +165,58 @@ export default function RegisterPelajarPage() {
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-4 border-[#FF9B71] border-t-transparent animate-spin" />
           <span className="text-sm text-gray-500 font-medium">Memeriksa sesi...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (isRegisteredSuccess) {
+    return (
+      <div className="min-h-screen bg-[#F6F3EE] flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-[#E6DFD5] max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-3xl bg-[#FFF1EB] border border-[#FFD9CA] text-[#964825] flex items-center justify-center mx-auto shadow-xs">
+            <Check className="w-8 h-8 text-[#FF9B71]" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-[#FFF1EB] text-[#964825] text-[11px] font-extrabold uppercase tracking-wider">
+              Pendaftaran Berhasil
+            </span>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              Cek Email Anda
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              Tautan verifikasi akun telah dikirimkan ke alamat email:
+            </p>
+            <div className="p-2.5 bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl font-bold text-xs text-[#964825] break-all inline-block max-w-full">
+              {formData.email}
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#FFF7F3] border border-[#FFD9CA] rounded-2xl text-left space-y-2">
+            <p className="text-xs text-[#964825] leading-relaxed">
+              <strong>Langkah selanjutnya:</strong> Buka inbox atau folder spam di Gmail Anda, lalu klik tombol <strong>"Verifikasi & Masuk Akun"</strong> untuk mengaktifkan akun dan langsung masuk ke dashboard talenta pelajar.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2">
+            <a
+              href="https://mail.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full h-12 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+            >
+              <span>Buka Gmail Sekarang</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+
+            <Link
+              href="/login"
+              className="w-full h-11 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full font-bold text-xs flex items-center justify-center transition-colors"
+            >
+              <span>Kembali ke Halaman Masuk</span>
+            </Link>
+          </div>
         </div>
       </div>
     )
