@@ -1,113 +1,172 @@
-# Contributing to itechcup-2026
+# Contributing to Mitra Muda (itechcup-2026)
 
-## Quick Start
+Panduan kontribusi resmi untuk pengembangan dan pemeliharaan platform **Mitra Muda — Pemberdayaan Talenta Pelajar Indonesia**.
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-git clone <repo-url>
+# 1. Clone repositori & checkout branch pengerjaan
+git clone https://github.com/Razerpoa/itechcup-2026.git
 cd itechcup-2026
+git checkout kpn
+
+# 2. Install dependencies
 npm install
-docker compose up -d          # start PostgreSQL
-npm run db:push               # create tables
-npm run db:seed               # optional: sample data
-npm run dev                   # http://localhost:3000
+
+# 3. Setup Environment Variables
+cp .env.example .env
+# Sesuaikan DATABASE_URL dan API Keys di .env
+
+# 4. Sinkronisasi Database Prisma (PostgreSQL)
+npm run db:push
+
+# 5. Jalankan Local Development Server
+npm run dev # http://localhost:3000
 ```
 
-## Directory Structure
+---
+
+## 📁 Struktur Direktori Terkini
 
 ```
 src/
-├── app/                  # Pages & API routes (Next.js App Router)
-│   ├── page.tsx          # Home page — reads device type, renders DashboardView
-│   ├── layout.tsx        # Root layout (fonts, metadata)
-│   ├── globals.css       # Tailwind v4 config
-│   └── api/              # REST endpoints (sekolah/, siswa/)
-├── components/           # React components (all 'use client')
-│   ├── DashboardView.tsx # Dispatcher — picks mobile/tablet/desktop
-│   └── Dashboard{Mobile,Tablet,Desktop}.tsx  # View scaffolds
-├── hooks/                # React hooks
-│   ├── use-live-device-type.ts  # Viewport → device type
-│   └── use-dashboard.ts         # Dashboard client state
-├── lib/                  # Utilities & server-side code
-│   ├── device.ts         # Breakpoint constants, normalizer
-│   ├── prisma.ts         # Prisma client singleton
-│   └── get-dashboard-data.ts  # Mock data (swap for real API later)
-├── types.ts              # Shared TypeScript types
-└── proxy.ts              # UA → x-device-type header (middleware)
-
-prisma/
-└── schema.prisma         # Database schema
+├── app/
+│   ├── (auth)/                   # Alur Autentikasi
+│   │   ├── login/page.tsx        # Login terpadu (Manual + Google OAuth)
+│   │   └── register/
+│   │       ├── pelajar/page.tsx  # Registrasi Pelajar + Upload Bukti Kartu Pelajar (Base64)
+│   │       ├── umkm/page.tsx     # Registrasi UMKM & Verifikasi Usaha
+│   │       └── sekolah/page.tsx  # Registrasi Sekolah & Lookup NPSN Kemendikdasmen
+│   ├── (dashboard)/              # Multi-Role Dashboard Shell
+│   │   ├── pelajar/              # Dashboard Pelajar, Dompet Digital, Jasa, & Akad Transaksi
+│   │   ├── sekolah/              # Dashboard Sekolah, Verifikasi Siswa, & Laporan Kinerja
+│   │   └── umkm/                 # Dashboard UMKM, Deposit Modal, & Buat Lowongan Proyek
+│   ├── (marketing)/
+│   │   └── page.tsx              # Landing Page & Role Onboarding Selection
+│   ├── marketplace/              # Marketplace Feed Proyek UMKM & Katalog Jasa Pelajar
+│   ├── profil/[id]/              # Halaman Portofolio Publik & Rating Siswa
+│   ├── tuan/                     # Portal Admin (Warm Editorial Design)
+│   │   ├── login/page.tsx        # Login Admin Terproteksi Rate Limiter
+│   │   └── page.tsx              # Dashboard Admin Verifikasi (Pelajar, UMKM, Sekolah, Escrow)
+│   ├── api/                      # RESTful Backend API Endpoints
+│   │   ├── auth/                 # login, admin-login, google-check, reset-password
+│   │   ├── pelajar/              # CRUD Pelajar & Sanitized Select
+│   │   ├── umkm/                 # CRUD UMKM & Verifikasi Legalitas
+│   │   ├── sekolah/              # CRUD Sekolah & Integrasi Kemendikdasmen
+│   │   ├── siswa/                # Endpoints Verifikasi Siswa oleh Sekolah
+│   │   ├── proyek/               # Posting & Pengelolaan Lowongan Proyek
+│   │   ├── jasa/                 # Listing Jasa Keahlian Siswa
+│   │   ├── deposit/              # Manajemen Deposit UMKM & Bukti Transfer
+│   │   ├── lamaran/              # Pengajuan Proposal Siswa
+│   │   └── transaksi/            # Akad Transaksi & Escrow Vault
+│   ├── globals.css               # Tailwind CSS v4 Theme Tokens (CSS-First)
+│   └── layout.tsx                # Root Layout (Plus Jakarta Sans)
+├── components/
+│   ├── ui/                       # Atom Components: button, input, card, badge, modal
+│   ├── layout/                   # Navbar, Sidebar, Footer
+│   ├── marketplace/              # ProyekCard, JasaCard
+│   └── two-factor-modal.tsx      # Modal 2FA Security
+├── lib/
+│   ├── prisma.ts                 # Prisma ORM v7 Client Singleton
+│   ├── auth-server.ts            # Cookie & JWT Session Helper
+│   ├── kemendikdasmen.ts         # Integrasi API NPSN Kementerian
+│   ├── rate-limiter.ts           # In-Memory & IP Rate Limiter
+│   ├── validate-npsn.ts          # Validator Format 8-Digit NPSN
+│   ├── normalize-school-name.ts  # Normalisasi Nama & Singkatan Sekolah
+│   ├── compare-school-names.ts   # Algoritma Pencocokan Nama Sekolah (EXACT / MINOR / CRITICAL)
+│   ├── admin-verification-store.ts # State & Sync Store Verifikasi Admin
+│   └── escrow-store.ts           # State & Sync Store Transaksi Escrow
+└── types/
+    └── index.ts                  # TypeScript Shared Type Definitions
 ```
 
-## Adding a New Feature
+---
 
-1. **Components** go in `src/components/`. Name them descriptively (e.g. `StudentTable.tsx`).
-2. **Hooks** go in `src/hooks/`. Prefix with `use` (e.g. `use-student-filters.ts`).
-3. **Shared types** go in `src/types.ts`. Keep one file until it gets too large.
-4. **API routes** go in `src/app/api/<resource>/route.ts`.
-5. **Utilities** go in `src/lib/`. If it's a small helper, co-locate it with the feature.
+## 🔒 Standar Keamanan Data (Security Guidelines)
 
-## Import Convention
+Seluruh kontributor **wajib** mematuhi standar keamanan data berikut:
 
-Always use `@/` aliases — never relative paths:
+1. **Pencegahan Kebocoran Password (Zero Password Exposure):**
+   - Field `password` / password hash **tidak boleh** disertakan dalam response API manapun (`GET`, `POST`, `PUT`, `PATCH`).
+   - Gunakan klausa `select` spesifik atau destrukturisasi hapus password (`const { password: _, ...data } = raw`) sebelum mereturn JSON ke client.
+2. **Enkripsi Password:**
+   - Semua pembuatan akun baru wajib di-hash menggunakan `bcryptjs` dengan *salt rounds* minimal 10.
+3. **Rate Limiting & Anti Brute-Force:**
+   - Endpoint login sensitif (terutama Admin `/api/auth/admin-login`) dilindungi rate limiter 5 percobaan / 10 menit berbasis IP.
+4. **Validasi Input Sanitasi:**
+   - Validasi ketat format email, nomor WhatsApp, NIS numerik, dan 8-digit NPSN di level API sebelum masuk ke query database.
+5. **Kebijakan Data Produksi:**
+   - Database produksi hanya memuat data registrasi riil oleh pengguna. Data *seed / mock / dummy* tidak boleh dibiarkan bercampur di lingkungan produksi.
 
-```ts
-// Good
-import { prisma } from '@/lib/prisma'
-import type { DeviceType } from '@/types'
+---
 
-// Bad
-import { prisma } from '../../lib/prisma'
-```
+## 🎨 Design System: Collaborative Vitality
 
-The `@/` alias resolves to `./src/` (configured in `tsconfig.json`).
+Desain antarmuka Mitra Muda mengutamakan estetika humanis, hangat, dan profesional (*tidak kaku/tidak menggunakan template AI cyberpunk generic*):
 
-## Design Rules
+- **Warna Utama:** Pastel Orange (`#FF9B71`)
+- **Aksen Gelap & Kontras:** Terracotta (`#964825`), Charcoal (`#2D2319`)
+- **Latar Belakang:** Warm Off-White (`#FAFAFA`) & Warm Sand (`#F6F3EE`)
+- **Tipografi:** Plus Jakarta Sans
+- **Pill & Badge Radius:** `rounded-full` / `rounded-xl`
+- **Card & Container Radius:** `rounded-2xl` / `rounded-3xl`
 
-- **One breakpoint per view file.** Mobile uses base/`max-*`, Tablet uses `md:`, Desktop uses `lg:`. Never mix them.
-- **Never hard-code breakpoint numbers.** Import `TABLET_MIN_WIDTH`/`DESKTOP_MIN_WIDTH` from `@/lib/device.ts`.
-- **Views stay presentational.** No `headers()`, no data fetching inside view components.
+---
 
-## Testing
+## 🧪 Pengujian & Testing
 
-Tests use Node's built-in `node:test` — no external test framework.
+Pengujian menggunakan modul bawaan `node:test` berkecepatan tinggi:
 
 ```bash
-# Run all tests
+# Jalankan seluruh unit test suite (44 tests)
 node --import ./tsx-hooks.mjs --test
 
-# Run a single file
-node --import ./tsx-hooks.mjs --test src/lib/device.test.ts
+# Jalankan pengujian file spesifik
+node --import ./tsx-hooks.mjs --test src/lib/validate-npsn.test.ts
+node --import ./tsx-hooks.mjs --test src/lib/compare-school-names.test.ts
 ```
 
-- Test files live next to source: `device.ts` → `device.test.ts`
-- Use explicit `.ts`/`.tsx` extensions in imports
-- Mock the device header with `globalThis.__TEST_DEVICE_TYPE`
-- Assert view dispatch via `data-view="mobile|tablet|desktop"` in rendered HTML
+### Cakupan Pengujian:
+- ✅ `pipeline.test.ts`: Integrasi pipeline pendaftaran & Kemendikdasmen.
+- ✅ `compare-school-names.test.ts`: Pencocokan akurasi nama sekolah.
+- ✅ `kemendikdasmen.test.ts`: Endpoint lookup NPSN & fallback review.
+- ✅ `normalize-school-name.test.ts`: Normalisasi akronim (`SMKN` → `SMK NEGERI`).
+- ✅ `rate-limiter.test.ts`: Rate limit memory tracking & sliding window.
+- ✅ `validate-npsn.test.ts`: Validasi format string NPSN.
 
-### TDD Workflow
+---
 
-1. Write a failing test (`node --import ./tsx-hooks.mjs --test`) — verify RED
-2. Implement the feature — verify GREEN
-3. `npm run lint` — must pass
-4. `npm run build` — must pass
-5. Commit
+## 📋 Checklist Sebelum Push / Pull Request
 
-## Before a PR
+Sebelum melakukan `git commit` dan `git push`:
 
-All three must pass:
+1. **Jalankan Unit Test:**
+   ```bash
+   node --import ./tsx-hooks.mjs --test
+   ```
+   *Wajib 100% PASS.*
+2. **Jalankan Production Build:**
+   ```bash
+   npm run build
+   ```
+   *Memastikan 0 error TypeScript dan 0 error kompilasi Next.js.*
+3. **Konvensi Commit:**
+   - `feat:` Fitur baru
+   - `fix:` Perbaikan bug
+   - `style:` Pembaruan UI/CSS & design system
+   - `security:` Peningkatan keamanan & sanitasi data
+   - `docs:` Dokumentasi & referensi
+4. **Push ke Branch:**
+   ```bash
+   git push origin kpn
+   ```
 
-```bash
-node --import ./tsx-hooks.mjs --test   # tests green
-npm run lint                           # no lint errors
-npm run build                          # production build succeeds
-```
+---
 
-## Database
+## 👥 Kontak Tim Pengembang
 
-- Schema: `prisma/schema.prisma`
-- Push schema: `npm run db:push`
-- Seed data: `npm run db:seed`
-- Open Prisma Studio: `npm run db:studio`
-- Quick connection test: `npx tsx src/lib/test-db.ts`
-
-PostgreSQL runs via Docker Compose (`docker compose up -d`) on port 5432.
+- **Inisiator & Lead Developer:** Raffa (`raffaxzee@gmail.com`)
+- **WhatsApp:** 0895622494773
+- **Dokumentasi Lengkap:** Lihat [`DOKUMENTASI.md`](./DOKUMENTASI.md)
