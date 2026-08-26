@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import Sidebar from '@/components/layout/sidebar'
 import Navbar from '@/components/layout/navbar'
 import AiAssistant from '@/components/ai-assistant'
-import SupportWidget from '@/components/support-widget'
 import { useAuthUser, getCurrentUser } from '@/lib/auth-client'
 
 export default function DashboardLayout({
@@ -89,7 +88,6 @@ export default function DashboardLayout({
         </main>
         
         <AiAssistant />
-        <SupportWidget />
       </div>
     </div>
   )
