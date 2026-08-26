@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Menu, X, Search, LogOut, ExternalLink, Activity, 
-  Building2, Store, Wallet, ArrowUpRight, 
+  Building2, Store, Wallet, ArrowUpRight, ArrowRight,
   ShieldAlert, AlertTriangle, CheckCircle2, 
   GraduationCap, MessageCircle, ShieldCheck
 } from 'lucide-react'
@@ -199,27 +199,27 @@ export default function MasterAdminEscrowPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0A0F1A] flex font-sans">
+    <div className="min-h-screen bg-[#F6F3EE] flex font-sans">
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      <div className={`fixed inset-y-0 left-0 w-60 bg-[#0D1117] border-r border-[#FF9B71]/10 z-50 transform transition-transform duration-200 ease-in-out flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className="h-[60px] flex items-center px-5 border-b border-[#FF9B71]/10 shrink-0 gap-3">
-          <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 ring-1 ring-[#FF9B71]/30">
+      <div className={`fixed inset-y-0 left-0 w-60 bg-white border-r border-[#E8E2DA] z-50 transform transition-transform duration-200 ease-in-out flex flex-col shadow-sm ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <div className="h-[60px] flex items-center px-5 border-b border-[#F0EBE4] shrink-0 gap-3">
+          <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 shadow-xs">
             <Image src="/logo.png" alt="Mitra Muda" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="font-bold text-white text-sm leading-tight tracking-tight">Mitra Muda</span>
-            <span className="text-[10px] text-[#FF9B71]/60 font-medium leading-tight font-mono">ADMIN PORTAL</span>
+            <span className="font-bold text-[#2D2319] text-sm leading-tight tracking-tight">Mitra Muda</span>
+            <span className="text-[10px] text-[#B5ADA4] font-medium leading-tight">Admin Panel</span>
           </div>
         </div>
 
         <div className="px-5 pt-4 pb-1">
-          <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest">Menu</p>
+          <p className="text-[10px] font-semibold text-[#B5ADA4] uppercase tracking-widest">Menu</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
@@ -227,21 +227,21 @@ export default function MasterAdminEscrowPage() {
             <button 
               key={item.id} 
               onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer ${
                 activeTab === item.id 
-                  ? 'bg-[#FF9B71]/10 text-[#FF9B71] font-semibold border border-[#FF9B71]/20' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  ? 'bg-[#FF9B71]/10 text-[#964825] font-semibold' 
+                  : 'text-[#6B6058] hover:text-[#2D2319] hover:bg-[#F6F3EE]'
               }`}
             >
               <item.icon className={`w-4 h-4 shrink-0 transition-colors ${
-                activeTab === item.id ? 'text-[#FF9B71]' : 'text-slate-600'
+                activeTab === item.id ? 'text-[#FF9B71]' : 'text-[#B5ADA4]'
               }`} />
               <span className="flex-1 text-left truncate">{item.label}</span>
               {item.badge && item.badge > 0 ? (
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                   activeTab === item.id 
-                    ? 'bg-[#FF9B71]/20 text-[#FF9B71]' 
-                    : 'bg-red-500/20 text-red-400'
+                    ? 'bg-[#FF9B71]/20 text-[#964825]' 
+                    : 'bg-red-50 text-red-500'
                 }`}>
                   {item.badge}
                 </span>
@@ -250,12 +250,12 @@ export default function MasterAdminEscrowPage() {
           ))}
         </nav>
 
-        <div className="px-3 pb-4 pt-2 border-t border-[#FF9B71]/10 space-y-0.5 shrink-0">
-          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all">
-            <ExternalLink className="w-4 h-4 shrink-0 text-slate-600" />
+        <div className="px-3 pb-4 pt-2 border-t border-[#F0EBE4] space-y-0.5 shrink-0">
+          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#6B6058] hover:text-[#2D2319] hover:bg-[#F6F3EE] transition-all">
+            <ExternalLink className="w-4 h-4 shrink-0 text-[#B5ADA4]" />
             <span>Lihat Website</span>
           </Link>
-          <button onClick={handleAdminLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer">
+          <button onClick={handleAdminLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#6B6058] hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer">
             <LogOut className="w-4 h-4 shrink-0" />
             <span>Keluar</span>
           </button>
@@ -263,131 +263,144 @@ export default function MasterAdminEscrowPage() {
       </div>
 
       <div className="flex-1 md:ml-60 flex flex-col min-h-screen min-w-0">
-        <header className="bg-[#0D1117]/95 backdrop-blur border-b border-[#FF9B71]/10 h-[60px] flex items-center justify-between px-6 sticky top-0 z-30 shrink-0">
+        <header className="bg-white/80 backdrop-blur-md border-b border-[#E8E2DA] h-[60px] flex items-center justify-between px-6 sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-slate-500 hover:text-slate-200 p-1 rounded-lg hover:bg-white/5 transition-colors">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-[#6B6058] hover:text-[#2D2319] p-1 rounded-lg hover:bg-[#F6F3EE] transition-colors">
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="font-semibold text-white text-sm">
+              <h1 className="font-semibold text-[#2D2319] text-sm">
                 {navItems.find(n => n.id === activeTab)?.label}
               </h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block font-mono">mitra-muda://admin</p>
+              <p className="text-[11px] text-[#B5ADA4] hidden sm:block">Panel Administrasi Mitra Muda</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="relative hidden sm:block">
-              <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-[#B5ADA4] absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Cari data..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-44 h-8 pl-8 pr-3 bg-[#161B22] border border-slate-700/50 rounded-lg text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-[#FF9B71]/40 transition-colors"
+                className="w-44 h-8 pl-8 pr-3 bg-[#FAFAF8] border border-[#E0DAD2] rounded-xl text-xs text-[#2D2319] placeholder:text-[#B5ADA4] focus:outline-none focus:border-[#FF9B71] transition-colors"
               />
             </div>
             <button
               onClick={() => setIs2FAModalOpen(true)}
-              className="flex items-center gap-1.5 bg-[#FF9B71]/10 hover:bg-[#FF9B71]/15 text-[#FF9B71] border border-[#FF9B71]/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#FF9B71]/10 hover:bg-[#FF9B71]/15 text-[#964825] px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">2FA</span>
+              <span className="hidden sm:inline">Keamanan</span>
             </button>
 
-            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[11px] text-emerald-400 font-medium">Live</span>
+            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+              <span className="text-[11px] text-emerald-700 font-medium">Aktif</span>
             </div>
           </div>
         </header>
 
-        <main className="p-6 flex-1 bg-[#0A0F1A]">
+        <main className="p-6 flex-1">
           {actionSuccess && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2">
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-medium flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{actionSuccess}</span>
             </div>
           )}
 
           {activeTab === 'overview' && (
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <h2 className="text-base font-semibold text-white mb-1">Ringkasan Platform</h2>
-                <p className="text-xs text-slate-500">Data real-time dari seluruh aktivitas Mitra Muda</p>
+                <h2 className="text-xl font-bold text-[#2D2319] tracking-tight">Ringkasan Operasional</h2>
+                <p className="text-xs text-[#8B7E74] mt-0.5">Pemantauan aktivitas real-time ekosistem talenta dan transaksi Mitra Muda</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                {/* Pelajar Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#FFF1EB] flex items-center justify-center">
-                      <GraduationCap className="w-4 h-4 text-[#FF9B71]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#FFF4EC] border border-[#FFE0D2] flex items-center justify-center">
+                      <GraduationCap className="w-5 h-5 text-[#964825]" />
                     </div>
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Pelajar</span>
+                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Pelajar</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{pendingPelajar.length}</div>
-                  <div className="text-xs text-gray-400 mt-1">Menunggu validasi</div>
+                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingPelajar.length}</div>
+                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">Menunggu validasi dokumen</p>
                   {pendingPelajar.length > 0 && (
-                    <button onClick={() => setActiveTab('pelajar')} className="mt-3 text-[11px] text-[#FF9B71] font-semibold hover:underline cursor-pointer">Tinjau sekarang</button>
+                    <button onClick={() => setActiveTab('pelajar')} className="mt-3 text-xs text-[#964825] font-bold hover:underline cursor-pointer flex items-center gap-1">
+                      <span>Tinjau sekarang</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
                   )}
                 </div>
 
-                <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                {/* Sekolah Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                      <Building2 className="w-4 h-4 text-emerald-500" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-emerald-700" />
                     </div>
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sekolah</span>
+                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Sekolah</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{pendingSekolah.length}</div>
-                  <div className="text-xs text-gray-400 mt-1">NPSN perlu validasi</div>
+                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingSekolah.length}</div>
+                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">NPSN perlu verifikasi manual</p>
                   {pendingSekolah.length > 0 && (
-                    <button onClick={() => setActiveTab('sekolah')} className="mt-3 text-[11px] text-emerald-600 font-semibold hover:underline cursor-pointer">Tinjau sekarang</button>
+                    <button onClick={() => setActiveTab('sekolah')} className="mt-3 text-xs text-emerald-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                      <span>Tinjau sekarang</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
                   )}
                 </div>
 
-                <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                {/* Escrow Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                      <ShieldAlert className="w-4 h-4 text-blue-500" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                      <ShieldAlert className="w-5 h-5 text-blue-700" />
                     </div>
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Escrow</span>
+                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Escrow</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 tabular-nums">{formatRupiah(totalDanaEscrow)}</div>
-                  <div className="text-xs text-gray-400 mt-1">Tertahan di rekening bersama</div>
+                  <div className="text-2xl font-extrabold text-[#2D2319] tracking-tight tabular-nums">{formatRupiah(totalDanaEscrow)}</div>
+                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">Dana tertahan di rekening bersama</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                {/* Finansial Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                      <Wallet className="w-4 h-4 text-amber-500" />
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-amber-700" />
                     </div>
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Finansial</span>
+                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Antrean Dana</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{pendingDeposits.length + pendingWithdrawals.length}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pendingDeposits.length} deposit · {pendingWithdrawals.length} pencairan</div>
+                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingDeposits.length + pendingWithdrawals.length}</div>
+                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">{pendingDeposits.length} deposit · {pendingWithdrawals.length} pencairan</p>
                   {(pendingDeposits.length + pendingWithdrawals.length) > 0 && (
-                    <button onClick={() => setActiveTab('deposits')} className="mt-3 text-[11px] text-amber-600 font-semibold hover:underline cursor-pointer">Tinjau sekarang</button>
+                    <button onClick={() => setActiveTab('deposits')} className="mt-3 text-xs text-amber-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                      <span>Tinjau sekarang</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
                   )}
                 </div>
               </div>
 
               {pendingDeposits.length > 0 && (
-                <div className="bg-white border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <div className="bg-white border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{pendingDeposits.length} deposit membutuhkan verifikasi</p>
-                      <p className="text-xs text-gray-400">Cek bukti transfer sebelum menyetujui penambahan saldo UMKM</p>
+                      <p className="text-sm font-bold text-[#2D2319]">{pendingDeposits.length} permohonan deposit UMKM menunggu validasi</p>
+                      <p className="text-xs text-[#8B7E74] mt-0.5">Periksa bukti transfer dan mutasi sebelum mengonfirmasi penambahan saldo.</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab('deposits')}
-                    className="px-4 py-2 bg-[#FF9B71] hover:bg-[#F5865A] text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer shrink-0"
+                    className="px-4 py-2.5 bg-[#2D2319] hover:bg-[#3D3229] text-white text-xs font-bold rounded-xl transition-all shadow-xs whitespace-nowrap cursor-pointer shrink-0"
                   >
-                    Tinjau Deposit
+                    Tinjau Antrean Deposit
                   </button>
                 </div>
               )}
@@ -397,88 +410,91 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'pelajar' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Verifikasi Pelajar</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredPelajar.length} Siswa</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Talenta Pelajar</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Daftar siswa terdaftar beserta kelengkapan kartu pelajar & data diri</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredPelajar.length} Siswa</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nama & Email</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">NIS</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Asal Sekolah & Kelas</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Data Lahir & Nama Ibu</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Kartu Pelajar</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Tanggal</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nama & Email</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">NIS</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Asal Sekolah & Kelas</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Data Lahir & Nama Ibu</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Dokumen</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Tanggal</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredPelajar.length > 0 ? filteredPelajar.map(p => {
                         const waNumber = p.nomorWa || ''
                         const cleanWa = waNumber.replace(/^0/, '62').replace(/\D/g, '')
                         return (
-                          <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-4 align-top">
-                              <div className="font-medium text-gray-900">{p.namaLengkap}</div>
-                              <div className="text-xs text-gray-500">{p.email}</div>
+                          <tr key={p.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                            <td className="px-5 py-4 align-top">
+                              <div className="font-bold text-[#2D2319]">{p.namaLengkap}</div>
+                              <div className="text-xs text-[#8B7E74]">{p.email}</div>
                               {waNumber ? (
                                 <a
                                   href={`https://wa.me/${cleanWa}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                                  className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg transition-colors"
                                 >
                                   <MessageCircle className="w-3 h-3 text-emerald-600" />
                                   <span>WA: {waNumber}</span>
                                 </a>
                               ) : (
-                                <div className="text-[11px] text-gray-400 mt-1">WA: Belum Diisi</div>
+                                <div className="text-[11px] text-[#B5ADA4] mt-1">WA: Belum Diisi</div>
                               )}
                             </td>
-                            <td className="px-4 py-4 align-top text-gray-900">{p.nis || '-'}</td>
-                            <td className="px-4 py-4 align-top">
-                              <div className="text-gray-900">{p.asalSekolah}</div>
-                              <div className="text-xs text-gray-500">{p.kelas || '-'}</div>
+                            <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{p.nis || '-'}</td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[#2D2319] font-medium">{p.asalSekolah}</div>
+                              <div className="text-xs text-[#8B7E74]">{p.kelas || '-'}</div>
                             </td>
-                            <td className="px-4 py-4 align-top">
-                              <div className="text-gray-900">{p.tempatLahir || '-'}</div>
-                              <div className="text-xs text-gray-500">Ibu: {p.namaIbu || '-'}</div>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[#2D2319] font-medium">{p.tempatLahir || '-'}</div>
+                              <div className="text-xs text-[#8B7E74]">Ibu: {p.namaIbu || '-'}</div>
                             </td>
-                            <td className="px-4 py-4 align-top">
+                            <td className="px-5 py-4 align-top">
                               {p.fotoKartuPelajar ? (
-                                <button onClick={() => setSelectedProofImg({url: p.fotoKartuPelajar!, title: `Kartu Pelajar: ${p.namaLengkap}`})} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer whitespace-nowrap">Lihat Dokumen</button>
+                                <button onClick={() => setSelectedProofImg({url: p.fotoKartuPelajar!, title: `Kartu Pelajar: ${p.namaLengkap}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
                               ) : (
-                                <span className="text-xs text-gray-400">Tidak ada</span>
+                                <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                               )}
                             </td>
-                            <td className="px-4 py-4 align-top">
-                              {p.verificationStatus === 'VERIFIED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Terverifikasi</span>}
-                              {p.verificationStatus === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Ditolak</span>}
-                              {p.verificationStatus === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Menunggu</span>}
+                            <td className="px-5 py-4 align-top">
+                              {p.verificationStatus === 'VERIFIED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terverifikasi</span>}
+                              {p.verificationStatus === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Ditolak</span>}
+                              {p.verificationStatus === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>}
                             </td>
-                            <td className="px-4 py-4 align-top text-xs text-gray-500 whitespace-nowrap">{formatDate(p.createdAt)}</td>
-                            <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                            <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(p.createdAt)}</td>
+                            <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                               {p.verificationStatus === 'PENDING' ? (
                                 <>
-                                  <button onClick={() => { adminVerifyPelajar(p.id); setActionSuccess('Pelajar terverifikasi langsung oleh Admin System'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Setujui Langsung</button>
-                                  <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectPelajar(p.id, r); setActionSuccess('Pelajar ditolak'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Tolak</button>
+                                  <button onClick={() => { adminVerifyPelajar(p.id); setActionSuccess('Pelajar terverifikasi langsung oleh Admin System'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
+                                  <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectPelajar(p.id, r); setActionSuccess('Pelajar ditolak'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
                                 </>
                               ) : (
-                                <button onClick={() => { const r = prompt('Alasan tolak/cabut?'); if(r){ adminRejectPelajar(p.id, r); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Cabut</button>
+                                <button onClick={() => { const r = prompt('Alasan tolak/cabut?'); if(r){ adminRejectPelajar(p.id, r); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-[#E0DAD2] text-[#6B6058] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Cabut</button>
                               )}
                             </td>
                           </tr>
                         )
                       }) : (
                         <tr>
-                          <td colSpan={8} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <GraduationCap className="w-5 h-5 text-gray-400" />
+                          <td colSpan={8} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <GraduationCap className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data siswa ditemukan
                           </td>
                         </tr>
                       )}
@@ -492,60 +508,63 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'sekolah' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Verifikasi Sekolah</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredSekolah.length} Sekolah</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Lembaga Sekolah</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Validasi legalitas institusi pendidikan dan penanggung jawab resmi</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredSekolah.length} Sekolah</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nama Sekolah & NPSN</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Penanggung Jawab</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Email & Kontak</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Alamat</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nama Sekolah & NPSN</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Penanggung Jawab</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Email & Kontak</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Alamat</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredSekolah.length > 0 ? filteredSekolah.map(s => (
-                        <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 align-top">
-                            <div className="font-medium text-gray-900">{s.namaSekolah}</div>
-                            <div className="text-xs text-gray-500 mt-0.5">NPSN: {s.npsn}</div>
+                        <tr key={s.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                          <td className="px-5 py-4 align-top">
+                            <div className="font-bold text-[#2D2319]">{s.namaSekolah}</div>
+                            <div className="text-xs text-[#8B7E74] mt-0.5 font-mono">NPSN: {s.npsn}</div>
                           </td>
-                          <td className="px-4 py-4 align-top text-gray-900">{s.namaPenanggungJawab}</td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900">{s.emailResmi}</div>
-                            <div className="text-xs text-gray-500">{s.kontakSekolah || '-'}</div>
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{s.namaPenanggungJawab}</td>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] font-medium">{s.emailResmi}</div>
+                            <div className="text-xs text-[#8B7E74]">{s.kontakSekolah || '-'}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900 text-xs">{s.alamatLengkap || '-'}</div>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] text-xs leading-relaxed">{s.alamatLengkap || '-'}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            {s.verificationStatus === 'VERIFIED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Terverifikasi</span>}
-                            {s.verificationStatus === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Ditolak</span>}
-                            {(s.verificationStatus === 'PENDING_REVIEW' || s.verificationStatus === 'UNVERIFIED') && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Menunggu</span>}
+                          <td className="px-5 py-4 align-top">
+                            {s.verificationStatus === 'VERIFIED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terverifikasi</span>}
+                            {s.verificationStatus === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Ditolak</span>}
+                            {(s.verificationStatus === 'PENDING_REVIEW' || s.verificationStatus === 'UNVERIFIED') && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>}
                           </td>
-                          <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {s.verificationStatus !== 'VERIFIED' ? (
                               <>
-                                <button onClick={() => { adminVerifySekolah(s.id); setActionSuccess('Sekolah terverifikasi'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Setujui</button>
-                                <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectSekolah(s.id); setActionSuccess('Sekolah ditolak'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Tolak</button>
+                                <button onClick={() => { adminVerifySekolah(s.id); setActionSuccess('Sekolah terverifikasi'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
+                                <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectSekolah(s.id); setActionSuccess('Sekolah ditolak'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
                               </>
                             ) : (
-                              <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectSekolah(s.id); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Cabut</button>
+                              <button onClick={() => { const r = prompt('Alasan?'); if(r){ adminRejectSekolah(s.id); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); } }} className="border border-[#E0DAD2] text-[#6B6058] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Cabut</button>
                             )}
                           </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <Building2 className="w-5 h-5 text-gray-400" />
+                          <td colSpan={6} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <Building2 className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data sekolah ditemukan
                           </td>
                         </tr>
                       )}
@@ -559,66 +578,69 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'umkm' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Verifikasi UMKM</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredUMKM.length} UMKM</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Mitra UMKM</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Kelola verifikasi legalitas usaha dan verifikasi nomor operasional WhatsApp</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredUMKM.length} UMKM</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nama Usaha & Kategori</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Pemilik & WA</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Email & Alamat</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Legalitas</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nama Usaha & Kategori</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Pemilik & WA</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Email & Alamat</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Legalitas</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredUMKM.length > 0 ? filteredUMKM.map(u => (
-                        <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 align-top">
-                            <div className="font-medium text-gray-900">{u.namaUsaha}</div>
-                            <div className="text-xs text-gray-500">{u.kategori || '-'}</div>
+                        <tr key={u.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                          <td className="px-5 py-4 align-top">
+                            <div className="font-bold text-[#2D2319]">{u.namaUsaha}</div>
+                            <div className="text-xs text-[#8B7E74]">{u.kategori || '-'}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900">{u.namaPemilik}</div>
-                            <div className="text-xs text-gray-500">{u.nomorWa}</div>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] font-medium">{u.namaPemilik}</div>
+                            <div className="text-xs text-[#8B7E74]">{u.nomorWa}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900">{u.email}</div>
-                            <div className="text-xs text-gray-500">{u.alamat || '-'}</div>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] font-medium">{u.email}</div>
+                            <div className="text-xs text-[#8B7E74]">{u.alamat || '-'}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
+                          <td className="px-5 py-4 align-top">
                             {u.buktiLegalitas ? (
-                              <button onClick={() => setSelectedProofImg({url: u.buktiLegalitas!, title: `Legalitas: ${u.namaUsaha}`})} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer whitespace-nowrap">Lihat Dokumen</button>
+                              <button onClick={() => setSelectedProofImg({url: u.buktiLegalitas!, title: `Legalitas: ${u.namaUsaha}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
                             ) : (
-                              <span className="text-xs text-gray-400">Tidak ada</span>
+                              <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                             )}
                           </td>
-                          <td className="px-4 py-4 align-top">
+                          <td className="px-5 py-4 align-top">
                             {u.isVerified ? (
-                              <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Terverifikasi</span>
+                              <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terverifikasi</span>
                             ) : (
-                              <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Menunggu</span>
+                              <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>
                             )}
                           </td>
-                          <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {!u.isVerified ? (
-                              <button onClick={() => { adminVerifyUMKM(u.id); setActionSuccess('UMKM terverifikasi'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Setujui</button>
+                              <button onClick={() => { adminVerifyUMKM(u.id); setActionSuccess('UMKM terverifikasi'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
                             ) : (
-                              <button onClick={() => { adminRevokeUMKM(u.id); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Cabut</button>
+                              <button onClick={() => { adminRevokeUMKM(u.id); setActionSuccess('Status diubah'); setTimeout(()=>setActionSuccess(null),3000); }} className="border border-[#E0DAD2] text-[#6B6058] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Cabut</button>
                             )}
                           </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <Store className="w-5 h-5 text-gray-400" />
+                          <td colSpan={6} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <Store className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data UMKM ditemukan
                           </td>
                         </tr>
                       )}
@@ -632,63 +654,66 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'deposits' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Deposit UMKM</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredDeposits.length} Deposit</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Deposit Saldo UMKM</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Konfirmasi penambahan modal escrow dari transfer bank UMKM</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredDeposits.length} Deposit</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">UMKM</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nominal</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Bank Tujuan</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Bukti Transfer</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Tanggal</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">UMKM</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nominal</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Bank Tujuan</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Bukti Transfer</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Tanggal</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredDeposits.length > 0 ? filteredDeposits.map(d => (
-                        <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 align-top">
-                            <div className="font-medium text-gray-900">{d.namaUsaha}</div>
-                            <div className="text-xs text-gray-500">{d.namaPemilik}</div>
+                        <tr key={d.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                          <td className="px-5 py-4 align-top">
+                            <div className="font-bold text-[#2D2319]">{d.namaUsaha}</div>
+                            <div className="text-xs text-[#8B7E74]">{d.namaPemilik}</div>
                           </td>
-                          <td className="px-4 py-4 align-top text-gray-900 font-medium">{formatRupiah(d.nominal)}</td>
-                          <td className="px-4 py-4 align-top text-gray-900">{d.bankTujuan}</td>
-                          <td className="px-4 py-4 align-top">
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-bold tabular-nums">{formatRupiah(d.nominal)}</td>
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{d.bankTujuan}</td>
+                          <td className="px-5 py-4 align-top">
                             {d.buktiTransferUrl ? (
-                              <button onClick={() => setSelectedProofImg({url: d.buktiTransferUrl!, title: `Bukti: ${d.namaUsaha}`})} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer whitespace-nowrap">Lihat Dokumen</button>
+                              <button onClick={() => setSelectedProofImg({url: d.buktiTransferUrl!, title: `Bukti Transfer: ${d.namaUsaha}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Bukti</button>
                             ) : (
-                              <span className="text-xs text-gray-400">Tidak ada</span>
+                              <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                             )}
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            {d.status === 'APPROVED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Disetujui</span>}
-                            {d.status === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Ditolak</span>}
-                            {d.status === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Menunggu</span>}
+                          <td className="px-5 py-4 align-top">
+                            {d.status === 'APPROVED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Disetujui</span>}
+                            {d.status === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Ditolak</span>}
+                            {d.status === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>}
                           </td>
-                          <td className="px-4 py-4 align-top text-xs text-gray-500 whitespace-nowrap">{formatDate(d.createdAt)}</td>
-                          <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                          <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(d.createdAt)}</td>
+                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {d.status === 'PENDING' ? (
                               <>
-                                <button onClick={() => handleApproveDeposit(d.id, d.namaUsaha, d.nominal)} className="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Setujui</button>
-                                <button onClick={() => handleRejectDeposit(d.id)} className="border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Tolak</button>
+                                <button onClick={() => handleApproveDeposit(d.id, d.namaUsaha, d.nominal)} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
+                                <button onClick={() => handleRejectDeposit(d.id)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
                               </>
                             ) : (
-                              <span className="text-xs text-gray-400">Selesai</span>
+                              <span className="text-xs text-[#B5ADA4]">Selesai</span>
                             )}
                           </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={7} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <Wallet className="w-5 h-5 text-gray-400" />
+                          <td colSpan={7} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <Wallet className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data deposit ditemukan
                           </td>
                         </tr>
                       )}
@@ -702,55 +727,58 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'withdrawals' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Penarikan Siswa</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredWithdrawals.length} Penarikan</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Pencairan Dana Pelajar</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Validasi pengiriman reward ke dompet digital (Gopay / OVO / DANA) pelajar</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredWithdrawals.length} Penarikan</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Pelajar</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nominal</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">E-Wallet</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Tanggal</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Pelajar</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nominal</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">E-Wallet</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Tanggal</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
-                        <tr key={w.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 align-top text-gray-900 font-medium">{w.namaPelajar}</td>
-                          <td className="px-4 py-4 align-top text-gray-900 font-medium">{formatRupiah(w.nominal)}</td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900">{w.eWalletType}</div>
-                            <div className="text-xs text-gray-500">{w.eWalletNomor}</div>
+                        <tr key={w.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-bold">{w.namaPelajar}</td>
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-bold tabular-nums">{formatRupiah(w.nominal)}</td>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] font-medium uppercase tracking-wider text-xs">{w.eWalletType}</div>
+                            <div className="text-xs text-[#8B7E74] font-mono mt-0.5">{w.eWalletNomor}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
-                            {w.status === 'APPROVED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Dicairkan</span>}
-                            {w.status === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Ditolak</span>}
-                            {w.status === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Menunggu</span>}
+                          <td className="px-5 py-4 align-top">
+                            {w.status === 'APPROVED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Dicairkan</span>}
+                            {w.status === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Ditolak</span>}
+                            {w.status === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>}
                           </td>
-                          <td className="px-4 py-4 align-top text-xs text-gray-500 whitespace-nowrap">{formatDate(w.createdAt)}</td>
-                          <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                          <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(w.createdAt)}</td>
+                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {w.status === 'PENDING' ? (
                               <>
-                                <button onClick={() => handleApproveWithdrawal(w.id, w.namaPelajar, w.nominal, w.eWalletType)} className="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Setujui</button>
-                                <button onClick={() => handleRejectWithdrawal(w.id)} className="border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Tolak</button>
+                                <button onClick={() => handleApproveWithdrawal(w.id, w.namaPelajar, w.nominal, w.eWalletType)} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
+                                <button onClick={() => handleRejectWithdrawal(w.id)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
                               </>
                             ) : (
-                              <span className="text-xs text-gray-400">Selesai</span>
+                              <span className="text-xs text-[#B5ADA4]">Selesai</span>
                             )}
                           </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <ArrowUpRight className="w-5 h-5 text-gray-400" />
+                          <td colSpan={6} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <ArrowUpRight className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data penarikan ditemukan
                           </td>
                         </tr>
                       )}
@@ -764,55 +792,58 @@ export default function MasterAdminEscrowPage() {
           {activeTab === 'escrows' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Escrow Vault</h3>
-                <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{filteredEscrows.length} Escrow</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Rekening Bersama (Escrow)</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Pemantauan dana jaminan DP dan sisa pelunasan per proyek aktif</p>
+                </div>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredEscrows.length} Escrow</span>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Proyek</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Pelajar</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Total & DP</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right whitespace-nowrap">Aksi</th>
+                      <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Proyek & UMKM</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Pelajar</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Total & DP</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#F0EBE4]">
                       {filteredEscrows.length > 0 ? filteredEscrows.map(e => (
-                        <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 align-top">
-                            <div className="font-medium text-gray-900">{e.judulProyek}</div>
-                            <div className="text-xs text-gray-500">{e.namaUsaha}</div>
+                        <tr key={e.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                          <td className="px-5 py-4 align-top">
+                            <div className="font-bold text-[#2D2319]">{e.judulProyek}</div>
+                            <div className="text-xs text-[#8B7E74]">{e.namaUsaha}</div>
                           </td>
-                          <td className="px-4 py-4 align-top text-gray-900">{e.namaPelajar}</td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="text-gray-900 font-medium">DP: {formatRupiah(e.nominalDP)}</div>
-                            <div className="text-xs text-gray-500">Total: {formatRupiah(e.nominalTotal)}</div>
+                          <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{e.namaPelajar}</td>
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-[#2D2319] font-bold tabular-nums">DP: {formatRupiah(e.nominalDP)}</div>
+                            <div className="text-xs text-[#8B7E74] tabular-nums">Total: {formatRupiah(e.nominalTotal)}</div>
                           </td>
-                          <td className="px-4 py-4 align-top">
+                          <td className="px-5 py-4 align-top">
                             {e.dpStatus === 'RELEASED_TO_PELAJAR' ? (
-                              <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Dicairkan</span>
+                              <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Dicairkan</span>
                             ) : (
-                              <span className="inline-flex bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Dikunci Sistem</span>
+                              <span className="inline-flex bg-[#F6F3EE] text-[#6B6058] border border-[#E0DAD2] px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terkunci di Vault</span>
                             )}
                           </td>
-                          <td className="px-4 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {e.dpStatus === 'HELD_IN_ESCROW' ? (
-                              <button onClick={() => handleReleaseEscrow(e.id, e.namaPelajar, e.nominalDP)} className="border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Paksa Rilis</button>
+                              <button onClick={() => handleReleaseEscrow(e.id, e.namaPelajar, e.nominalDP)} className="border border-[#E0DAD2] text-[#2D2319] bg-white hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs">Paksa Rilis</button>
                             ) : (
-                              <span className="text-xs text-gray-400">Selesai</span>
+                              <span className="text-xs text-[#B5ADA4]">Selesai</span>
                             )}
                           </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={5} className="px-4 py-12 text-center text-sm text-gray-500">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                              <ShieldAlert className="w-5 h-5 text-gray-400" />
+                          <td colSpan={5} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
+                              <ShieldAlert className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data ditemukan
+                            Tidak ada data transaksi escrow ditemukan
                           </td>
                         </tr>
                       )}
@@ -827,31 +858,34 @@ export default function MasterAdminEscrowPage() {
 
       {/* Document Modal */}
       {selectedProofImg && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl relative">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-[#E8E2DA] relative">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-gray-900">{selectedProofImg.title}</h4>
+              <div>
+                <h4 className="font-bold text-[#2D2319] text-base">{selectedProofImg.title}</h4>
+                <p className="text-xs text-[#8B7E74]">Dokumen lampiran verifikasi pendaftar</p>
+              </div>
               <button
                 onClick={() => setSelectedProofImg(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-9 h-9 rounded-xl bg-[#F6F3EE] text-[#6B6058] hover:text-[#2D2319] hover:bg-[#EDE8E0] flex items-center justify-center cursor-pointer transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5" />
               </button>
             </div>
-            <div className="relative min-h-[300px] max-h-[500px] w-full rounded-xl overflow-hidden bg-slate-900/5 border border-gray-200 mb-4 flex items-center justify-center p-2">
+            <div className="relative min-h-[300px] max-h-[500px] w-full rounded-2xl overflow-hidden bg-[#FAF8F5] border border-[#E8E2DA] mb-5 flex items-center justify-center p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedProofImg.url}
                 alt={selectedProofImg.title}
-                className="max-h-[460px] max-w-full object-contain rounded-lg"
+                className="max-h-[460px] max-w-full object-contain rounded-xl shadow-xs"
               />
             </div>
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedProofImg(null)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#2D2319] hover:bg-[#3D3229] text-white font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-xs"
               >
-                Tutup
+                Tutup Dokumen
               </button>
             </div>
           </div>
