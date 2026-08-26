@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         nis: true,
         kelas: true,
         verificationStatus: true,
+        fotoKartuPelajar: true,
         sekolahId: true,
         sekolah: { select: { namaSekolah: true } },
         profil: { select: { displayName: true, fotoProfil: true, kontakWa: true, ratingRata: true, jumlahProyekSelesai: true } },

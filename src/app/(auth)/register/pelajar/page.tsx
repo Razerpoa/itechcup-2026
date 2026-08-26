@@ -28,6 +28,7 @@ export default function RegisterPelajarPage() {
   const [gender, setGender] = useState('Laki-laki')
   const [selectedSkills, setSelectedSkills] = useState<string[]>(['UI/UX', 'Web Dev'])
   const [fileName, setFileName] = useState<string | null>(null)
+  const [filePreview, setFilePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
@@ -78,7 +79,19 @@ export default function RegisterPelajarPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name)
+      const file = e.target.files[0]
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage('Ukuran file maksimal 5MB.')
+        return
+      }
+      setFileName(file.name)
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setFilePreview(reader.result)
+        }
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -120,7 +133,7 @@ export default function RegisterPelajarPage() {
           sekolah: formData.sekolah,
           nomorWa: formData.nomorWa,
           bidangKeahlian: selectedSkills,
-          fotoKartuPelajar: fileName || undefined
+          fotoKartuPelajar: filePreview || undefined
         }),
       })
 
@@ -548,28 +561,37 @@ export default function RegisterPelajarPage() {
                     <label className="font-bold text-xs text-gray-700 uppercase tracking-wider">
                       Unggah Foto Kartu Pelajar (Opsional / Sementara)
                     </label>
-                    <label className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF7F3] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF1EB] transition-colors group min-h-[140px] relative">
+                    <label className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF7F3] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF1EB] transition-colors group min-h-[140px] relative overflow-hidden">
                       <input
                         type="file"
                         className="sr-only"
-                        accept="image/*,.pdf"
+                        accept="image/*"
                         onChange={handleFileChange}
                       />
-                      <div className="w-12 h-12 bg-[#FFD9CA] rounded-full flex items-center justify-center text-[#964825] group-hover:scale-110 transition-transform mb-2">
-                        <UploadCloud className="w-6 h-6" />
-                      </div>
-                      {fileName ? (
-                        <div className="flex items-center gap-2 text-sm font-bold text-[#964825]">
-                          <Check className="w-4 h-4 text-green-600" />
-                          <span className="truncate max-w-[240px]">{fileName}</span>
+                      {filePreview ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-24 h-16 rounded-lg overflow-hidden border border-[#FFD9CA] shadow-xs relative bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={filePreview} alt="Preview Kartu" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-[#964825]">
+                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                            <span className="truncate max-w-[200px]">{fileName}</span>
+                          </div>
+                          <span className="text-[10px] text-gray-500 font-medium underline hover:text-[#964825]">
+                            Klik untuk ganti foto
+                          </span>
                         </div>
                       ) : (
                         <>
+                          <div className="w-12 h-12 bg-[#FFD9CA] rounded-full flex items-center justify-center text-[#964825] group-hover:scale-110 transition-transform mb-2">
+                            <UploadCloud className="w-6 h-6" />
+                          </div>
                           <p className="font-bold text-xs text-[#964825] mb-0.5">
-                            Klik untuk unggah atau seret file ke sini
+                            Klik untuk unggah foto kartu pelajar
                           </p>
                           <p className="text-[11px] text-gray-500">
-                            Format JPG, PNG, atau PDF (Maksimal 2MB)
+                            Format JPG, PNG, atau WEBP (Maksimal 5MB)
                           </p>
                         </>
                       )}

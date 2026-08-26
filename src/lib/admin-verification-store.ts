@@ -135,7 +135,7 @@ export async function syncAdminUsersFromDB(): Promise<void> {
             tempatLahir: p.tempatLahir || 'Tasikmalaya',
             tanggalLahir: p.tanggalLahir,
             namaIbu: p.namaIbu || 'Ibu Kandung',
-            fotoKartuPelajar: p.fotoKartuPelajar || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=600&auto=format&fit=crop',
+            fotoKartuPelajar: p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=600&auto=format&fit=crop',
             nomorWa: actualWa,
             verificationStatus: (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING',
             createdAt: p.createdAt || new Date().toISOString()

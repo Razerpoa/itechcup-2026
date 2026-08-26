@@ -838,13 +838,12 @@ export default function MasterAdminEscrowPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="relative h-80 w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-4">
-              <Image
+            <div className="relative min-h-[300px] max-h-[500px] w-full rounded-xl overflow-hidden bg-slate-900/5 border border-gray-200 mb-4 flex items-center justify-center p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={selectedProofImg.url}
-                alt="Preview"
-                fill
-                className="object-contain"
-                unoptimized
+                alt={selectedProofImg.title}
+                className="max-h-[460px] max-w-full object-contain rounded-lg"
               />
             </div>
             <div className="flex justify-end">
