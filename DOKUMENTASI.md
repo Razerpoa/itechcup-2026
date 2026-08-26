@@ -5,9 +5,9 @@ Dokumen ini merupakan rekam jejak teknis, arsitektur sistem, dan spesifikasi fit
 ---
 
 ## 👨‍💻 Inisiator & Pengembang Utama (Tahap 1)
-**Nama:** Raffa (Raffa StokMl)  
-**Email:** stokmlraffa3@gmail.com  
-**WhatsApp:** 081234567890  
+**Nama:** Raffa (Raffa)  
+**Email:** raffaxzee@gmail.com  
+**WhatsApp:** 0895622494773  
 **Periode Pengerjaan:** Agustus 2026  
 
 *Tahap 1 mencakup perancangan sistem dari nol (scratch), pembuatan seluruh alur basis data, integrasi frontend & backend, sistem keamanan, hingga kesiapan deployment ke server produksi.*
