@@ -93,14 +93,30 @@ export async function PUT(request: NextRequest) {
     let userData: any = null
 
     // 1. Try Pelajar
-    const pelajar = await prisma.pelajar.findUnique({ where: { email: trimmedEmail } })
+    const pelajar = await prisma.pelajar.findUnique({
+      where: { email: trimmedEmail },
+      include: { profil: true, sekolah: { select: { namaSekolah: true } } }
+    })
     if (pelajar) {
       const p = await prisma.pelajar.update({
         where: { email: trimmedEmail },
         data: { password: hashedPassword }
       })
       userRole = 'pelajar'
-      userData = { id: p.id, email: p.email, nama: p.namaLengkap, role: 'pelajar' }
+      userData = {
+        id: p.id,
+        email: p.email,
+        nama: p.namaLengkap,
+        role: 'pelajar',
+        sekolah: pelajar.sekolah?.namaSekolah || pelajar.kelas || 'SMK Terdaftar',
+        nisn: pelajar.nis,
+        skills: pelajar.profil?.skills?.length ? pelajar.profil.skills : pelajar.profil?.bidangKeahlian || ['Web Dev', 'UI/UX'],
+        proyekSelesai: pelajar.profil?.jumlahProyekSelesai || 0,
+        totalPendapatan: pelajar.profil?.totalPendapatan || 0,
+        onTimeRate: 100,
+        verificationStatus: pelajar.verificationStatus,
+        isVerified: pelajar.verificationStatus === 'VERIFIED'
+      }
       updated = true
     } else {
       // 2. Try UMKM
@@ -111,7 +127,16 @@ export async function PUT(request: NextRequest) {
           data: { password: hashedPassword }
         })
         userRole = 'umkm'
-        userData = { id: u.id, email: u.email, nama: u.namaPemilik, namaUsaha: u.namaUsaha, role: 'umkm', isVerified: u.isVerified }
+        userData = {
+          id: u.id,
+          email: u.email,
+          nama: u.namaPemilik,
+          namaUsaha: u.namaUsaha,
+          nomorWa: u.nomorWa,
+          role: 'umkm',
+          isVerified: Boolean(u.isVerified),
+          verificationStatus: u.isVerified ? 'VERIFIED' : 'PENDING'
+        }
         updated = true
       } else {
         // 3. Try Sekolah
@@ -122,7 +147,16 @@ export async function PUT(request: NextRequest) {
             data: { password: hashedPassword }
           })
           userRole = 'sekolah'
-          userData = { id: s.id, email: s.emailResmi, nama: s.namaPenanggungJawab, namaSekolah: s.namaSekolah, role: 'sekolah', isVerified: s.verificationStatus === 'VERIFIED' }
+          userData = {
+            id: s.id,
+            email: s.emailResmi,
+            nama: s.namaPenanggungJawab,
+            namaSekolah: s.namaSekolah,
+            npsn: s.npsn,
+            role: 'sekolah',
+            isVerified: s.verificationStatus === 'VERIFIED',
+            verificationStatus: s.verificationStatus
+          }
           updated = true
         }
       }
