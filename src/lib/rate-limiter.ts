@@ -49,3 +49,4 @@ export class RateLimiter {
 
 export const ipRateLimiter = new RateLimiter({ windowMs: 60_000, maxRequests: 5 })
 export const npsnRateLimiter = new RateLimiter({ windowMs: 900_000, maxRequests: 10 })
+export const aiRateLimiter = new RateLimiter({ windowMs: 60_000, maxRequests: 12 })
