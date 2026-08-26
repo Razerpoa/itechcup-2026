@@ -68,59 +68,51 @@ export async function POST(request: NextRequest) {
       parts: [{ text: `${userContextPrefix}${message.trim()}` }]
     })
 
-    // Call Google Gemini API (gemini-1.5-flash / gemini-2.0-flash)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+    const candidateModels = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash']
+    let replyText: string | null = null
 
-    const res = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: formattedContents,
-        systemInstruction: {
-          parts: [{ text: SYSTEM_INSTRUCTION }]
-        },
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      })
-    })
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      console.warn('Gemini API Error, fallback to gemini-2.0-flash:', errData)
-
-      // Fallback try with gemini-2.0-flash
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
-      const fallbackRes = await fetch(fallbackUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: formattedContents,
-          systemInstruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }]
-          }
+    for (const model of candidateModels) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+        const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: formattedContents,
+            systemInstruction: {
+              parts: [{ text: SYSTEM_INSTRUCTION }]
+            },
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            }
+          })
         })
-      })
 
-      if (fallbackRes.ok) {
-        const fbData = await fallbackRes.json()
-        const replyText = fbData.candidates?.[0]?.content?.parts?.[0]?.text
-        if (replyText) {
-          return NextResponse.json({ success: true, reply: replyText })
+        if (res.ok) {
+          const data = await res.json()
+          const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text
+          if (candidateText && candidateText.trim()) {
+            replyText = candidateText.trim()
+            break
+          }
+        } else {
+          const errBody = await res.text().catch(() => '')
+          console.warn(`Model ${model} returned status ${res.status}:`, errBody.slice(0, 150))
         }
+      } catch (err) {
+        console.warn(`Error attempting model ${model}:`, err)
       }
-
-      return NextResponse.json({
-        success: true,
-        reply: 'Halo! Saya asisten Mitra Muda. Ada yang bisa saya bantu terkait pembuatan proyek UMKM, pendaftaran pelajar, verifikasi NPSN sekolah, atau sistem pembayaran DP escrow?'
-      })
     }
 
-    const data = await res.json()
-    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Terima kasih telah bertanya! Silakan jelaskan detail kendala Anda atau beralih ke tab "Hubungi CS" untuk terhubung via WhatsApp.'
+    if (!replyText) {
+      return NextResponse.json({
+        success: true,
+        reply: 'Halo! Saya asisten resmi Mitra Muda. Ada yang bisa saya bantu terkait pembuatan proyek UMKM, pendaftaran pelajar, verifikasi NPSN sekolah, atau sistem pembayaran DP escrow?'
+      })
+    }
 
     return NextResponse.json({
       success: true,
