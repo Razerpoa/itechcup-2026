@@ -9,12 +9,17 @@ export async function GET(request: NextRequest) {
   try {
     const search = request.nextUrl.searchParams.get('search')
     const kategori = request.nextUrl.searchParams.get('kategori')
+    const verifiedOnly = request.nextUrl.searchParams.get('verifiedOnly')
 
-    const where: Record<string, unknown> = { isVerified: true }
+    const where: Record<string, unknown> = {}
+    if (verifiedOnly === 'true') {
+      where.isVerified = true
+    }
     if (search) {
       where.OR = [
         { namaUsaha: { contains: search, mode: 'insensitive' } },
         { namaPemilik: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ]
     }
     if (kategori) where.kategori = kategori
@@ -25,11 +30,19 @@ export async function GET(request: NextRequest) {
         id: true,
         namaUsaha: true,
         namaPemilik: true,
+        email: true,
+        nomorWa: true,
         fotoUsaha: true,
         kategori: true,
         ukuranBisnis: true,
+        alamat: true,
+        isVerified: true,
+        verifikasiType: true,
+        buktiLegalitas: true,
+        createdAt: true,
         _count: { select: { proyek: true } },
       },
+      orderBy: { createdAt: 'desc' },
     })
 
     return NextResponse.json({ data })
@@ -77,8 +90,22 @@ export async function POST(request: NextRequest) {
         email: body.email,
         password: hashedPassword,
         nomorWa: body.nomorWa,
+        ukuranBisnis: body.ukuranBisnis || 'KECIL',
+        kategori: body.kategori || 'Kuliner & F&B',
+        alamat: body.alamat || null,
+        buktiLegalitas: body.buktiLegalitas || null,
+        verifikasiType: body.buktiLegalitas ? 'Dokumen Legalitas / NIB' : 'Verifikasi Manual Admin',
+        isVerified: false,
       },
-      select: { id: true, namaUsaha: true, email: true, createdAt: true },
+      select: {
+        id: true,
+        namaUsaha: true,
+        namaPemilik: true,
+        email: true,
+        nomorWa: true,
+        isVerified: true,
+        createdAt: true,
+      },
     })
 
     // Sync ke Supabase Authentication (auth.users)

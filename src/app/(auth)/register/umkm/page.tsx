@@ -16,6 +16,7 @@ export default function RegisterUMKMPage() {
   const [businessSize, setBusinessSize] = useState('Kecil')
   const [kategori, setKategori] = useState('Kuliner & F&B')
   const [fileName, setFileName] = useState<string | null>(null)
+  const [buktiLegalitas, setBuktiLegalitas] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
@@ -43,7 +44,16 @@ export default function RegisterUMKMPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name)
+      const file = e.target.files[0]
+      setFileName(file.name)
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setBuktiLegalitas(reader.result)
+        }
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -78,7 +88,8 @@ export default function RegisterUMKMPage() {
           nomorWa: formData.nomorWa,
           ukuranBisnis: businessSize.toUpperCase() as 'MIKRO' | 'KECIL' | 'MENENGAH',
           kategori: kategori,
-          alamat: formData.alamat || undefined
+          alamat: formData.alamat || undefined,
+          buktiLegalitas: buktiLegalitas || undefined
         })
       })
 
@@ -101,7 +112,18 @@ export default function RegisterUMKMPage() {
         email: formData.email,
         role: 'umkm' as const,
         namaUsaha: formData.namaUsaha,
-        nomorWa: formData.nomorWa
+        nomorWa: formData.nomorWa,
+        isVerified: false,
+        buktiLegalitas: buktiLegalitas || undefined
+      }
+
+      if (typeof window !== 'undefined') {
+        const existingList = JSON.parse(localStorage.getItem('mitra_muda_all_registered_users_v1') || '[]')
+        existingList.push({
+          ...userSession,
+          createdAt: new Date().toISOString()
+        })
+        localStorage.setItem('mitra_muda_all_registered_users_v1', JSON.stringify(existingList))
       }
 
       setCurrentUser(userSession)

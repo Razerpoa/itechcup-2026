@@ -302,10 +302,27 @@ export function adminRejectSekolah(id: string): boolean {
 
 export function adminVerifyUMKM(id: string): boolean {
   const state = getVerificationState()
+  const targetUMKM = state.umkmList.find((u) => u.id === id)
   const updated = state.umkmList.map((u) =>
     u.id === id ? { ...u, isVerified: true } : u
   )
   saveVerificationState({ ...state, umkmList: updated })
+
+  if (typeof window !== 'undefined') {
+    try {
+      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
+      if (activeRaw) {
+        const parsed = JSON.parse(activeRaw)
+        if (parsed.id === id || (targetUMKM && parsed.email === targetUMKM.email)) {
+          parsed.isVerified = true
+          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
+          window.dispatchEvent(new Event('storage'))
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   fetch(`/api/umkm/${id}`, {
     method: 'PATCH',
@@ -318,10 +335,27 @@ export function adminVerifyUMKM(id: string): boolean {
 
 export function adminRevokeUMKM(id: string): boolean {
   const state = getVerificationState()
+  const targetUMKM = state.umkmList.find((u) => u.id === id)
   const updated = state.umkmList.map((u) =>
     u.id === id ? { ...u, isVerified: false } : u
   )
   saveVerificationState({ ...state, umkmList: updated })
+
+  if (typeof window !== 'undefined') {
+    try {
+      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
+      if (activeRaw) {
+        const parsed = JSON.parse(activeRaw)
+        if (parsed.id === id || (targetUMKM && parsed.email === targetUMKM.email)) {
+          parsed.isVerified = false
+          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
+          window.dispatchEvent(new Event('storage'))
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   fetch(`/api/umkm/${id}`, {
     method: 'PATCH',

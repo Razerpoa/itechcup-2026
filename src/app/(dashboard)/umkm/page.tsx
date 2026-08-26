@@ -124,9 +124,15 @@ export default function UmkmDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{namaUsaha}</h1>
-            <span className="w-5 h-5 rounded-full bg-orange-100 text-[#964825] flex items-center justify-center text-xs font-bold" title="Terverifikasi">
-              <Check className="w-3 h-3" />
-            </span>
+            {user?.isVerified === false ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
+                Menunggu Verifikasi
+              </span>
+            ) : (
+              <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold" title="Terverifikasi Resmi">
+                <Check className="w-3 h-3" />
+              </span>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">Kelola proyek, pantau pelamar, dan bertransaksi aman dengan sistem DP escrow</p>
         </div>
