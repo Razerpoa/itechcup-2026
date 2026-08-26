@@ -290,18 +290,18 @@ cp .env.example .env
 Contoh konfigurasi utama:
 ```env
 # Database PostgreSQL
-DATABASE_URL="postgresql://postgres:password@localhost:5432/mitramuda"
+DATABASE_URL="postgresql://username:password@localhost:5432/mitramuda"
 
 # Supabase Auth & Storage
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
 
 # AI Google Gemini
-GEMINI_API_KEY="AIzaSy..."
+GEMINI_API_KEY="your-gemini-api-key-here"
 
 # Layanan Email (Resend)
-RESEND_API_KEY="re_..."
+RESEND_API_KEY="your-resend-api-key-here"
 EMAIL_FROM="Mitra Muda <noreply@mitramuda.raffzdigital.biz.id>"
 
 # Domain Aplikasi
