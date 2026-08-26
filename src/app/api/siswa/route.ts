@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { VerificationStatus } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,18 @@ export async function GET(request: NextRequest) {
 
     const data = await prisma.pelajar.findMany({
       where,
-      include: { sekolah: { select: { id: true, namaSekolah: true, npsn: true } } },
+      select: {
+        id: true,
+        namaLengkap: true,
+        email: true,
+        nis: true,
+        kelas: true,
+        verificationStatus: true,
+        sekolahId: true,
+        createdAt: true,
+        updatedAt: true,
+        sekolah: { select: { id: true, namaSekolah: true, npsn: true } },
+      },
     })
 
     return NextResponse.json({ data })
@@ -37,17 +49,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sekolah tidak ditemukan' }, { status: 404 })
     }
 
-    const data = await prisma.pelajar.create({
+    const hashedPassword = await bcrypt.hash(body.password, 10)
+
+    const raw = await prisma.pelajar.create({
       data: {
         namaLengkap: body.namaLengkap,
         email: body.email,
-        password: body.password,
+        password: hashedPassword,
         nis: body.nis,
         kelas: body.kelas,
         sekolahId: body.sekolahId,
       },
-      include: { sekolah: true },
+      include: { sekolah: { select: { id: true, namaSekolah: true, npsn: true } } },
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw
 
     return NextResponse.json({ data }, { status: 201 })
   } catch (error) {

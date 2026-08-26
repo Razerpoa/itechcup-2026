@@ -23,11 +23,22 @@ function cleanName(name: string): string {
 }
 
 export function compareSchoolNames(userNormalized: string, officialName: string): NameComparisonResult {
+  if (userNormalized === officialName) {
+    return { match: 'EXACT' }
+  }
+
   const cleanUser = cleanName(userNormalized)
   const cleanOfficial = cleanName(officialName)
 
   if (cleanUser === cleanOfficial) {
-    return { match: 'EXACT' }
+    return { match: 'MINOR' }
+  }
+
+  const userLevel = extractSchoolLevel(cleanUser)
+  const officialLevel = extractSchoolLevel(cleanOfficial)
+
+  if (userLevel && officialLevel && userLevel !== officialLevel) {
+    return { match: 'CRITICAL' }
   }
 
   if (cleanUser.includes(cleanOfficial) || cleanOfficial.includes(cleanUser)) {
@@ -43,12 +54,14 @@ export function compareSchoolNames(userNormalized: string, officialName: string)
     return { match: 'MINOR' }
   }
 
-  const userLevel = extractSchoolLevel(cleanUser)
-  const officialLevel = extractSchoolLevel(cleanOfficial)
+  // Substring abbreviation match (e.g. TASIK in TASIKMALAYA)
+  const hasPartialTokenMatch = userTokens.some((u) =>
+    u.length >= 4 && officialTokens.some((o) => o.startsWith(u) || u.startsWith(o))
+  )
 
-  if (userLevel && officialLevel && userLevel !== officialLevel) {
-    return { match: 'CRITICAL' }
+  if (hasPartialTokenMatch && (commonTokens.length >= 1 || userLevel === officialLevel)) {
+    return { match: 'MINOR' }
   }
 
-  return { match: 'MINOR' }
+  return { match: 'CRITICAL' }
 }

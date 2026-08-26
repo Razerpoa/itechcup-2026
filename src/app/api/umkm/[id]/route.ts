@@ -4,16 +4,19 @@ import { prisma } from '@/lib/prisma'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const data = await prisma.uMKM.findUnique({
+    const raw = await prisma.uMKM.findUnique({
       where: { id },
       include: {
         proyek: true
       }
     })
 
-    if (!data) {
+    if (!raw) {
       return NextResponse.json({ error: 'UMKM tidak ditemukan' }, { status: 404 })
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw
 
     return NextResponse.json({ data })
   } catch {
@@ -38,10 +41,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.buktiLegalitas = body.buktiLegalitas
     }
 
-    const updated = await prisma.uMKM.update({
+    const rawUpdated = await prisma.uMKM.update({
       where: { id },
       data: updateData
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...updated } = rawUpdated
 
     return NextResponse.json({ data: updated })
   } catch {

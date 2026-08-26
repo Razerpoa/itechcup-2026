@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const data = await prisma.pelajar.findUnique({
+    const raw = await prisma.pelajar.findUnique({
       where: { id },
       include: {
         profil: true,
@@ -14,9 +14,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     })
 
-    if (!data) {
+    if (!raw) {
       return NextResponse.json({ error: 'Pelajar tidak ditemukan' }, { status: 404 })
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw
 
     return NextResponse.json({ data })
   } catch {
@@ -64,11 +67,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
-    const updated = await prisma.pelajar.update({
+    const rawUpdated = await prisma.pelajar.update({
       where: { id },
       data: updateData,
       include: { profil: true }
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...updated } = rawUpdated
 
     return NextResponse.json({ data: updated })
   } catch {

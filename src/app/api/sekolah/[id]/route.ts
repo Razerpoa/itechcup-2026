@@ -5,14 +5,29 @@ import bcrypt from 'bcryptjs';
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const data = await prisma.sekolah.findUnique({
+    const raw = await prisma.sekolah.findUnique({
       where: { id },
-      include: { daftarSiswa: true },
+      include: {
+        daftarSiswa: {
+          select: {
+            id: true,
+            namaLengkap: true,
+            email: true,
+            nis: true,
+            kelas: true,
+            verificationStatus: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
-    if (!data) {
+    if (!raw) {
       return NextResponse.json({ error: 'Sekolah tidak ditemukan' }, { status: 404 });
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw;
 
     return NextResponse.json({ data });
   } catch (error) {
@@ -57,10 +72,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Tidak ada field yang diperbarui' }, { status: 400 });
     }
 
-    const data = await prisma.sekolah.update({
+    const raw = await prisma.sekolah.update({
       where: { id },
       data: updateData,
     });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw;
 
     return NextResponse.json({ data });
   } catch (error) {
@@ -92,10 +110,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.lastVerifiedAt = new Date()
     }
 
-    const data = await prisma.sekolah.update({
+    const raw = await prisma.sekolah.update({
       where: { id },
       data: updateData
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...data } = raw
 
     return NextResponse.json({ data })
   } catch {

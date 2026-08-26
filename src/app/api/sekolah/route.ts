@@ -22,7 +22,22 @@ export async function GET(request: NextRequest) {
         }
       : {}
 
-    const data = await prisma.sekolah.findMany({ where })
+    const data = await prisma.sekolah.findMany({
+      where,
+      select: {
+        id: true,
+        namaSekolah: true,
+        npsn: true,
+        emailResmi: true,
+        namaPenanggungJawab: true,
+        alamatLengkap: true,
+        kontakSekolah: true,
+        verificationStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { daftarSiswa: true } },
+      },
+    })
     return NextResponse.json({ data })
   } catch {
     return NextResponse.json({ error: 'Gagal mengambil data sekolah' }, { status: 500 })
