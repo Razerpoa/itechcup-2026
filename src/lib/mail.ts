@@ -13,7 +13,8 @@ export interface SendResetMailParams {
 
 export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Muda', resetToken = 'dummy-token' }: SendResetMailParams) {
   const apiKey = process.env.RESEND_API_KEY
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login?resetToken=${resetToken}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mitramuda.biz.id'
+  const resetUrl = `${baseUrl}/auth/callback?type=recovery&email=${encodeURIComponent(to)}`
 
   if (!apiKey) {
     console.log(`[Resend Mail Simulation] Reset password email for ${to}: ${resetUrl}`)
@@ -21,7 +22,7 @@ export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Mu
   }
 
   const resend = new Resend(apiKey)
-  const customFrom = process.env.RESEND_FROM_EMAIL || 'Mitra Muda <noreply@mitramuda.biz.id>'
+  const customFrom = process.env.RESEND_FROM_EMAIL || 'Mitra Muda <noreply@mitramuda.raffzdigital.biz.id>'
 
   const emailHtml = `
     <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FAFAFA; padding: 32px; border-radius: 24px; border: 1px solid #EAEAEA;">

@@ -4,22 +4,36 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { setCurrentUser, getCurrentUser } from '@/lib/auth-client'
-import { Loader2 } from 'lucide-react'
+import { Loader2, KeyRound, CheckCircle2, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
-  const [statusText, setStatusText] = useState('Memproses masuk akun Google...')
+  const [statusText, setStatusText] = useState('Memproses verifikasi akun...')
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  // Recovery Form State
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   useEffect(() => {
     async function handleAuthCallback() {
       try {
         let email: string | undefined = undefined
         let nama: string | undefined = undefined
+        let authType: string | null = null
 
-        // 1. Try extracting email and nama from window.location.hash (#access_token=...)
+        // 1. Check URL hash (#access_token=...&type=recovery|signup|magiclink)
         if (typeof window !== 'undefined' && window.location.hash) {
           const hashParams = new URLSearchParams(window.location.hash.substring(1))
           const accessToken = hashParams.get('access_token')
+          authType = hashParams.get('type')
+
           if (accessToken) {
             try {
               const base64Url = accessToken.split('.')[1]
@@ -39,14 +53,28 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // 2. If not in hash, fallback to Supabase session
+        // 2. Check query params (?type=recovery&email=...)
+        if (typeof window !== 'undefined' && !authType) {
+          const searchParams = new URLSearchParams(window.location.search)
+          authType = searchParams.get('type')
+          if (!email) email = searchParams.get('email') || undefined
+        }
+
+        // 3. Fallback to Supabase active session
         if (!email) {
           const { data: { session } } = await supabase.auth.getSession()
           email = session?.user?.email
           nama = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name
         }
 
-        // 3. Fallback for local demo/dev mode if email not returned in session or hash
+        // Handle Recovery (Lupa Password)
+        if (authType === 'recovery') {
+          setIsRecoveryMode(true)
+          if (email) setUserEmail(email)
+          return
+        }
+
+        // Fallback for local demo/dev mode
         if (!email) {
           const activeUser = getCurrentUser()
           if (activeUser) {
@@ -62,6 +90,8 @@ export default function AuthCallbackPage() {
           return
         }
 
+        setStatusText('Verifikasi berhasil! Mengalihkan ke dashboard...')
+
         const res = await fetch('/api/auth/google-check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -69,12 +99,11 @@ export default function AuthCallbackPage() {
         })
 
         const data = await res.json()
-
         let targetUser = data.user
 
         if (!targetUser) {
           targetUser = {
-            id: 'p-google-' + Date.now(),
+            id: 'p-user-' + Date.now(),
             email: email,
             nama: nama || email.split('@')[0],
             role: 'pelajar',
@@ -110,13 +139,164 @@ export default function AuthCallbackPage() {
     handleAuthCallback()
   }, [router])
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setErrorMsg(null)
+
+    if (newPassword.length < 8) {
+      setErrorMsg('Password baru minimal 8 karakter.')
+      setIsSubmitting(false)
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Konfirmasi password tidak cocok.')
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      // 1. Update in Supabase Auth if available
+      try {
+        await supabase.auth.updateUser({ password: newPassword })
+      } catch {
+        // ignore if handled on backend
+      }
+
+      // 2. Update in Postgres Database
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          newPassword
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setErrorMsg(data.error || 'Gagal mengubah password. Silakan coba lagi.')
+        setIsSubmitting(false)
+        return
+      }
+
+      setSuccessMsg('Kata sandi berhasil diperbarui! Mengalihkan ke dashboard...')
+
+      if (data.user) {
+        setCurrentUser(data.user)
+      }
+
+      setTimeout(() => {
+        if (data.role === 'sekolah') router.push('/sekolah')
+        else if (data.role === 'umkm') router.push('/umkm')
+        else router.push('/pelajar')
+      }, 1500)
+    } catch {
+      setErrorMsg('Terjadi kesalahan jaringan. Coba lagi.')
+      setIsSubmitting(false)
+    }
+  }
+
+  // Recovery Form View
+  if (isRecoveryMode) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-lg border border-[#EAEAEA] max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-[#FFF1EB] text-[#964825] flex items-center justify-center mx-auto">
+              <KeyRound className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+              Atur Kata Sandi Baru
+            </h2>
+            <p className="text-xs text-gray-500">
+              {userEmail ? `Untuk akun: ${userEmail}` : 'Masukkan kata sandi baru untuk akun Mitra Muda Anda'}
+            </p>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Kata Sandi Baru
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Minimal 8 karakter"
+                  className="h-11 w-full bg-[#F5F5F5] rounded-xl pl-4 pr-11 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <PasswordStrengthMeter password={newPassword} />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Ulangi Kata Sandi Baru
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="Konfirmasi kata sandi"
+                className="h-11 w-full bg-[#F5F5F5] rounded-xl px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || Boolean(successMsg)}
+              className="w-full h-11 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer disabled:opacity-60"
+            >
+              {isSubmitting ? (
+                <span>Menyimpan...</span>
+              ) : (
+                <>
+                  <span>Simpan & Masuk ke Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // Normal Automatic Auth / Verification Processing View
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4 text-center">
       <div className="bg-white p-8 rounded-3xl shadow-xs border border-[#EAEAEA] max-w-sm w-full space-y-4">
         <div className="w-12 h-12 rounded-full bg-[#FFF1EB] text-[#964825] flex items-center justify-center mx-auto animate-spin">
           <Loader2 className="w-6 h-6" />
         </div>
-        <h3 className="font-extrabold text-lg text-gray-900">Menghubungkan Akun Google</h3>
+        <h3 className="font-extrabold text-lg text-gray-900">Memverifikasi Akun</h3>
         <p className="text-xs text-gray-500">{statusText}</p>
       </div>
     </div>

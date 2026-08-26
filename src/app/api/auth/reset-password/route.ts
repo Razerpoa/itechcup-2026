@@ -71,3 +71,80 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { email, newPassword } = body
+
+    if (!email || !newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      return NextResponse.json(
+        { error: 'Password baru minimal 8 karakter' },
+        { status: 400 }
+      )
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+    const bcrypt = await import('bcryptjs')
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    let updated = false
+    let userRole = 'pelajar'
+    let userData: any = null
+
+    // 1. Try Pelajar
+    const pelajar = await prisma.pelajar.findUnique({ where: { email: trimmedEmail } })
+    if (pelajar) {
+      const p = await prisma.pelajar.update({
+        where: { email: trimmedEmail },
+        data: { password: hashedPassword }
+      })
+      userRole = 'pelajar'
+      userData = { id: p.id, email: p.email, nama: p.namaLengkap, role: 'pelajar' }
+      updated = true
+    } else {
+      // 2. Try UMKM
+      const umkm = await prisma.uMKM.findUnique({ where: { email: trimmedEmail } })
+      if (umkm) {
+        const u = await prisma.uMKM.update({
+          where: { email: trimmedEmail },
+          data: { password: hashedPassword }
+        })
+        userRole = 'umkm'
+        userData = { id: u.id, email: u.email, nama: u.namaPemilik, namaUsaha: u.namaUsaha, role: 'umkm', isVerified: u.isVerified }
+        updated = true
+      } else {
+        // 3. Try Sekolah
+        const sekolah = await prisma.sekolah.findUnique({ where: { emailResmi: trimmedEmail } })
+        if (sekolah) {
+          const s = await prisma.sekolah.update({
+            where: { emailResmi: trimmedEmail },
+            data: { password: hashedPassword }
+          })
+          userRole = 'sekolah'
+          userData = { id: s.id, email: s.emailResmi, nama: s.namaPenanggungJawab, namaSekolah: s.namaSekolah, role: 'sekolah', isVerified: s.verificationStatus === 'VERIFIED' }
+          updated = true
+        }
+      }
+    }
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: 'Akun dengan email ini tidak ditemukan' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Kata sandi berhasil diperbarui',
+      user: userData,
+      role: userRole
+    })
+  } catch {
+    return NextResponse.json(
+      { error: 'Gagal memperbarui kata sandi' },
+      { status: 500 }
+    )
+  }
+}
