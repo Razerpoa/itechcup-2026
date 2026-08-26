@@ -17,13 +17,14 @@ import {
   Info
 } from 'lucide-react'
 import { formatRupiah, formatDate } from '@/lib/utils'
-import { useAuthUser, setCurrentUser } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync } from '@/lib/auth-client'
 import { useEscrowStore } from '@/lib/escrow-store'
 import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
 import { useJasaStore } from '@/lib/jasa-store'
 
 export default function PelajarDashboard() {
   const user = useAuthUser()
+  useRealtimeVerificationSync()
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
   const jasaList = useJasaStore()
@@ -39,7 +40,6 @@ export default function PelajarDashboard() {
     return Boolean(matchId || matchNama)
   })
 
-  // Synchronously compute verification status from user session
   const isVerifiedAccount = Boolean(
     user?.isVerified ||
     user?.verificationStatus === 'VERIFIED'
@@ -48,32 +48,12 @@ export default function PelajarDashboard() {
   useEffect(() => {
     syncAkadWithDB()
 
-    const checkVerificationFromDB = async () => {
-      if (!user?.id) return
-
-      // Check DB via API
-      try {
-        const res = await fetch(`/api/pelajar/${user.id}`)
-        if (res.ok) {
-          const json = await res.json()
-          if (json.data && json.data.verificationStatus === 'VERIFIED' && !user.isVerified) {
-            setCurrentUser({ ...user, isVerified: true, verificationStatus: 'VERIFIED' })
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    checkVerificationFromDB()
-
     const interval = setInterval(() => {
       syncAkadWithDB()
-      checkVerificationFromDB()
-    }, 8000)
+    }, 3000)
 
     return () => clearInterval(interval)
-  }, [user?.id, user?.email, user?.isVerified])
+  }, [])
 
   const myAkadList = akadState.akadList.filter((a) => {
     if (isDemoPelajar) return true

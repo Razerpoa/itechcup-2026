@@ -23,7 +23,7 @@ import {
   ArrowRight,
   FileText
 } from 'lucide-react'
-import { useAuthUser, logoutUser } from '@/lib/auth-client'
+import { useAuthUser, logoutUser, useRealtimeVerificationSync } from '@/lib/auth-client'
 
 interface NavbarProps {
   onMenuClick: () => void
@@ -43,6 +43,7 @@ interface NotificationItem {
 export default function Navbar({ onMenuClick, title }: NavbarProps) {
   const router = useRouter()
   const user = useAuthUser()
+  useRealtimeVerificationSync()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
 

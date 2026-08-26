@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Users, UserCheck, Clock, Check, X, ShieldAlert, Building2, Loader2, Search, ShieldCheck, CheckCircle2 } from 'lucide-react'
-import { useAuthUser } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync, broadcastVerificationChange } from '@/lib/auth-client'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatDate } from '@/lib/utils'
 
@@ -18,6 +18,7 @@ export interface StudentItem {
 
 export default function SekolahDashboard() {
   const user = useAuthUser()
+  useRealtimeVerificationSync()
   const [students, setStudents] = useState<StudentItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,9 +66,17 @@ export default function SekolahDashboard() {
   }, [sekolahId, isDemoSekolah])
 
   const handleAction = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
+    const targetStudent = students.find((s) => s.id === id)
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status } : s))
     )
+
+    broadcastVerificationChange({
+      role: 'pelajar',
+      id,
+      email: targetStudent?.email,
+      status
+    })
 
     try {
       await fetch(`/api/siswa/${id}`, {
@@ -76,7 +85,6 @@ export default function SekolahDashboard() {
         body: JSON.stringify({ verificationStatus: status })
       })
     } catch {
-      // rollback on error if needed
     }
   }
 

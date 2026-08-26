@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, Check, Wallet, Users, MessageSquare, CheckCircle2, FileText, Sparkles, XCircle, ArrowRight, Send, X, Trash2, ShieldAlert, ShieldCheck } from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatRelativeTime, formatDate } from '@/lib/utils'
-import { useAuthUser } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync } from '@/lib/auth-client'
 import { useProjects, syncProjectsWithDB, removeProject } from '@/lib/projects-store'
 import { useEscrowStore } from '@/lib/escrow-store'
 import { useAkadStore, acceptLamaranAndCreateAkad, rejectLamaran, syncAkadWithDB, sendAkadChat, LamaranItem } from '@/lib/akad-store'
@@ -14,6 +14,7 @@ import { useAkadStore, acceptLamaranAndCreateAkad, rejectLamaran, syncAkadWithDB
 export default function UmkmDashboard() {
   const router = useRouter()
   const user = useAuthUser()
+  useRealtimeVerificationSync()
   const allProjects = useProjects()
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
@@ -29,7 +30,7 @@ export default function UmkmDashboard() {
     const interval = setInterval(() => {
       syncAkadWithDB()
       syncProjectsWithDB()
-    }, 8000)
+    }, 3000)
 
     return () => clearInterval(interval)
   }, [])

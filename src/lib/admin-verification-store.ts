@@ -1,6 +1,7 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { broadcastVerificationChange } from '@/lib/auth-client'
 
 export interface AdminPelajarItem {
   id: string
@@ -200,20 +201,15 @@ export function adminVerifyPelajar(id: string): boolean {
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
-  // Sync with current logged-in user if matching
+  broadcastVerificationChange({
+    role: 'pelajar',
+    id,
+    email: targetPelajar?.email,
+    status: 'VERIFIED'
+  })
+
   if (typeof window !== 'undefined') {
     try {
-      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
-      if (activeRaw) {
-        const parsed = JSON.parse(activeRaw)
-        if (parsed.id === id || (targetPelajar && parsed.email === targetPelajar.email)) {
-          parsed.verificationStatus = 'VERIFIED'
-          parsed.isVerified = true
-          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
-          window.dispatchEvent(new Event('storage'))
-        }
-      }
-
       const allUsersRaw = localStorage.getItem('mitra_muda_all_registered_users_v1')
       if (allUsersRaw) {
         const allUsers = JSON.parse(allUsersRaw)
@@ -226,7 +222,6 @@ export function adminVerifyPelajar(id: string): boolean {
         localStorage.setItem('mitra_muda_all_registered_users_v1', JSON.stringify(updatedAll))
       }
     } catch {
-      // ignore
     }
   }
 
@@ -247,22 +242,12 @@ export function adminRejectPelajar(id: string, reason?: string): boolean {
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
-  if (typeof window !== 'undefined') {
-    try {
-      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
-      if (activeRaw) {
-        const parsed = JSON.parse(activeRaw)
-        if (parsed.id === id || (targetPelajar && parsed.email === targetPelajar.email)) {
-          parsed.verificationStatus = 'REJECTED'
-          parsed.isVerified = false
-          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
-          window.dispatchEvent(new Event('storage'))
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
+  broadcastVerificationChange({
+    role: 'pelajar',
+    id,
+    email: targetPelajar?.email,
+    status: 'REJECTED'
+  })
 
   fetch(`/api/pelajar/${id}`, {
     method: 'PATCH',
@@ -275,10 +260,18 @@ export function adminRejectPelajar(id: string, reason?: string): boolean {
 
 export function adminVerifySekolah(id: string): boolean {
   const state = getVerificationState()
+  const targetSekolah = state.sekolahList.find((s) => s.id === id)
   const updated = state.sekolahList.map((s) =>
     s.id === id ? { ...s, verificationStatus: 'VERIFIED' as const } : s
   )
   saveVerificationState({ ...state, sekolahList: updated })
+
+  broadcastVerificationChange({
+    role: 'sekolah',
+    id,
+    email: targetSekolah?.emailResmi,
+    status: 'VERIFIED'
+  })
 
   fetch(`/api/sekolah/${id}`, {
     method: 'PATCH',
@@ -291,10 +284,18 @@ export function adminVerifySekolah(id: string): boolean {
 
 export function adminRejectSekolah(id: string): boolean {
   const state = getVerificationState()
+  const targetSekolah = state.sekolahList.find((s) => s.id === id)
   const updated = state.sekolahList.map((s) =>
     s.id === id ? { ...s, verificationStatus: 'REJECTED' as const } : s
   )
   saveVerificationState({ ...state, sekolahList: updated })
+
+  broadcastVerificationChange({
+    role: 'sekolah',
+    id,
+    email: targetSekolah?.emailResmi,
+    status: 'REJECTED'
+  })
 
   fetch(`/api/sekolah/${id}`, {
     method: 'PATCH',
@@ -313,21 +314,12 @@ export function adminVerifyUMKM(id: string): boolean {
   )
   saveVerificationState({ ...state, umkmList: updated })
 
-  if (typeof window !== 'undefined') {
-    try {
-      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
-      if (activeRaw) {
-        const parsed = JSON.parse(activeRaw)
-        if (parsed.id === id || (targetUMKM && parsed.email === targetUMKM.email)) {
-          parsed.isVerified = true
-          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
-          window.dispatchEvent(new Event('storage'))
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
+  broadcastVerificationChange({
+    role: 'umkm',
+    id,
+    email: targetUMKM?.email,
+    status: 'VERIFIED'
+  })
 
   fetch(`/api/umkm/${id}`, {
     method: 'PATCH',
@@ -346,21 +338,12 @@ export function adminRevokeUMKM(id: string): boolean {
   )
   saveVerificationState({ ...state, umkmList: updated })
 
-  if (typeof window !== 'undefined') {
-    try {
-      const activeRaw = localStorage.getItem('mitra_muda_auth_user')
-      if (activeRaw) {
-        const parsed = JSON.parse(activeRaw)
-        if (parsed.id === id || (targetUMKM && parsed.email === targetUMKM.email)) {
-          parsed.isVerified = false
-          localStorage.setItem('mitra_muda_auth_user', JSON.stringify(parsed))
-          window.dispatchEvent(new Event('storage'))
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
+  broadcastVerificationChange({
+    role: 'umkm',
+    id,
+    email: targetUMKM?.email,
+    status: 'REJECTED'
+  })
 
   fetch(`/api/umkm/${id}`, {
     method: 'PATCH',

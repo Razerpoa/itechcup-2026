@@ -1,6 +1,6 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 
 export interface UserSession {
   id: string
@@ -23,11 +23,38 @@ export interface UserSession {
 }
 
 const STORAGE_KEY = 'mitra_muda_auth_user'
+const VERIFY_CHANNEL_NAME = 'mitra_muda_verify_sync'
 
 let memoryUser: UserSession | null = null
 let lastRaw: string | null = '__init__'
 let cachedUser: UserSession | null = null
 const listeners = new Set<() => void>()
+
+let verifyChannel: BroadcastChannel | null = null
+if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+  try {
+    verifyChannel = new BroadcastChannel(VERIFY_CHANNEL_NAME)
+    verifyChannel.onmessage = (event) => {
+      const data = event.data
+      if (data?.type === 'VERIFICATION_UPDATE') {
+        const current = getCurrentUser()
+        if (current) {
+          const matchId = current.id === data.id
+          const matchEmail = data.email && current.email && current.email.toLowerCase() === data.email.toLowerCase()
+          if (matchId || matchEmail) {
+            const isVer = data.status === 'VERIFIED'
+            setCurrentUser({
+              ...current,
+              isVerified: isVer,
+              verificationStatus: isVer ? 'VERIFIED' : 'REJECTED'
+            })
+          }
+        }
+      }
+    }
+  } catch {
+  }
+}
 
 function emitChange() {
   lastRaw = '__dirty__'
@@ -64,10 +91,44 @@ export function setCurrentUser(user: UserSession): void {
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
     } catch {
-      // ignore
     }
   }
   emitChange()
+}
+
+export function broadcastVerificationChange(payload: {
+  role: 'pelajar' | 'umkm' | 'sekolah'
+  id: string
+  email?: string
+  status: 'VERIFIED' | 'REJECTED'
+}) {
+  const current = getCurrentUser()
+  if (current) {
+    const matchId = current.id === payload.id
+    const matchEmail = payload.email && current.email && current.email.toLowerCase() === payload.email.toLowerCase()
+    if (matchId || matchEmail) {
+      const isVer = payload.status === 'VERIFIED'
+      setCurrentUser({
+        ...current,
+        isVerified: isVer,
+        verificationStatus: isVer ? 'VERIFIED' : 'REJECTED'
+      })
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      if (verifyChannel) {
+        verifyChannel.postMessage({
+          type: 'VERIFICATION_UPDATE',
+          ...payload
+        })
+      }
+      window.dispatchEvent(new CustomEvent('mitramuda_verify_update', { detail: payload }))
+      window.dispatchEvent(new Event('storage'))
+    } catch {
+    }
+  }
 }
 
 export function logoutUser(): void {
@@ -78,7 +139,6 @@ export function logoutUser(): void {
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch {
-      // ignore
     }
   }
   emitChange()
@@ -112,4 +172,71 @@ function getServerSnapshot(): UserSession | null {
 
 export function useAuthUser(): UserSession | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+}
+
+export function useRealtimeVerificationSync() {
+  const user = useAuthUser()
+
+  useEffect(() => {
+    if (!user?.id) return
+    const alreadyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
+    if (alreadyVerified) return
+
+    let isMounted = true
+
+    const checkStatus = async () => {
+      if (!user?.id) return
+      try {
+        let endpoint = ''
+        if (user.role === 'pelajar') endpoint = `/api/pelajar/${user.id}`
+        else if (user.role === 'umkm') endpoint = `/api/umkm/${user.id}`
+        else if (user.role === 'sekolah') endpoint = `/api/sekolah/${user.id}`
+
+        if (!endpoint) return
+
+        const res = await fetch(endpoint, { cache: 'no-store' })
+        if (res.ok && isMounted) {
+          const json = await res.json()
+          const data = json.data
+          if (data) {
+            const isVerifiedNow =
+              data.isVerified === true ||
+              data.verificationStatus === 'VERIFIED'
+
+            if (isVerifiedNow && (!user.isVerified || user.verificationStatus !== 'VERIFIED')) {
+              setCurrentUser({
+                ...user,
+                isVerified: true,
+                verificationStatus: 'VERIFIED'
+              })
+            } else if (data.verificationStatus === 'REJECTED' && user.verificationStatus !== 'REJECTED') {
+              setCurrentUser({
+                ...user,
+                isVerified: false,
+                verificationStatus: 'REJECTED'
+              })
+            }
+          }
+        }
+      } catch {
+      }
+    }
+
+    checkStatus()
+    const interval = setInterval(checkStatus, 1500)
+
+    const handleFocus = () => {
+      checkStatus()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
+  }, [user?.id, user?.isVerified, user?.verificationStatus, user?.role])
 }
