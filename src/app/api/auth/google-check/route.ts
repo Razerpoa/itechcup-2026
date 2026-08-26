@@ -50,7 +50,9 @@ export async function POST(request: NextRequest) {
           nama: umkm.namaPemilik,
           namaUsaha: umkm.namaUsaha,
           nomorWa: umkm.nomorWa,
-          role: 'umkm'
+          role: 'umkm',
+          isVerified: Boolean(umkm.isVerified),
+          verificationStatus: umkm.isVerified ? 'VERIFIED' : 'PENDING'
         }
       })
     }
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (sekolah) {
+      const isSekolahVerified = sekolah.verificationStatus === 'VERIFIED'
       return NextResponse.json({
         exists: true,
         user: {
@@ -68,7 +71,9 @@ export async function POST(request: NextRequest) {
           nama: sekolah.namaPenanggungJawab,
           namaSekolah: sekolah.namaSekolah,
           npsn: sekolah.npsn,
-          role: 'sekolah'
+          role: 'sekolah',
+          isVerified: isSekolahVerified,
+          verificationStatus: (sekolah.verificationStatus as any) || 'PENDING_REVIEW'
         }
       })
     }

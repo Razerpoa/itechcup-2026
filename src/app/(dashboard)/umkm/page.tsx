@@ -118,13 +118,15 @@ export default function UmkmDashboard() {
       )
     : []
 
+  const isVerified = user?.isVerified === true
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{namaUsaha}</h1>
-            {user?.isVerified === false ? (
+            {!isVerified ? (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
                 Menunggu Verifikasi
               </span>
@@ -145,7 +147,7 @@ export default function UmkmDashboard() {
             <ShieldCheck className="w-4 h-4 text-[#FF9B71]" />
             <span>2FA Keamanan</span>
           </button>
-          {user?.isVerified === false ? (
+          {!isVerified ? (
             <button
               type="button"
               disabled
@@ -163,7 +165,7 @@ export default function UmkmDashboard() {
               <span>Top Up Saldo</span>
             </Link>
           )}
-          {user?.isVerified === false ? (
+          {!isVerified ? (
             <button
               type="button"
               disabled
@@ -184,7 +186,7 @@ export default function UmkmDashboard() {
         </div>
       </div>
 
-      {user?.isVerified === false && (
+      {!isVerified && (
         <div className="border border-amber-200 bg-amber-50 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <ShieldAlert className="text-amber-600 w-5 h-5 mt-0.5 shrink-0" />
