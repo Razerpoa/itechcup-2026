@@ -51,16 +51,17 @@ export default function ProfilPage() {
     foto?: string
     cover?: string
     nomorWa?: string
+    skills?: string[]
   }>({})
 
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
-  const nama = customProfile.nama || user?.nama || 'Raffa Maulana'
-  const sekolah = user?.sekolah || 'SMK Negeri 2 Tasikmalaya - Rekayasa Perangkat Lunak (PPLG)'
-  const lokasi = customProfile.lokasi || 'Kota Tasikmalaya'
+  const nama = customProfile.nama || user?.nama || 'Profil Talenta Pelajar'
+  const sekolah = user?.sekolah || 'SMK / SMA Terdaftar'
+  const lokasi = customProfile.lokasi || 'Indonesia'
   const foto = customProfile.foto || user?.fotoProfil || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(nama))
-  const cover = customProfile.cover || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2070&auto=format&fit=crop'
+  const cover = customProfile.cover || ''
   const nomorWa = customProfile.nomorWa || user?.nomorWa || ''
   
   const completedAkad = akadState.akadList.filter((a) => a.step === 4)
@@ -69,8 +70,8 @@ export default function ProfilPage() {
     ? (completedAkad.reduce((acc, a) => acc + (a.rating || 5), 0) / proyekSelesai).toFixed(1)
     : '0.0'
   const tepatWaktu = proyekSelesai > 0 ? (user?.onTimeRate ?? 100) : 0
-  const skills = user?.skills && user.skills.length > 0 ? user.skills : ['React', 'Tailwind CSS', 'UI/UX', 'Logo Design', 'Next.js']
-  const bio = customProfile.bio || 'Pelajar SMK yang bersemangat dalam dunia web development dan desain antarmuka. Siap membantu UMKM go digital dengan karya berkualitas tanpa ribet!'
+  const skills = user?.skills && user.skills.length > 0 ? user.skills : (customProfile.skills || ['Web Dev', 'UI/UX'])
+  const bio = customProfile.bio || 'Pelajar berbakat yang siap berkarya dan membantu UMKM Indonesia go digital!'
 
   const [editForm, setEditForm] = useState({
     nama: nama,
@@ -200,9 +201,17 @@ export default function ProfilPage() {
 
       <main className="max-w-5xl mx-auto px-4 md:px-8 pt-6">
         <div className="relative rounded-3xl overflow-hidden shadow-xs border border-gray-100 bg-white">
-          <div className="h-44 sm:h-64 w-full relative bg-gray-100 group">
-            <Image src={cover} alt="Cover" fill className="object-cover" priority unoptimized />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+          <div className="h-44 sm:h-64 w-full relative bg-gradient-to-r from-[#FFD9CA] via-[#FFEADB] to-[#FFF1EB] group">
+            {cover ? (
+              <>
+                <Image src={cover} alt="Cover" fill className="object-cover" priority unoptimized />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF9B71]/20 via-[#FFF1EB] to-[#FFF7F3] flex items-center justify-center opacity-60">
+                <div className="w-full h-full bg-[radial-gradient(#FF9B71_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+              </div>
+            )}
             <button
               onClick={() => {
                 setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
@@ -299,7 +308,7 @@ export default function ProfilPage() {
               <div>
                 <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wider mb-3">Keahlian</h3>
                 <div className="flex flex-wrap gap-2">
-                  {skills.map((skill) => (
+                  {skills.map((skill: string) => (
                     <span key={skill} className="px-3.5 py-1.5 rounded-full bg-[#FFF1EB] text-[#964825] font-bold text-xs border border-[#FFD9CA]">
                       {skill}
                     </span>

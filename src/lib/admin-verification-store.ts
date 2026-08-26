@@ -125,17 +125,18 @@ export async function syncAdminUsersFromDB(): Promise<void> {
       ? resPelajar.data.map((p: any) => {
           const matchedUser = localRegistry.find((u: any) => u.email === p.email || u.id === p.id)
           const actualWa = matchedUser?.nomorWa || p.profil?.kontakWa || p.nomorWa || p.noHp || ''
+          const docPhoto = p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || undefined
           return {
             id: p.id,
             namaLengkap: p.namaLengkap,
             email: p.email,
             asalSekolah: p.sekolah?.namaSekolah || p.kelas || 'SMKN / SMAN Indonesia',
-            nis: p.nis || p.nisn || '3201948271',
+            nis: p.nis || p.nisn || '',
             kelas: p.kelas || 'Siswa Terdaftar',
-            tempatLahir: p.tempatLahir || 'Tasikmalaya',
+            tempatLahir: p.tempatLahir || '',
             tanggalLahir: p.tanggalLahir,
-            namaIbu: p.namaIbu || 'Ibu Kandung',
-            fotoKartuPelajar: p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=600&auto=format&fit=crop',
+            namaIbu: p.namaIbu || '',
+            fotoKartuPelajar: docPhoto,
             nomorWa: actualWa,
             verificationStatus: (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING',
             createdAt: p.createdAt || new Date().toISOString()
@@ -151,8 +152,8 @@ export async function syncAdminUsersFromDB(): Promise<void> {
           emailResmi: s.emailResmi,
           namaPenanggungJawab: s.namaPenanggungJawab,
           jabatanAdmin: s.jabatanAdmin || 'Kepala Sekolah / Waka Hubin',
-          alamatLengkap: s.alamatLengkap || 'Jl. Pendidikan No. 45, Indonesia',
-          kontakSekolah: s.kontakSekolah || '0265-334125',
+          alamatLengkap: s.alamatLengkap || '',
+          kontakSekolah: s.kontakSekolah || '',
           verificationStatus: (s.verificationStatus as any) || 'PENDING_REVIEW',
           officialNama: s.officialNama || s.namaSekolah,
           akreditasi: s.akreditasi || 'A',
@@ -161,20 +162,24 @@ export async function syncAdminUsersFromDB(): Promise<void> {
       : []
 
     const umkmFromDB: AdminUMKMItem[] = Array.isArray(resUmkm.data)
-      ? resUmkm.data.map((u: any) => ({
-          id: u.id,
-          namaUsaha: u.namaUsaha,
-          namaPemilik: u.namaPemilik,
-          email: u.email,
-          nomorWa: u.nomorWa,
-          kategori: u.kategori || 'Kuliner & F&B',
-          ukuranBisnis: u.ukuranBisnis || 'Kecil',
-          alamat: u.alamat || 'Jl. Perdagangan UMKM No. 12',
-          isVerified: Boolean(u.isVerified),
-          verifikasiType: u.verifikasiType || 'NIB Legalitas',
-          buktiLegalitas: u.buktiLegalitas || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=600&auto=format&fit=crop',
-          createdAt: u.createdAt || new Date().toISOString()
-        }))
+      ? resUmkm.data.map((u: any) => {
+          const matchedUser = localRegistry.find((m: any) => m.email === u.email || m.id === u.id)
+          const legalDoc = u.buktiLegalitas || matchedUser?.buktiLegalitas || undefined
+          return {
+            id: u.id,
+            namaUsaha: u.namaUsaha,
+            namaPemilik: u.namaPemilik,
+            email: u.email,
+            nomorWa: u.nomorWa,
+            kategori: u.kategori || 'Kuliner & F&B',
+            ukuranBisnis: u.ukuranBisnis || 'Kecil',
+            alamat: u.alamat || '',
+            isVerified: Boolean(u.isVerified),
+            verifikasiType: u.verifikasiType || (legalDoc ? 'Dokumen Legalitas / NIB' : 'Verifikasi Manual Admin'),
+            buktiLegalitas: legalDoc,
+            createdAt: u.createdAt || new Date().toISOString()
+          }
+        })
       : []
 
     saveVerificationState({
