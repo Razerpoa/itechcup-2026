@@ -66,7 +66,7 @@ export default function AiAssistant() {
     return 'Pertanyaan yang bagus! Untuk panduan lengkap silakan akses menu Panduan, atau hubungi tim Customer Support kami melalui tab "Hubungi CS" di atas.'
   }
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || input
     if (!query.trim() || isLoading) return
     const userMsg = { id: Date.now().toString(), role: 'user', text: query.trim() }
@@ -74,15 +74,43 @@ export default function AiAssistant() {
     if (!textToSend) setInput('')
     setIsLoading(true)
 
-    setTimeout(() => {
-      const aiResponse = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        text: getAIResponse(userMsg.text, user?.role)
-      }
-      setMessages((prev) => [...prev, aiResponse])
+    try {
+      const res = await fetch('/api/ai/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg.text,
+          history: messages,
+          userRole: user?.role || 'pengunjung',
+          userNama: user?.nama
+        })
+      })
+
+      const data = await res.json()
+      const replyText = data.reply || getAIResponse(userMsg.text, user?.role)
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: replyText
+        }
+      ])
+    } catch {
+      // Local graceful fallback
+      const fallbackReply = getAIResponse(userMsg.text, user?.role)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: fallbackReply
+        }
+      ])
+    } finally {
       setIsLoading(false)
-    }, 600)
+    }
   }
 
   const quickPrompts = [
