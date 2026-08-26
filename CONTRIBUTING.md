@@ -53,6 +53,8 @@ src/
 │   │   ├── login/page.tsx        # Login Admin Terproteksi Rate Limiter
 │   │   └── page.tsx              # Dashboard Admin Verifikasi (Pelajar, UMKM, Sekolah, Escrow)
 │   ├── api/                      # RESTful Backend API Endpoints
+│   │   ├── ai/
+│   │   │   └── assistant/route.ts # Google Gemini AI Chat Assistant Endpoint (1.5-Flash & 2.0-Flash)
 │   │   ├── auth/                 # login, admin-login, google-check, reset-password (POST & PUT)
 │   │   ├── pelajar/              # CRUD Pelajar & Sanitized Select
 │   │   ├── umkm/                 # CRUD UMKM & Verifikasi Legalitas
@@ -69,7 +71,7 @@ src/
 │   ├── ui/                       # Atom Components: button, input, card, badge, modal, strength meter
 │   ├── layout/                   # Navbar, Sidebar, Footer
 │   ├── marketplace/              # ProyekCard, JasaCard
-│   ├── ai-assistant.tsx          # Widget Terpadu AI Chatbot & Customer Service WhatsApp
+│   ├── ai-assistant.tsx          # Widget Terpadu AI Chatbot (Google Gemini) & CS WhatsApp
 │   └── two-factor-modal.tsx      # Modal 2FA Security
 ├── lib/
 │   ├── prisma.ts                 # Prisma ORM v7 Client Singleton
@@ -82,11 +84,22 @@ src/
 │   ├── validate-npsn.ts          # Validator Format 8-Digit NPSN
 │   ├── normalize-school-name.ts  # Normalisasi Nama & Singkatan Sekolah
 │   ├── compare-school-names.ts   # Algoritma Pencocokan Nama Sekolah (EXACT / MINOR / CRITICAL)
-│   ├── admin-verification-store.ts # State & Sync Store Verifikasi Admin
+│   ├── admin-verification-store.ts # State & Sync Store Verifikasi Admin (Pure Authentic Documents)
 │   └── escrow-store.ts           # State & Sync Store Transaksi Escrow
 └── types/
     └── index.ts                  # TypeScript Shared Type Definitions
 ```
+
+---
+
+## 🤖 Integrasi AI Assistant (Google Gemini API)
+
+Asisten virtual Mitra Muda ditenagai oleh model **Google Gemini Flash** (`gemini-1.5-flash` / `gemini-2.0-flash`) via `GEMINI_API_KEY`:
+
+- **Endpoint API:** `POST /api/ai/assistant`
+- **Knowledge Base:** Terkonfigurasi dengan panduan resmi Mitra Muda (sistem escrow, penarikan saldo e-wallet tanpa KTP/bank, verifikasi NPSN Kemendikdasmen, alur pendaftaran, dan kontak CS).
+- **Multi-Role Context:** Memahami peran pengguna aktif (Pelajar, UMKM, atau Sekolah) untuk memberikan jawaban yang tepat sasaran.
+- **Smart Fallback:** Dilengkapi penanganan luring otomatis jika koneksi atau kuota API terganggu.
 
 ---
 
@@ -117,11 +130,14 @@ Seluruh kontributor **wajib** mematuhi standar keamanan data berikut:
    - Gunakan klausa `select` spesifik atau destrukturisasi hapus password (`const { password: _, ...data } = raw`) sebelum mereturn JSON ke client.
 2. **Enkripsi Password:**
    - Semua pembuatan akun baru dan ganti password wajib di-hash menggunakan `bcryptjs` dengan *salt rounds* minimal 10.
-3. **Rate Limiting & Anti Brute-Force:**
+3. **Integritas Dokumen Asli (Zero Random Mock Images):**
+   - Kartu Pelajar (`fotoKartuPelajar`), Bukti Legalitas UMKM (`buktiLegalitas`), dan Bukti Transfer **hanya boleh** menampilkan data dokumen asli yang diunggah oleh pendaftar (Base64 / URL aman).
+   - Dilarang keras menggunakan URL foto acak/stok internet (seperti Unsplash) sebagai fallback dokumen legalitas. Jika belum ada dokumen, tampilkan status kosong secara jujur.
+4. **Rate Limiting & Anti Brute-Force:**
    - Endpoint login sensitif (terutama Admin `/api/auth/admin-login`) dilindungi rate limiter 5 percobaan / 10 menit berbasis IP.
-4. **Validasi Input Sanitasi:**
+5. **Validasi Input Sanitasi:**
    - Validasi ketat format email, nomor WhatsApp, NIS numerik, dan 8-digit NPSN di level API sebelum masuk ke query database.
-5. **Kebijakan Data Produksi:**
+6. **Kebijakan Data Produksi:**
    - Database produksi hanya memuat data registrasi riil oleh pengguna. Data *seed / mock / dummy* tidak boleh dibiarkan bercampur di lingkungan produksi.
 
 ---
