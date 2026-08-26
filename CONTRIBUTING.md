@@ -92,14 +92,21 @@ src/
 
 ---
 
-## 🤖 Integrasi AI Assistant (Google Gemini API)
+## 🤖 Integrasi AI Assistant (Google Gemini Multi-Tier Waterfall)
 
-Asisten virtual Mitra Muda ditenagai oleh model **Google Gemini Flash** (`gemini-1.5-flash` / `gemini-2.0-flash`) via `GEMINI_API_KEY`:
+Asisten virtual Mitra Muda ditenagai oleh model **Google Gemini Flash** dengan arsitektur berjenjang (*waterfall*) dari tier paling hemat token ke tier tertinggi via `GEMINI_API_KEY`:
 
-- **Endpoint API:** `POST /api/ai/assistant`
-- **Knowledge Base:** Terkonfigurasi dengan panduan resmi Mitra Muda (sistem escrow, penarikan saldo e-wallet tanpa KTP/bank, verifikasi NPSN Kemendikdasmen, alur pendaftaran, dan kontak CS).
-- **Multi-Role Context:** Memahami peran pengguna aktif (Pelajar, UMKM, atau Sekolah) untuk memberikan jawaban yang tepat sasaran.
-- **Smart Fallback:** Dilengkapi penanganan luring otomatis jika koneksi atau kuota API terganggu.
+1. **Hirarki Model (Dari Paling Bawah/Hemat Token):**
+   - 🟢 `gemini-3.1-flash-lite`: Tier awal, paling ringan dan hemat kuota token.
+   - 🟡 `gemini-3.5-flash`: Tier kedua, dipanggil otomatis jika model lite mencapai batas rate limit.
+   - 🟠 `gemini-3.6-flash`: Tier ketiga, dipanggil jika model sebelumnya penuh/habis.
+   - 🔴 `gemini-3.7-flash`: Tier teratas, benteng terakhir sebelum kuota habis.
+   - ❌ **Penanganan Kuota Penuh:** Jika seluruh model mencapai batas penggunaan, sistem mengembalikan status HTTP 429 dengan notifikasi resmi dan tombol alihkan ke CS WhatsApp (bukan jawaban palsu/statis).
+2. **Mesin Pemformat Markdown Chat (`FormattedMessage`):**
+   - Jawaban AI dirender rapi dengan pill badge penomoran bernuansa `#FFF1EB`, bullet points `#FF9B71`, dan pemisah antar bagian yang bersih.
+   - Menghilangkan simbol markdown mentah yang menumpuk (seperti `--- ### 💡`).
+3. **Konteks Multi-Peran:**
+   - Memahami peran aktif pengguna (Pelajar, UMKM, atau Sekolah) untuk memberikan saran yang relevan dan kontekstual.
 
 ---
 
@@ -121,24 +128,37 @@ Platform menggunakan integrasi domain resmi **`mitramuda.raffzdigital.biz.id`** 
 
 ---
 
-## 🔒 Standar Keamanan Data (Security Guidelines)
+## 🔒 Standar Keamanan Data & Server (Security SSS-Tier)
 
-Seluruh kontributor **wajib** mematuhi standar keamanan data berikut:
+Seluruh kontributor **wajib** mematuhi benteng keamanan tingkat SSS berikut:
 
-1. **Pencegahan Kebocoran Password (Zero Password Exposure):**
+1. **Perlindungan Kunci API AI (Zero Credential Exposure):**
+   - Kunci `GEMINI_API_KEY` disimpan murni di server environment (`process.env`), dilarang keras dipaparkan ke client-side JavaScript.
+   - **Output Redactor Engine:** Respon AI disaring secara otomatis via regex untuk menyensor string menyerupai API key (`AIzaSy...`), JWT (`eyJ...`), atau secret keys menjadi `[KREDENSIAL DILINDUNGI]`.
+2. **Anti-Jailbreak & Prompt Injection Shield:**
+   - Endpoint AI memvalidasi dan memblokir upaya eksploitasi seperti *"system prompt"*, *"ignore instructions"*, *"dump variables"*, atau *"developer mode"*.
+   - Pesan input dibatasi maksimal 500 karakter dengan pembersihan karakter kontrol liar.
+3. **Pencegahan Kebocoran Password (Zero Password Exposure):**
    - Field `password` / password hash **tidak boleh** disertakan dalam response API manapun (`GET`, `POST`, `PUT`, `PATCH`).
    - Gunakan klausa `select` spesifik atau destrukturisasi hapus password (`const { password: _, ...data } = raw`) sebelum mereturn JSON ke client.
-2. **Enkripsi Password:**
+4. **Enkripsi Password:**
    - Semua pembuatan akun baru dan ganti password wajib di-hash menggunakan `bcryptjs` dengan *salt rounds* minimal 10.
-3. **Integritas Dokumen Asli (Zero Random Mock Images):**
+5. **Integritas Dokumen Asli (Zero Random Mock Images):**
    - Kartu Pelajar (`fotoKartuPelajar`), Bukti Legalitas UMKM (`buktiLegalitas`), dan Bukti Transfer **hanya boleh** menampilkan data dokumen asli yang diunggah oleh pendaftar (Base64 / URL aman).
    - Dilarang keras menggunakan URL foto acak/stok internet (seperti Unsplash) sebagai fallback dokumen legalitas. Jika belum ada dokumen, tampilkan status kosong secara jujur.
-4. **Rate Limiting & Anti Brute-Force:**
-   - Endpoint login sensitif (terutama Admin `/api/auth/admin-login`) dilindungi rate limiter 5 percobaan / 10 menit berbasis IP.
-5. **Validasi Input Sanitasi:**
-   - Validasi ketat format email, nomor WhatsApp, NIS numerik, dan 8-digit NPSN di level API sebelum masuk ke query database.
-6. **Kebijakan Data Produksi:**
-   - Database produksi hanya memuat data registrasi riil oleh pengguna. Data *seed / mock / dummy* tidak boleh dibiarkan bercampur di lingkungan produksi.
+6. **Enterprise HTTP Security Headers (`next.config.ts`):**
+   - `X-Frame-Options: SAMEORIGIN`: Menangkal serangan Clickjacking.
+   - `X-Content-Type-Options: nosniff`: Mencegah MIME sniffing exploit.
+   - `Strict-Transport-Security`: Memaksa HTTPS mutlak 2 tahun (`max-age=63072000; includeSubDomains; preload`).
+   - `Referrer-Policy: strict-origin-when-cross-origin`: Menjaga privasi referrer token.
+   - `Permissions-Policy`: Menonaktifkan akses kamera, mikrofon, dan sensor tanpa izin.
+   - `Cache-Control: no-store, max-age=0` pada seluruh endpoint `/api/*`.
+   - `poweredByHeader: false`: Menghilangkan header informasi framework.
+7. **Rate Limiting Berlapis:**
+   - Endpoint login sensitif: 5 percobaan / 10 menit.
+   - Endpoint asisten AI (`aiRateLimiter`): 12 query / menit per IP.
+8. **Standar Kode Bersih (Clean Code):**
+   - File fungsional produksi harus bebas dari komentar kode baris yang tidak esensial demi kerapian dan efisiensi bundle.
 
 ---
 
