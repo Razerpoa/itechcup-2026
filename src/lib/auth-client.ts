@@ -11,8 +11,10 @@ export interface UserSession {
   nisn?: string
   registrationId?: string
   namaUsaha?: string
+  namaPemilik?: string
   nomorWa?: string
   namaSekolah?: string
+  namaPenanggungJawab?: string
   npsn?: string
   skills?: string[]
   fotoProfil?: string

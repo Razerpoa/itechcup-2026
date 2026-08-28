@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, Check, Wallet, Users, MessageSquare, CheckCircle2, FileText, Sparkles, XCircle, ArrowRight, Send, X, Trash2, ShieldAlert, ShieldCheck } from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatRelativeTime, formatDate } from '@/lib/utils'
-import { useAuthUser, useRealtimeVerificationSync } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
 import { useProjects, syncProjectsWithDB, removeProject } from '@/lib/projects-store'
 import { useEscrowStore } from '@/lib/escrow-store'
 import { useAkadStore, acceptLamaranAndCreateAkad, rejectLamaran, syncAkadWithDB, sendAkadChat, LamaranItem } from '@/lib/akad-store'
@@ -22,6 +22,35 @@ export default function UmkmDashboard() {
   const [chatLamaran, setChatLamaran] = useState<LamaranItem | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
+
+  useEffect(() => {
+    async function fetchUmkmProfile() {
+      if (!user) return
+      if (user.namaUsaha && user.nama) return
+
+      try {
+        const res = await fetch('/api/umkm')
+        const json = await res.json()
+        if (json.data && Array.isArray(json.data)) {
+          const match = json.data.find(
+            (u: any) => (user.id && u.id === user.id) || (user.email && u.email.toLowerCase() === user.email.toLowerCase())
+          )
+          if (match) {
+            setCurrentUser({
+              ...user,
+              namaUsaha: match.namaUsaha || user.namaUsaha,
+              nama: match.namaPemilik || user.nama,
+              nomorWa: match.nomorWa || user.nomorWa,
+              isVerified: Boolean(match.isVerified)
+            })
+          }
+        }
+      } catch {
+      }
+    }
+
+    fetchUmkmProfile()
+  }, [user?.id, user?.email, user?.namaUsaha, user?.nama])
 
   useEffect(() => {
     syncProjectsWithDB()
@@ -125,19 +154,28 @@ export default function UmkmDashboard() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{namaUsaha}</h1>
-            {!isVerified ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
-                Menunggu Verifikasi
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-1">
+            {isVerified ? (
+              <span className="flex items-center gap-1.5 text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                <ShieldCheck className="w-4 h-4 text-teal-600" />
+                <span>Mitra Usaha UMKM Terverifikasi</span>
               </span>
             ) : (
-              <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold" title="Terverifikasi Resmi">
-                <Check className="w-3 h-3" />
+              <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                <ShieldAlert className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span>Menunggu Verifikasi Dokumen Usaha</span>
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">Kelola proyek, pantau pelamar, dan bertransaksi aman dengan sistem DP escrow</p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Selamat Datang, {user?.nama || user?.namaPemilik || namaUsaha}!
+          </h2>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className="text-xs font-bold text-[#964825] bg-[#FFF1EB] border border-[#FFD9CA] px-2.5 py-0.5 rounded-full">
+              {namaUsaha}
+            </span>
+            <span className="text-xs sm:text-sm text-gray-500">• Kelola proyek, pantau pelamar siswa, dan transaksi aman via Escrow</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

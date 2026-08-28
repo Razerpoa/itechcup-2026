@@ -10,7 +10,50 @@ import { ipRateLimiter, npsnRateLimiter } from '@/lib/rate-limiter'
 
 export async function GET(request: NextRequest) {
   try {
+    const id = request.nextUrl.searchParams.get('id')
+    const email = request.nextUrl.searchParams.get('email')
     const search = request.nextUrl.searchParams.get('search')
+
+    if (id) {
+      const sekolah = await prisma.sekolah.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          namaSekolah: true,
+          npsn: true,
+          emailResmi: true,
+          namaPenanggungJawab: true,
+          alamatLengkap: true,
+          kontakSekolah: true,
+          verificationStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: { select: { daftarSiswa: true } },
+        },
+      })
+      return NextResponse.json({ data: sekolah ? [sekolah] : [] })
+    }
+
+    if (email) {
+      const cleanEmail = email.trim().toLowerCase()
+      const sekolah = await prisma.sekolah.findFirst({
+        where: { emailResmi: cleanEmail },
+        select: {
+          id: true,
+          namaSekolah: true,
+          npsn: true,
+          emailResmi: true,
+          namaPenanggungJawab: true,
+          alamatLengkap: true,
+          kontakSekolah: true,
+          verificationStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: { select: { daftarSiswa: true } },
+        },
+      })
+      return NextResponse.json({ data: sekolah ? [sekolah] : [] })
+    }
 
     const where = search
       ? {
@@ -172,8 +215,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       data: {
         id: sekolah.id,
-        is_verified: true,
+        email: sekolah.emailResmi,
+        emailResmi: sekolah.emailResmi,
+        nama: sekolah.namaPenanggungJawab,
+        namaPenanggungJawab: sekolah.namaPenanggungJawab,
+        namaSekolah: official.nama,
         nama_sekolah: official.nama,
+        npsn: sekolah.npsn,
+        role: 'sekolah',
+        isVerified: verificationStatus === 'VERIFIED',
+        is_verified: verificationStatus === 'VERIFIED',
+        verificationStatus,
         status: verificationStatus,
       },
     }, { status: 201 })

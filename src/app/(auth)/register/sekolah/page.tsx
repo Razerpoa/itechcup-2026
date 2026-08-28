@@ -83,12 +83,13 @@ export default function RegisterSekolahPage() {
       if (data.data) {
         setCurrentUser({
           id: data.data.id,
-          nama: data.data.namaPenanggungJawab,
-          namaSekolah: data.data.namaSekolah,
-          email: data.data.emailResmi,
+          nama: data.data.nama || data.data.namaPenanggungJawab || formData.namaPenanggungJawab,
+          namaSekolah: data.data.namaSekolah || data.data.nama_sekolah || formData.namaSekolah,
+          email: data.data.email || data.data.emailResmi || formData.emailResmi,
+          npsn: data.data.npsn || formData.npsn,
           role: 'sekolah',
-          isVerified: false,
-          verificationStatus: 'PENDING'
+          isVerified: Boolean(data.data.isVerified || data.data.is_verified),
+          verificationStatus: data.data.verificationStatus || 'PENDING'
         })
       }
 

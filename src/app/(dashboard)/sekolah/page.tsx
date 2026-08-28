@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Users, UserCheck, Clock, Check, X, ShieldAlert, Building2, Loader2, Search, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react'
-import { useAuthUser, useRealtimeVerificationSync, broadcastVerificationChange } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync, broadcastVerificationChange, setCurrentUser } from '@/lib/auth-client'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatDate } from '@/lib/utils'
 
@@ -25,10 +25,56 @@ export default function SekolahDashboard() {
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
   const [quickRegId, setQuickRegId] = useState('')
   const [quickStatus, setQuickStatus] = useState<string | null>(null)
+  const [dbSchool, setDbSchool] = useState<{
+    namaSekolah: string
+    namaPenanggungJawab?: string
+    npsn?: string
+  } | null>(null)
 
-  const namaSekolah = user?.namaSekolah || user?.nama || 'Sekolah Terdaftar Mitra Muda'
   const sekolahId = user?.id
   const isDemoSekolah = user?.id === 'sekolah-active' || user?.email === 'sekolah@mitramuda.id'
+
+  useEffect(() => {
+    async function fetchSchoolProfile() {
+      if (!user) return
+      try {
+        let fetchedData = null
+        if (user.id && user.id !== 'sekolah-active') {
+          const res = await fetch(`/api/sekolah?id=${encodeURIComponent(user.id)}`)
+          const json = await res.json()
+          if (json.data && json.data.length > 0) {
+            fetchedData = json.data[0]
+          }
+        }
+        if (!fetchedData && user.email && user.email !== 'sekolah@mitramuda.id') {
+          const res = await fetch(`/api/sekolah?email=${encodeURIComponent(user.email)}`)
+          const json = await res.json()
+          if (json.data && json.data.length > 0) {
+            fetchedData = json.data[0]
+          }
+        }
+
+        if (fetchedData) {
+          setDbSchool({
+            namaSekolah: fetchedData.namaSekolah,
+            namaPenanggungJawab: fetchedData.namaPenanggungJawab,
+            npsn: fetchedData.npsn
+          })
+          if (!user.namaSekolah || user.namaSekolah !== fetchedData.namaSekolah) {
+            setCurrentUser({
+              ...user,
+              namaSekolah: fetchedData.namaSekolah,
+              nama: fetchedData.namaPenanggungJawab || user.nama,
+              npsn: fetchedData.npsn || user.npsn
+            })
+          }
+        }
+      } catch {
+      }
+    }
+
+    fetchSchoolProfile()
+  }, [user?.id, user?.email])
 
   useEffect(() => {
     async function loadStudents() {
@@ -56,6 +102,15 @@ export default function SekolahDashboard() {
           }))
           
           setStudents(mapped)
+
+          const firstMatchingSchool = json.data.find((item: any) => item.sekolah?.namaSekolah)?.sekolah?.namaSekolah
+            || json.data.find((item: any) => item.kelas && item.kelas.toLowerCase().includes('sm'))?.kelas
+          if (firstMatchingSchool) {
+            setDbSchool((prev) => prev ? { ...prev, namaSekolah: prev.namaSekolah || firstMatchingSchool } : { namaSekolah: firstMatchingSchool })
+            if (user && !user.namaSekolah) {
+              setCurrentUser({ ...user, namaSekolah: firstMatchingSchool })
+            }
+          }
         }
       } catch {
         setStudents([])
@@ -66,6 +121,19 @@ export default function SekolahDashboard() {
 
     loadStudents()
   }, [sekolahId, isDemoSekolah])
+
+  const namaSekolah = 
+    dbSchool?.namaSekolah || 
+    user?.namaSekolah || 
+    (students.length > 0 && students[0].kelas && students[0].kelas.toLowerCase().includes('sm') ? students[0].kelas : null) ||
+    (isDemoSekolah ? 'SMK Negeri 2 Tasikmalaya' : null) || 
+    user?.nama || 
+    'SMK Negeri 2 Tasikmalaya'
+
+  const namaAdmin = 
+    dbSchool?.namaPenanggungJawab || 
+    user?.nama || 
+    (user?.email ? user.email.split('@')[0] : 'Pihak Sekolah')
 
   const handleAction = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
     const targetStudent = students.find((s) => s.id === id)
@@ -122,6 +190,23 @@ export default function SekolahDashboard() {
 
   return (
     <div className="space-y-8 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-1">
+            <span className="flex items-center gap-1.5 text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+              <ShieldCheck className="w-4 h-4 text-teal-600" />
+              <span>Portal Resmi Institusi Pendidikan</span>
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Selamat Datang, {namaAdmin}!
+          </h2>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
+            Portal verifikasi siswa dan monitoring portofolio industri talenta {namaSekolah}.
+          </p>
+        </div>
+      </div>
+
       <section className="bg-gradient-to-br from-[#FF9B71] to-[#ffb598] rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-lg border border-white/20">
         <div className="absolute right-0 top-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="relative z-10 flex flex-col gap-6">
@@ -137,6 +222,11 @@ export default function SekolahDashboard() {
                 <span>Terverifikasi Kemendikdasmen RI</span>
               </span>
             </div>
+            {(dbSchool?.npsn || user?.npsn) && (
+              <p className="text-xs text-white/90 font-mono font-bold mt-1.5">
+                NPSN: {dbSchool?.npsn || user?.npsn}
+              </p>
+            )}
           </div>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2 bg-white/30 px-5 py-3 rounded-2xl backdrop-blur-md shadow-xs">

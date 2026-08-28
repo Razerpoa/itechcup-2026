@@ -19,7 +19,7 @@ import {
   Share2
 } from 'lucide-react'
 import { formatRupiah, formatDate } from '@/lib/utils'
-import { useAuthUser, useRealtimeVerificationSync } from '@/lib/auth-client'
+import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
 import { useEscrowStore } from '@/lib/escrow-store'
 import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
 import { useJasaStore } from '@/lib/jasa-store'
@@ -31,6 +31,37 @@ export default function PelajarDashboard() {
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
   const jasaList = useJasaStore()
+
+  useEffect(() => {
+    async function fetchPelajarProfile() {
+      if (!user) return
+      if (user.sekolah && user.nama) return
+
+      try {
+        const res = await fetch('/api/pelajar')
+        const json = await res.json()
+        if (json.data && Array.isArray(json.data)) {
+          const match = json.data.find(
+            (p: any) => (user.id && p.id === user.id) || (user.email && p.email.toLowerCase() === user.email.toLowerCase())
+          )
+          if (match) {
+            setCurrentUser({
+              ...user,
+              nama: match.namaLengkap || user.nama,
+              sekolah: match.sekolah?.namaSekolah || match.kelas || user.sekolah,
+              nisn: match.nis || user.nisn,
+              registrationId: match.nis || user.registrationId,
+              isVerified: match.verificationStatus === 'VERIFIED',
+              verificationStatus: match.verificationStatus || user.verificationStatus
+            })
+          }
+        }
+      } catch {
+      }
+    }
+
+    fetchPelajarProfile()
+  }, [user?.id, user?.email, user?.sekolah, user?.nama])
 
   const isDemoPelajar = user?.id === 'pelajar-active' || user?.email === 'pelajar.google@gmail.com'
   const pelajarId = user?.id || 'pelajar-default'

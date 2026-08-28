@@ -161,8 +161,20 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
     setReadIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
   }
 
-  const displayName = user?.nama || user?.namaUsaha || user?.namaSekolah || 'Akun Saya'
-  const subtext = role === 'umkm' ? (user?.namaUsaha || 'Pemilik Usaha UMKM') : role === 'sekolah' ? (user?.namaSekolah || 'Pengelola Sekolah') : (user?.sekolah || 'Pelajar Terdaftar')
+  const displayName = 
+    (role === 'sekolah' ? (user?.namaSekolah || user?.nama) : null) ||
+    (role === 'umkm' ? (user?.namaUsaha || user?.nama) : null) ||
+    user?.nama ||
+    user?.namaSekolah ||
+    user?.namaUsaha ||
+    (user?.email ? user.email.split('@')[0] : null) ||
+    'Akun Terdaftar'
+
+  const subtext = role === 'umkm' 
+    ? (user?.namaUsaha || user?.nama || 'Pemilik Usaha UMKM') 
+    : role === 'sekolah' 
+    ? (user?.namaSekolah || user?.nama || 'Pengelola Sekolah') 
+    : (user?.sekolah || user?.nama || 'Pelajar Terdaftar')
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-[#EAEAEA] flex items-center justify-between px-4 md:px-6 shadow-2xs">
