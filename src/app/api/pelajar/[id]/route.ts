@@ -18,10 +18,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Pelajar tidak ditemukan' }, { status: 404 })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...data } = raw
+    const safeData = { ...raw }
+    delete (safeData as Record<string, unknown>).password
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: safeData })
   } catch {
     return NextResponse.json({ error: 'Gagal mengambil data pelajar' }, { status: 500 })
   }
@@ -39,6 +39,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (body.verificationStatus !== undefined) {
       updateData.verificationStatus = body.verificationStatus
+      if (body.verificationStatus === 'VERIFIED' && body.catatanPenolakan === undefined) {
+        updateData.catatanPenolakan = null
+      }
     }
     if (body.catatanPenolakan !== undefined) {
       updateData.catatanPenolakan = body.catatanPenolakan
@@ -73,11 +76,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       include: { profil: true }
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...updated } = rawUpdated
+    const safeUpdated = { ...rawUpdated }
+    delete (safeUpdated as Record<string, unknown>).password
 
-    return NextResponse.json({ data: updated })
-  } catch {
-    return NextResponse.json({ error: 'Gagal memperbarui status pelajar' }, { status: 500 })
+    return NextResponse.json({ data: safeUpdated })
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Gagal memperbarui status pelajar', details: error?.message }, { status: 500 })
   }
+}
+
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  return PATCH(request, context)
 }

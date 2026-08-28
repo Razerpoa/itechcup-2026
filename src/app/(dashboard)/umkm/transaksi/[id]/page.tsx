@@ -301,17 +301,7 @@ export default function UMKMTransaksiRoomPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
           <button
             onClick={() => {
-              const rev = prompt(`Masukkan catatan revisi untuk ${activeAkad.namaPelajar}:`)
-              if (rev && user) {
-                sendAkadChat({
-                  proyekId: activeAkad.proyekId,
-                  senderId: user.id,
-                  senderName: user.namaUsaha || user.nama || 'Pemilik Usaha',
-                  senderRole: 'umkm',
-                  recipientId: activeAkad.pelajarId,
-                  text: `[Permintaan Revisi]: ${rev}`
-                })
-              }
+              setInputMsg('[Permintaan Revisi]: ')
             }}
             className="w-full sm:w-1/2 py-3 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >

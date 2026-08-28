@@ -50,7 +50,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { password: _, ...updated } = rawUpdated
 
     return NextResponse.json({ data: updated })
-  } catch {
-    return NextResponse.json({ error: 'Gagal memperbarui status UMKM' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Gagal memperbarui status UMKM', details: error?.message }, { status: 500 })
   }
+}
+
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  return PATCH(request, context)
 }

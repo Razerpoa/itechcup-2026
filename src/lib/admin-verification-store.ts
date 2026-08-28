@@ -193,11 +193,11 @@ export async function syncAdminUsersFromDB(): Promise<void> {
   }
 }
 
-export function adminVerifyPelajar(id: string): boolean {
+export async function adminVerifyPelajar(id: string): Promise<boolean> {
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
   const updated = state.pelajarList.map((p) =>
-    p.id === id ? { ...p, verificationStatus: 'VERIFIED' as const } : p
+    p.id === id ? { ...p, verificationStatus: 'VERIFIED' as const, catatanPenolakan: undefined } : p
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
@@ -225,20 +225,30 @@ export function adminVerifyPelajar(id: string): boolean {
     }
   }
 
-  fetch(`/api/pelajar/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verificationStatus: 'VERIFIED' })
-  }).catch(() => {})
+  try {
+    await fetch(`/api/pelajar/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
+    })
+    await fetch(`/api/siswa/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
+    }).catch(() => {})
+  } catch (err) {
+    console.error('Error verifying pelajar in DB:', err)
+  }
 
   return true
 }
 
-export function adminRejectPelajar(id: string, reason?: string): boolean {
+export async function adminRejectPelajar(id: string, reason?: string): Promise<boolean> {
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
+  const cleanReason = reason || 'Dokumen kartu pelajar tidak sesuai persyaratan'
   const updated = state.pelajarList.map((p) =>
-    p.id === id ? { ...p, verificationStatus: 'REJECTED' as const, catatanPenolakan: reason || 'Dokumen kartu pelajar tidak sesuai' } : p
+    p.id === id ? { ...p, verificationStatus: 'REJECTED' as const, catatanPenolakan: cleanReason } : p
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
@@ -249,16 +259,42 @@ export function adminRejectPelajar(id: string, reason?: string): boolean {
     status: 'REJECTED'
   })
 
-  fetch(`/api/pelajar/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: reason })
-  }).catch(() => {})
+  if (typeof window !== 'undefined') {
+    try {
+      const allUsersRaw = localStorage.getItem('mitra_muda_all_registered_users_v1')
+      if (allUsersRaw) {
+        const allUsers = JSON.parse(allUsersRaw)
+        const updatedAll = allUsers.map((u: any) => {
+          if (u.id === id || (targetPelajar && u.email === targetPelajar.email)) {
+            return { ...u, verificationStatus: 'REJECTED', isVerified: false }
+          }
+          return u
+        })
+        localStorage.setItem('mitra_muda_all_registered_users_v1', JSON.stringify(updatedAll))
+      }
+    } catch {
+    }
+  }
+
+  try {
+    await fetch(`/api/pelajar/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: cleanReason })
+    })
+    await fetch(`/api/siswa/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: cleanReason })
+    }).catch(() => {})
+  } catch (err) {
+    console.error('Error rejecting pelajar in DB:', err)
+  }
 
   return true
 }
 
-export function adminVerifySekolah(id: string): boolean {
+export async function adminVerifySekolah(id: string): Promise<boolean> {
   const state = getVerificationState()
   const targetSekolah = state.sekolahList.find((s) => s.id === id)
   const updated = state.sekolahList.map((s) =>
@@ -273,16 +309,20 @@ export function adminVerifySekolah(id: string): boolean {
     status: 'VERIFIED'
   })
 
-  fetch(`/api/sekolah/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verificationStatus: 'VERIFIED' })
-  }).catch(() => {})
+  try {
+    await fetch(`/api/sekolah/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
+    })
+  } catch (err) {
+    console.error('Error verifying sekolah in DB:', err)
+  }
 
   return true
 }
 
-export function adminRejectSekolah(id: string): boolean {
+export async function adminRejectSekolah(id: string): Promise<boolean> {
   const state = getVerificationState()
   const targetSekolah = state.sekolahList.find((s) => s.id === id)
   const updated = state.sekolahList.map((s) =>
@@ -297,16 +337,20 @@ export function adminRejectSekolah(id: string): boolean {
     status: 'REJECTED'
   })
 
-  fetch(`/api/sekolah/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verificationStatus: 'REJECTED' })
-  }).catch(() => {})
+  try {
+    await fetch(`/api/sekolah/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationStatus: 'REJECTED' })
+    })
+  } catch (err) {
+    console.error('Error rejecting sekolah in DB:', err)
+  }
 
   return true
 }
 
-export function adminVerifyUMKM(id: string): boolean {
+export async function adminVerifyUMKM(id: string): Promise<boolean> {
   const state = getVerificationState()
   const targetUMKM = state.umkmList.find((u) => u.id === id)
   const updated = state.umkmList.map((u) =>
@@ -321,16 +365,20 @@ export function adminVerifyUMKM(id: string): boolean {
     status: 'VERIFIED'
   })
 
-  fetch(`/api/umkm/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isVerified: true })
-  }).catch(() => {})
+  try {
+    await fetch(`/api/umkm/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isVerified: true })
+    })
+  } catch (err) {
+    console.error('Error verifying UMKM in DB:', err)
+  }
 
   return true
 }
 
-export function adminRevokeUMKM(id: string): boolean {
+export async function adminRevokeUMKM(id: string): Promise<boolean> {
   const state = getVerificationState()
   const targetUMKM = state.umkmList.find((u) => u.id === id)
   const updated = state.umkmList.map((u) =>
@@ -345,11 +393,15 @@ export function adminRevokeUMKM(id: string): boolean {
     status: 'REJECTED'
   })
 
-  fetch(`/api/umkm/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isVerified: false })
-  }).catch(() => {})
+  try {
+    await fetch(`/api/umkm/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isVerified: false })
+    })
+  } catch (err) {
+    console.error('Error revoking UMKM in DB:', err)
+  }
 
   return true
 }

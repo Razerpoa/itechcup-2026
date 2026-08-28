@@ -8,7 +8,8 @@ import {
   Menu, X, Search, LogOut, ExternalLink, Activity, 
   Building2, Store, Wallet, ArrowUpRight, ArrowRight,
   ShieldAlert, AlertTriangle, CheckCircle2, 
-  GraduationCap, MessageCircle, ShieldCheck, Check, RotateCcw
+  GraduationCap, MessageCircle, ShieldCheck, Check, RotateCcw,
+  Loader2, Clock
 } from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatDate } from '@/lib/utils'
@@ -43,34 +44,181 @@ export default function MasterAdminEscrowPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
+  const [isProcessingAction, setIsProcessingAction] = useState(false)
   const [rejectRevokeModal, setRejectRevokeModal] = useState<{
     isOpen: boolean
     title: string
     subtitle: string
-    actionType: 'reject_pelajar' | 'revoke_pelajar' | 'reject_sekolah' | 'revoke_sekolah' | 'revoke_umkm'
+    actionType: 'reject_pelajar' | 'revoke_pelajar' | 'reject_sekolah' | 'revoke_sekolah' | 'revoke_umkm' | 'reject_deposit' | 'reject_withdrawal'
     targetId: string
     targetName: string
   } | null>(null)
   const [reasonCategory, setReasonCategory] = useState('Dokumen tidak sesuai')
   const [customReasonText, setCustomReasonText] = useState('')
 
-  const handleConfirmRejectRevoke = () => {
-    if (!rejectRevokeModal) return
-    const finalReason = customReasonText.trim() ? `${reasonCategory}: ${customReasonText.trim()}` : reasonCategory
+  const openRejectModal = (
+    actionType: 'reject_pelajar' | 'revoke_pelajar' | 'reject_sekolah' | 'revoke_sekolah' | 'revoke_umkm' | 'reject_deposit' | 'reject_withdrawal',
+    targetId: string,
+    targetName: string
+  ) => {
+    let title = 'Tolak Verifikasi'
+    let subtitle = `Pilih alasan untuk ${targetName}:`
+    let defaultReason = 'Dokumen tidak sesuai persyaratan'
 
-    if (rejectRevokeModal.actionType === 'reject_pelajar' || rejectRevokeModal.actionType === 'revoke_pelajar') {
-      adminRejectPelajar(rejectRevokeModal.targetId, finalReason)
-      setActionSuccess(`Status ${rejectRevokeModal.targetName} berhasil diubah`)
-    } else if (rejectRevokeModal.actionType === 'reject_sekolah' || rejectRevokeModal.actionType === 'revoke_sekolah') {
-      adminRejectSekolah(rejectRevokeModal.targetId)
-      setActionSuccess(`Status sekolah ${rejectRevokeModal.targetName} berhasil diubah`)
-    } else if (rejectRevokeModal.actionType === 'revoke_umkm') {
-      adminRevokeUMKM(rejectRevokeModal.targetId)
-      setActionSuccess(`Status UMKM ${rejectRevokeModal.targetName} berhasil dicabut`)
+    if (actionType === 'reject_pelajar') {
+      title = 'Tolak Verifikasi Siswa'
+      subtitle = `Pilih alasan penolakan berkas siswa ${targetName}:`
+      defaultReason = 'Kartu identitas / foto buram'
+    } else if (actionType === 'revoke_pelajar') {
+      title = 'Cabut Status Verifikasi Siswa'
+      subtitle = `Cabut status terverifikasi resmi untuk ${targetName}:`
+      defaultReason = 'Permintaan pencabutan pihak sekolah'
+    } else if (actionType === 'reject_sekolah') {
+      title = 'Tolak Verifikasi Sekolah'
+      subtitle = `Pilih alasan penolakan institusi ${targetName}:`
+      defaultReason = 'NPSN tidak terdaftar resmi'
+    } else if (actionType === 'revoke_sekolah') {
+      title = 'Cabut Verifikasi Sekolah'
+      subtitle = `Cabut akses terverifikasi institusi ${targetName}:`
+      defaultReason = 'Permintaan penonaktifan sekolah'
+    } else if (actionType === 'revoke_umkm') {
+      title = 'Cabut Verifikasi Mitra UMKM'
+      subtitle = `Cabut status terverifikasi usaha ${targetName}:`
+      defaultReason = 'Dokumen legalitas / NIB tidak sah'
+    } else if (actionType === 'reject_deposit') {
+      title = 'Tolak Permintaan Deposit'
+      subtitle = `Pilih alasan penolakan deposit dari ${targetName}:`
+      defaultReason = 'Bukti transfer tidak jelas / dana belum masuk'
+    } else if (actionType === 'reject_withdrawal') {
+      title = 'Tolak Penarikan Saldo Siswa'
+      subtitle = `Pilih alasan penolakan penarikan saldo ${targetName}:`
+      defaultReason = 'Nomor e-wallet tidak aktif / salah'
     }
 
-    setRejectRevokeModal(null)
+    setReasonCategory(defaultReason)
     setCustomReasonText('')
+    setRejectRevokeModal({
+      isOpen: true,
+      title,
+      subtitle,
+      actionType,
+      targetId,
+      targetName
+    })
+  }
+
+  const getReasonOptions = (actionType: string) => {
+    switch (actionType) {
+      case 'reject_pelajar':
+        return [
+          'Kartu identitas / foto buram',
+          'NIS atau data diri tidak valid',
+          'Bukan siswa aktif sekolah terkait',
+          'Dokumen terindikasi manipulasi'
+        ]
+      case 'revoke_pelajar':
+        return [
+          'Permintaan pencabutan pihak sekolah',
+          'Pelanggaran ketentuan platform',
+          'Indikasi akun ganda / pemalsuan',
+          'Penyalahgunaan transaksi escrow'
+        ]
+      case 'reject_sekolah':
+        return [
+          'NPSN tidak terdaftar resmi',
+          'Email resmi sekolah tidak valid',
+          'Surat tugas penanggung jawab tidak valid',
+          'Nama lembaga tidak sesuai Kemendikdasmen'
+        ]
+      case 'revoke_sekolah':
+        return [
+          'Permintaan penonaktifan sekolah',
+          'Akun terindikasi disalahgunakan',
+          'Data legalitas ditarik pihak sekolah'
+        ]
+      case 'revoke_umkm':
+        return [
+          'Dokumen legalitas / NIB tidak sah',
+          'Nomor WhatsApp tidak aktif',
+          'Pelanggaran komitmen akad proyek',
+          'Laporan kecurangan transaksi dari siswa'
+        ]
+      case 'reject_deposit':
+        return [
+          'Bukti transfer tidak jelas / buram',
+          'Dana belum masuk rekening escrow',
+          'Nominal tidak sesuai mutasi bank',
+          'Rekening pengirim tidak valid'
+        ]
+      case 'reject_withdrawal':
+        return [
+          'Nomor e-wallet tidak aktif / salah',
+          'Akun e-wallet belum terverifikasi',
+          'Batas penarikan harian terlampaui',
+          'Data akun tidak cocok'
+        ]
+      default:
+        return [
+          'Dokumen tidak sesuai',
+          'Data tidak valid',
+          'Permintaan pembatalan',
+          'Pelanggaran kebijakan sistem'
+        ]
+    }
+  }
+
+  const handleConfirmRejectRevoke = async () => {
+    if (!rejectRevokeModal) return
+    setIsProcessingAction(true)
+    const finalReason = customReasonText.trim() ? `${reasonCategory}: ${customReasonText.trim()}` : reasonCategory
+
+    try {
+      if (rejectRevokeModal.actionType === 'reject_pelajar' || rejectRevokeModal.actionType === 'revoke_pelajar') {
+        await adminRejectPelajar(rejectRevokeModal.targetId, finalReason)
+        setActionSuccess(`Status verifikasi ${rejectRevokeModal.targetName} berhasil diubah`)
+      } else if (rejectRevokeModal.actionType === 'reject_sekolah' || rejectRevokeModal.actionType === 'revoke_sekolah') {
+        await adminRejectSekolah(rejectRevokeModal.targetId)
+        setActionSuccess(`Status sekolah ${rejectRevokeModal.targetName} berhasil diubah`)
+      } else if (rejectRevokeModal.actionType === 'revoke_umkm') {
+        await adminRevokeUMKM(rejectRevokeModal.targetId)
+        setActionSuccess(`Status UMKM ${rejectRevokeModal.targetName} berhasil dicabut`)
+      } else if (rejectRevokeModal.actionType === 'reject_deposit') {
+        adminRejectDeposit(rejectRevokeModal.targetId, finalReason)
+        setActionSuccess(`Deposit UMKM telah ditolak`)
+      } else if (rejectRevokeModal.actionType === 'reject_withdrawal') {
+        adminRejectWithdrawal(rejectRevokeModal.targetId, finalReason)
+        setActionSuccess(`Penarikan dana siswa telah ditolak dan saldo dikembalikan`)
+      }
+
+      await syncAdminUsersFromDB()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsProcessingAction(false)
+      setRejectRevokeModal(null)
+      setCustomReasonText('')
+      setTimeout(() => setActionSuccess(null), 3500)
+    }
+  }
+
+  const handleVerifyPelajar = async (id: string, nama: string) => {
+    await adminVerifyPelajar(id)
+    setActionSuccess(`Pelajar ${nama} berhasil diverifikasi resmi!`)
+    await syncAdminUsersFromDB()
+    setTimeout(() => setActionSuccess(null), 3000)
+  }
+
+  const handleVerifySekolah = async (id: string, nama: string) => {
+    await adminVerifySekolah(id)
+    setActionSuccess(`Sekolah ${nama} berhasil diverifikasi resmi!`)
+    await syncAdminUsersFromDB()
+    setTimeout(() => setActionSuccess(null), 3000)
+  }
+
+  const handleVerifyUMKM = async (id: string, nama: string) => {
+    await adminVerifyUMKM(id)
+    setActionSuccess(`UMKM ${nama} berhasil diverifikasi resmi!`)
+    await syncAdminUsersFromDB()
     setTimeout(() => setActionSuccess(null), 3000)
   }
 
@@ -139,15 +287,6 @@ export default function MasterAdminEscrowPage() {
     }
   }
 
-  const handleRejectDeposit = (id: string) => {
-    const reason = prompt('Masukkan alasan penolakan deposit:', 'Bukti transfer tidak valid atau dana belum masuk')
-    if (reason !== null) {
-      adminRejectDeposit(id, reason)
-      setActionSuccess('Deposit telah ditolak.')
-      setTimeout(() => setActionSuccess(null), 3000)
-    }
-  }
-
   const handleApproveWithdrawal = (id: string, namaPelajar: string, nominal: number, eWallet: string) => {
     const ok = adminApproveWithdrawal(id)
     if (ok) {
@@ -156,24 +295,12 @@ export default function MasterAdminEscrowPage() {
     }
   }
 
-  const handleRejectWithdrawal = (id: string) => {
-    const reason = prompt('Masukkan alasan penolakan penarikan:', 'Nomor e-wallet tidak aktif atau batas penarikan tercapai')
-    if (reason !== null) {
-      adminRejectWithdrawal(id, reason)
-      setActionSuccess('Permintaan penarikan telah ditolak dan saldo dikembalikan ke dompet siswa.')
-      setTimeout(() => setActionSuccess(null), 3000)
-    }
-  }
-
   const handleReleaseEscrow = (escrowId: string, namaPelajar: string, nominal: number) => {
-    if (confirm(`Rilis dana escrow proyek sebesar ${formatRupiah(nominal)} langsung ke dompet ${namaPelajar}?`)) {
-      releaseProjectCompletionToPelajar(escrowId)
-      setActionSuccess(`Dana escrow proyek sebesar ${formatRupiah(nominal)} berhasil dicairkan ke saldo siswa ${namaPelajar}!`)
-      setTimeout(() => setActionSuccess(null), 4000)
-    }
+    releaseProjectCompletionToPelajar(escrowId)
+    setActionSuccess(`Dana escrow proyek sebesar ${formatRupiah(nominal)} berhasil dicairkan ke saldo siswa ${namaPelajar}!`)
+    setTimeout(() => setActionSuccess(null), 4000)
   }
 
-  // Filter Search
   const filteredPelajar = adminVerifs.pelajarList.filter((p) =>
     p.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -501,69 +628,65 @@ export default function MasterAdminEscrowPage() {
                               )}
                             </td>
                             <td className="px-5 py-4 align-top">
-                              {p.verificationStatus === 'VERIFIED' && <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terverifikasi</span>}
-                              {p.verificationStatus === 'REJECTED' && <span className="inline-flex bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Ditolak</span>}
-                              {p.verificationStatus === 'PENDING' && <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Menunggu</span>}
+                              {p.verificationStatus === 'VERIFIED' && (
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  <Check className="w-3 h-3" />
+                                  <span>Terverifikasi</span>
+                                </span>
+                              )}
+                              {p.verificationStatus === 'REJECTED' && (
+                                <div className="space-y-1">
+                                  <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                    <X className="w-3 h-3" />
+                                    <span>Ditolak</span>
+                                  </span>
+                                  {p.catatanPenolakan && (
+                                    <p className="text-[10px] text-gray-500 max-w-[150px] truncate" title={p.catatanPenolakan}>
+                                      {p.catatanPenolakan}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              {p.verificationStatus === 'PENDING' && (
+                                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Menunggu</span>
+                                </span>
+                              )}
                             </td>
                             <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(p.createdAt)}</td>
                             <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                               {p.verificationStatus === 'PENDING' ? (
-                                <>
+                                <div className="inline-flex items-center gap-1.5">
                                   <button
-                                    onClick={() => {
-                                      adminVerifyPelajar(p.id)
-                                      setActionSuccess(`Pelajar ${p.namaLengkap} berhasil disetujui`)
-                                      setTimeout(() => setActionSuccess(null), 3000)
-                                    }}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    onClick={() => handleVerifyPelajar(p.id, p.namaLengkap)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
                                   >
                                     <Check className="w-3.5 h-3.5" />
                                     <span>Setujui</span>
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      setRejectRevokeModal({
-                                        isOpen: true,
-                                        title: 'Tolak Verifikasi Pelajar',
-                                        subtitle: `Pilih alasan penolakan untuk ${p.namaLengkap}:`,
-                                        actionType: 'reject_pelajar',
-                                        targetId: p.id,
-                                        targetName: p.namaLengkap
-                                      })
-                                    }}
+                                    onClick={() => openRejectModal('reject_pelajar', p.id, p.namaLengkap)}
                                     className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                     <span>Tolak</span>
                                   </button>
-                                </>
+                                </div>
                               ) : p.verificationStatus === 'VERIFIED' ? (
                                 <button
-                                  onClick={() => {
-                                    setRejectRevokeModal({
-                                      isOpen: true,
-                                      title: 'Cabut Verifikasi Pelajar',
-                                      subtitle: `Cabut status verifikasi untuk ${p.namaLengkap}:`,
-                                      actionType: 'revoke_pelajar',
-                                      targetId: p.id,
-                                      targetName: p.namaLengkap
-                                    })
-                                  }}
-                                  className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  onClick={() => openRejectModal('revoke_pelajar', p.id, p.namaLengkap)}
+                                  className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                                 >
-                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                                   <span>Cabut Verifikasi</span>
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => {
-                                    adminVerifyPelajar(p.id)
-                                    setActionSuccess(`Pelajar ${p.namaLengkap} dipulihkan & disetujui`)
-                                    setTimeout(() => setActionSuccess(null), 3000)
-                                  }}
-                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  onClick={() => handleVerifyPelajar(p.id, p.namaLengkap)}
+                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
                                   <span>Pulihkan & Setujui</span>
                                 </button>
                               )}
@@ -763,11 +886,7 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {!u.isVerified ? (
                               <button
-                                onClick={() => {
-                                  adminVerifyUMKM(u.id)
-                                  setActionSuccess(`UMKM ${u.namaUsaha} terverifikasi`)
-                                  setTimeout(() => setActionSuccess(null), 3000)
-                                }}
+                                onClick={() => handleVerifyUMKM(u.id, u.namaUsaha)}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -775,19 +894,10 @@ export default function MasterAdminEscrowPage() {
                               </button>
                             ) : (
                               <button
-                                onClick={() => {
-                                  setRejectRevokeModal({
-                                    isOpen: true,
-                                    title: 'Cabut Verifikasi UMKM',
-                                    subtitle: `Cabut status verifikasi untuk usaha ${u.namaUsaha}:`,
-                                    actionType: 'revoke_umkm',
-                                    targetId: u.id,
-                                    targetName: u.namaUsaha
-                                  })
-                                }}
-                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                onClick={() => openRejectModal('revoke_umkm', u.id, u.namaUsaha)}
+                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" />
+                                <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                                 <span>Cabut Verifikasi</span>
                               </button>
                             )}
@@ -857,10 +967,10 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(d.createdAt)}</td>
                           <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {d.status === 'PENDING' ? (
-                              <>
+                              <div className="inline-flex items-center gap-1.5">
                                 <button onClick={() => handleApproveDeposit(d.id, d.namaUsaha, d.nominal)} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
-                                <button onClick={() => handleRejectDeposit(d.id)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
-                              </>
+                                <button onClick={() => openRejectModal('reject_deposit', d.id, d.namaUsaha)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
+                              </div>
                             ) : (
                               <span className="text-xs text-[#B5ADA4]">Selesai</span>
                             )}
@@ -922,10 +1032,10 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-xs text-[#8B7E74] whitespace-nowrap">{formatDate(w.createdAt)}</td>
                           <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {w.status === 'PENDING' ? (
-                              <>
+                              <div className="inline-flex items-center gap-1.5">
                                 <button onClick={() => handleApproveWithdrawal(w.id, w.namaPelajar, w.nominal, w.eWalletType)} className="border border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors">Setujui</button>
-                                <button onClick={() => handleRejectWithdrawal(w.id)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
-                              </>
+                                <button onClick={() => openRejectModal('reject_withdrawal', w.id, w.namaPelajar)} className="border border-red-200 text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Tolak</button>
+                              </div>
                             ) : (
                               <span className="text-xs text-[#B5ADA4]">Selesai</span>
                             )}
@@ -1060,38 +1170,35 @@ export default function MasterAdminEscrowPage() {
                 <h4>{rejectRevokeModal.title}</h4>
               </div>
               <button
+                type="button"
+                disabled={isProcessingAction}
                 onClick={() => setRejectRevokeModal(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
               {rejectRevokeModal.subtitle}
             </p>
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                Pilih Alasan
+                Pilih Alasan Utama
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  'Dokumen tidak sesuai',
-                  'Kartu identitas buram',
-                  'Data tidak valid',
-                  'Permintaan pencabutan status',
-                  'Sekolah tidak terdaftar resmi'
-                ].map((reason) => (
+                {getReasonOptions(rejectRevokeModal.actionType).map((reason) => (
                   <button
                     key={reason}
                     type="button"
+                    disabled={isProcessingAction}
                     onClick={() => setReasonCategory(reason)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
                       reasonCategory === reason
-                        ? 'bg-[#FF9B71] text-white shadow-2xs'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                        ? 'bg-[#FF9B71] text-white border-[#FF9B71] shadow-2xs'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    } disabled:opacity-50`}
                   >
                     {reason}
                   </button>
@@ -1100,24 +1207,30 @@ export default function MasterAdminEscrowPage() {
               <textarea
                 value={customReasonText}
                 onChange={(e) => setCustomReasonText(e.target.value)}
-                placeholder="Catatan tambahan (opsional)..."
+                disabled={isProcessingAction}
+                placeholder="Catatan tambahan penjelasan admin (opsional)..."
                 rows={2}
-                className="w-full mt-2 p-3 bg-[#FAF8F5] border border-gray-200 focus:border-[#FF9B71] rounded-xl text-xs outline-none resize-none"
+                className="w-full mt-2 p-3 bg-[#FAF8F5] border border-gray-200 focus:border-[#FF9B71] rounded-xl text-xs outline-none resize-none disabled:opacity-50"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
               <button
+                type="button"
+                disabled={isProcessingAction}
                 onClick={() => setRejectRevokeModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Batal
               </button>
               <button
+                type="button"
+                disabled={isProcessingAction}
                 onClick={handleConfirmRejectRevoke}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
-                Konfirmasi Aksi
+                {isProcessingAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isProcessingAction ? 'Menyimpan...' : 'Konfirmasi Aksi'}</span>
               </button>
             </div>
           </div>
