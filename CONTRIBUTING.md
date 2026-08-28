@@ -245,7 +245,13 @@ Sebelum melakukan `git commit` dan `git push`:
 
 ---
 
-## 👥 Kontak Tim Pengembang
+## 👥 Tim Developer & Kontak
+
+| Nama | Peran | GitHub |
+| :--- | :--- | :--- |
+| **Raffa Rizqi Ramdani** | Project Lead & Full Stack Developer | [@RaffaRizqi](https://github.com/RaffaRizqi) |
+| **Faaiz Hamdy** | Frontend Developer & UI/UX Designer | [@Faaizhamdhy](https://github.com/Faaizhamdhy) |
+| **Fathan Assidqi Dwipayana** | Backend Developer | [@Razerpoa](https://github.com/Razerpoa) |
 
 - **Inisiator & Lead Developer:** Raffa (`raffaxzee@gmail.com`)
 - **WhatsApp:** 0895622494773
