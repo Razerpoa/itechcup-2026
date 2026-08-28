@@ -378,8 +378,8 @@ npm run lint
 ## 📚 API Documentation
 
 ### Base URL
-* **Development:** `http://localhost:3000/api`
-* **Production:** `https://www.mitramuda.biz.id/api`
+* **Development:** `http://localhost:3000`
+* **Production:** `https://www.mitramuda.biz.id`
 
 ### Endpoints
 
