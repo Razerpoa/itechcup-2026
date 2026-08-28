@@ -435,7 +435,23 @@ export default function DetailProyekPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Pesan Singkat & Pengantar Portofolio</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Pesan Singkat & Pengantar Portofolio</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const studentName = user?.nama || 'Saya'
+                        const school = user?.sekolah || 'siswa vokasi terverifikasi'
+                        setPesan(
+                          `Halo Bapak/Ibu dari ${mockProyek.namaUsaha}! Perkenalkan, saya ${studentName} (${school}). Saya sangat tertarik dan siap membantu pengerjaan proyek "${mockProyek.judul}". Saya memiliki keterampilan yang relevan dan berkomitmen menyelesaikan pekerjaan secara disiplin, komunikatif, dan sesuai deadline dengan standar kualitas terbaik. Terima kasih atas kesempatannya!`
+                        )
+                      }}
+                      className="text-[11px] font-bold text-[#964825] bg-[#FFF1EB] hover:bg-[#FFD9CA] border border-[#FFD9CA] px-2.5 py-0.5 rounded-full transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3 text-[#FF9B71]" />
+                      <span>Template Sopan</span>
+                    </button>
+                  </div>
                   <textarea
                     rows={4}
                     value={pesan}

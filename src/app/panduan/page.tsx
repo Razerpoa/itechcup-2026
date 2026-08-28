@@ -386,6 +386,26 @@ export default function PanduanPage() {
       category: 'umum',
       question: 'Berapa komisi atau potongan biaya platform di Mitra Muda?',
       answer: 'Mitra Muda berkomitmen memberdayakan pelajar tanpa potong komisi dari pendapatan hasil karya siswa (0% komisi pelajar). Biaya operasional platform dibebankan secara transparan dalam bentuk biaya layanan mikro yang sangat terjangkau.'
+    },
+    {
+      category: 'umkm',
+      question: 'Apakah UMKM bisa mendapatkan bukti kwitansi / invoice resmi untuk pembukuan?',
+      answer: 'Bisa! Di setiap ruang transaksi akad, UMKM dapat mengklik tombol "Invoice" untuk mencetak atau menyimpan dokumen Invoice & Kwitansi Resmi berstandar akuntansi UMKM lengkap dengan nomor faktur unik dan status pelunasan.'
+    },
+    {
+      category: 'pelajar',
+      question: 'Apakah siswa bisa mendapatkan bukti sertifikat pengalaman kerja?',
+      answer: 'Bisa! Di ruang transaksi akad yang selesai, siswa dapat mengunduh Surat Keterangan Pengalaman Kerja Industri resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, serta rating kepuasan untuk portofolio magang/PKL atau melamar kerja.'
+    },
+    {
+      category: 'umum',
+      question: 'Bagaimana perlindungan privasi data pelajar di bawah umur?',
+      answer: 'Mitra Muda patuh penuh pada UU Perlindungan Data Pribadi (UU PDP No. 27/2022). Seluruh data identitas siswa disimpan terenkripsi hanya untuk verifikasi keaktifan sekolah dan tidak pernah dibagikan atau diperjualbelikan ke pihak ketiga.'
+    },
+    {
+      category: 'umum',
+      question: 'Bagaimana jika terjadi sengketa pengerjaan antara UMKM dan Pelajar?',
+      answer: 'Mitra Muda memiliki sistem mediasi resmi. Dana DP tetap aman terkunci di escrow hingga kesepakatan tercapai. Tim mediasi Mitra Muda dapat meninjau riwayat chat dan berkas karya untuk memberikan solusi yang adil bagi kedua pihak.'
     }
   ]
 
@@ -740,6 +760,19 @@ export default function PanduanPage() {
           </div>
         </div>
       </main>
+
+      {/* Footer Panduan */}
+      <footer className="border-t border-gray-200 bg-white py-8 px-4 sm:px-8 text-xs text-gray-500 mt-10">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi.</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link href="/marketplace" className="hover:text-gray-900 transition-colors">Marketplace Jasa</Link>
+            <Link href="/syarat-ketentuan" className="hover:text-gray-900 transition-colors">Syarat & Ketentuan</Link>
+            <Link href="/kebijakan-privasi" className="hover:text-gray-900 transition-colors">Kebijakan Privasi</Link>
+            <Link href="/perlindungan-pelajar" className="hover:text-[#964825] font-semibold transition-colors">Perlindungan Pelajar</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

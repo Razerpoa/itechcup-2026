@@ -14,12 +14,15 @@ import {
   Sparkles,
   Send,
   Wallet,
-  Briefcase
+  Briefcase,
+  Printer,
+  MessageCircle
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore } from '@/lib/escrow-store'
 import { useAkadStore, sendAkadChat, completeAkadAndPayout, syncAkadWithDB } from '@/lib/akad-store'
+import InvoiceModal from '@/components/invoice-modal'
 
 export default function UMKMTransaksiRoomPage() {
   const params = useParams()
@@ -72,6 +75,7 @@ export default function UMKMTransaksiRoomPage() {
   }
 
   const [inputMsg, setInputMsg] = useState('')
+  const [showInvoice, setShowInvoice] = useState(false)
   const [isCompletedModal, setIsCompletedModal] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [selectedRating, setSelectedRating] = useState(5)
@@ -154,8 +158,27 @@ export default function UMKMTransaksiRoomPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="bg-[#FFF1EB] text-[#964825] px-4 py-2 rounded-full font-extrabold text-sm border border-[#FFD9CA]">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowInvoice(true)}
+              className="text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              title="Lihat & Cetak Invoice Resmi"
+            >
+              <Printer className="w-3.5 h-3.5 text-gray-500" />
+              <span>Invoice</span>
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Halo ${activeAkad.namaPelajar}, saya dari ${activeAkad.namaUsaha} terkait proyek "${activeAkad.judulProyek}" di Mitra Muda: https://www.mitramuda.biz.id/umkm/transaksi/${rawId}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">WA Siswa</span>
+            </a>
+            <div className="bg-[#FFF1EB] text-[#964825] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-extrabold text-xs sm:text-sm border border-[#FFD9CA]">
               {formatRupiah(activeAkad.nominalTotal)}
             </div>
           </div>
@@ -438,6 +461,14 @@ export default function UMKMTransaksiRoomPage() {
           </div>
         </div>
       )}
+
+      {/* Official Invoice Modal */}
+      <InvoiceModal
+        isOpen={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        type="invoice"
+        akad={activeAkad}
+      />
     </div>
   )
 }

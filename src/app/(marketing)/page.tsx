@@ -186,11 +186,14 @@ export default function OnboardingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-5xl w-full mx-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-3">
+      <footer className="max-w-5xl w-full mx-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
         <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi.</p>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link href="/panduan" className="hover:text-gray-600 transition-colors">Panduan Sistem</Link>
           <Link href="/marketplace" className="hover:text-gray-600 transition-colors">Marketplace Jasa</Link>
+          <Link href="/syarat-ketentuan" className="hover:text-gray-600 transition-colors">Syarat & Ketentuan</Link>
+          <Link href="/kebijakan-privasi" className="hover:text-gray-600 transition-colors">Kebijakan Privasi</Link>
+          <Link href="/perlindungan-pelajar" className="hover:text-[#964825] font-semibold transition-colors">Perlindungan Pelajar</Link>
         </div>
       </footer>
     </div>

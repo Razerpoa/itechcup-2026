@@ -13,11 +13,14 @@ import {
   Sparkles,
   Send,
   UploadCloud,
-  Briefcase
+  Briefcase,
+  Award,
+  MessageCircle
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useAkadStore, sendAkadChat, submitPelajarDeliverable, syncAkadWithDB } from '@/lib/akad-store'
+import InvoiceModal from '@/components/invoice-modal'
 
 export default function PelajarTransaksiRoomPage() {
   const params = useParams()
@@ -67,6 +70,7 @@ export default function PelajarTransaksiRoomPage() {
 
   const [inputMsg, setInputMsg] = useState('')
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showCertificate, setShowCertificate] = useState(false)
   const [fileNameInput, setFileNameInput] = useState('')
 
   if (!activeAkad) {
@@ -169,8 +173,29 @@ export default function PelajarTransaksiRoomPage() {
               </p>
             </div>
           </div>
-          <div className="bg-[#FFF1EB] text-[#964825] px-4 py-2 rounded-full font-extrabold text-sm border border-[#FFD9CA]">
-            {formatRupiah(activeAkad.nominalTotal)}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCertificate(true)}
+              className="text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              title="Cetak Surat Keterangan Pengalaman Kerja Resmi"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-600" />
+              <span>Surat Pengalaman</span>
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Halo pihak ${activeAkad.namaUsaha}, saya ${activeAkad.namaPelajar} terkait proyek "${activeAkad.judulProyek}" di Mitra Muda: https://www.mitramuda.biz.id/pelajar/transaksi/${rawId}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">WA UMKM</span>
+            </a>
+            <div className="bg-[#FFF1EB] text-[#964825] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-extrabold text-xs sm:text-sm border border-[#FFD9CA]">
+              {formatRupiah(activeAkad.nominalTotal)}
+            </div>
           </div>
         </div>
         
@@ -351,6 +376,14 @@ export default function PelajarTransaksiRoomPage() {
           </div>
         </div>
       )}
+
+      {/* Official Certificate / Surat Pengalaman Modal */}
+      <InvoiceModal
+        isOpen={showCertificate}
+        onClose={() => setShowCertificate(false)}
+        type="certificate"
+        akad={activeAkad}
+      />
     </div>
   )
 }

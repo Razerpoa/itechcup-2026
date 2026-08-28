@@ -92,7 +92,7 @@ export default function MarketplacePage() {
     router.push('/login')
   }
 
-  const categories = ['Semua', 'Desain Grafis', 'Web Dev', 'Video Editor', 'Copywriting', 'UI/UX']
+  const categories = ['Semua', 'Desain Grafis', 'Web Dev', 'Video & Animasi', 'Medsos & Marketing', 'Fotografi', 'Copywriting', 'UI/UX']
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -624,6 +624,23 @@ export default function MarketplacePage() {
           )
         )}
       </div>
+
+      {/* Footer Marketplace */}
+      <footer className="mt-auto border-t border-gray-200 bg-white py-8 px-4 sm:px-8 text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <Image src="/logo.jpg" alt="Mitra Muda" width={28} height={28} className="rounded-lg object-cover border border-[#FFD9CA]" unoptimized />
+            <span className="font-extrabold text-gray-900 text-sm">Mitra Muda Indonesia</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+            <Link href="/panduan" className="hover:text-gray-900 transition-colors">Panduan Sistem</Link>
+            <Link href="/syarat-ketentuan" className="hover:text-gray-900 transition-colors">Syarat & Ketentuan</Link>
+            <Link href="/kebijakan-privasi" className="hover:text-gray-900 transition-colors">Kebijakan Privasi</Link>
+            <Link href="/perlindungan-pelajar" className="hover:text-[#964825] font-semibold transition-colors">Perlindungan Pelajar</Link>
+          </div>
+          <p>© 2026 Mitra Muda. Hak Cipta Dilindungi.</p>
+        </div>
+      </footer>
 
       {isFilterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
