@@ -191,12 +191,13 @@ sequenceDiagram
     Sekolah->>Platform: Daftar dengan NPSN 8-digit
     Platform-->>Sekolah: Verifikasi otomatis via API Kemendikdasmen
 
-    Pelajar->>Platform: Registrasi (Pilih Sekolah, NIS, Upload Kartu Pelajar)
-    Sekolah->>Platform: Verifikasi & Setujui Siswa
+    Pelajar->>Platform: Registrasi (Pilih Sekolah Terdaftar, Dapatkan ID Registrasi MM-2026-XXXXX)
+    Pelajar->>Sekolah: Kirim ID Registrasi via WhatsApp Guru
+    Sekolah->>Platform: Verifikasi Cepat Siswa via ID Registrasi
     Platform-->>Pelajar: Akun Berstatus Terverifikasi
 
     UMKM->>Platform: Registrasi & Upload Legalitas (NIB / Foto Usaha)
-    Tuan->>Platform: Verifikasi Dokumen UMKM
+    Tuan->>Platform: Verifikasi Dokumen UMKM (Setujui / Tolak / Cabut via Modal)
     Platform-->>UMKM: Akun Berstatus Terverifikasi
 
     UMKM->>Platform: Publikasi Lowongan Proyek + Set Budget DP

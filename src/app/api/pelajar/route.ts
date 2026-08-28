@@ -70,8 +70,33 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(body.password, 10)
 
-    const rawNis = (body.nisn || body.nis || '').toString().trim()
-    const finalNis = rawNis.length > 0 ? rawNis : 'NIS-' + Math.floor(100000 + Math.random() * 900000)
+    let matchedSekolahId: string | null = null
+    let schoolDisplayName = body.sekolah?.trim() || 'SMK Terdaftar'
+
+    if (body.sekolahId && typeof body.sekolahId === 'string' && body.sekolahId.trim() !== '') {
+      const sch = await prisma.sekolah.findUnique({ where: { id: body.sekolahId } })
+      if (sch) {
+        matchedSekolahId = sch.id
+        schoolDisplayName = sch.namaSekolah
+      }
+    } else if (body.sekolah && typeof body.sekolah === 'string' && body.sekolah.trim() !== '') {
+      const sch = await prisma.sekolah.findFirst({
+        where: {
+          OR: [
+            { namaSekolah: { equals: body.sekolah.trim(), mode: 'insensitive' } },
+            { namaSekolah: { contains: body.sekolah.trim(), mode: 'insensitive' } }
+          ]
+        }
+      })
+      if (sch) {
+        matchedSekolahId = sch.id
+        schoolDisplayName = sch.namaSekolah
+      }
+    }
+
+    const randomCode = Math.floor(10000 + Math.random() * 90000).toString()
+    const registrationId = `MM-2026-${randomCode}`
+    const finalNis = (body.nisn || body.nis || '').toString().trim() || registrationId
 
     const validGender = body.jenisKelamin === 'PEREMPUAN' ? 'PEREMPUAN' : 'LAKI_LAKI'
 
@@ -89,13 +114,14 @@ export async function POST(request: NextRequest) {
         email: cleanEmail,
         password: hashedPassword,
         jenisKelamin: validGender,
-        tempatLahir: body.tempatLahir?.trim() || 'Indonesia',
+        tempatLahir: body.tempatLahir?.trim() || null,
         tanggalLahir: parsedDate,
-        namaIbu: body.namaIbu?.trim() || 'Ibu Kandung',
+        namaIbu: body.namaIbu?.trim() || null,
         nis: finalNis,
-        kelas: body.sekolah?.trim() || 'SMK Terdaftar',
+        kelas: schoolDisplayName,
+        sekolahId: matchedSekolahId,
         verificationStatus: 'PENDING',
-        fotoKartuPelajar: body.fotoKartuPelajar,
+        fotoKartuPelajar: body.fotoKartuPelajar || null,
         profil: {
           create: {
             kontakWa: body.nomorWa?.trim() || '',
@@ -104,10 +130,19 @@ export async function POST(request: NextRequest) {
           },
         },
       },
-      select: { id: true, namaLengkap: true, email: true, verificationStatus: true, createdAt: true },
+      select: {
+        id: true,
+        namaLengkap: true,
+        email: true,
+        nis: true,
+        kelas: true,
+        sekolahId: true,
+        verificationStatus: true,
+        createdAt: true,
+        sekolah: { select: { id: true, namaSekolah: true } }
+      },
     })
 
-    // Sync ke Supabase Authentication (auth.users)
     createSupabaseAuthUser({
       email: cleanEmail,
       password: body.password,
@@ -115,13 +150,12 @@ export async function POST(request: NextRequest) {
       role: 'pelajar'
     }).catch(() => {})
 
-    // Kirim email verifikasi pendaftaran via Resend
     const { sendConfirmationEmail } = await import('@/lib/mail')
     sendConfirmationEmail({
       to: cleanEmail,
       userNama: body.namaLengkap.trim(),
       role: 'Pelajar'
-    }).catch((e) => console.error('Gagal kirim email konfirmasi pelajar:', e))
+    }).catch(() => {})
 
     const token = signJwt({
       id: pelajar.id,
@@ -130,7 +164,24 @@ export async function POST(request: NextRequest) {
       nama: pelajar.namaLengkap
     })
 
-    const response = NextResponse.json({ data: pelajar, token }, { status: 201 })
+    const userSession = {
+      id: pelajar.id,
+      nama: pelajar.namaLengkap,
+      email: pelajar.email,
+      role: 'pelajar',
+      sekolah: pelajar.sekolah?.namaSekolah || pelajar.kelas || schoolDisplayName,
+      nisn: pelajar.nis,
+      registrationId: pelajar.nis || registrationId,
+      isVerified: false,
+      verificationStatus: 'PENDING'
+    }
+
+    const response = NextResponse.json({
+      data: userSession,
+      token,
+      registrationId: pelajar.nis || registrationId
+    }, { status: 201 })
+
     const isProd = process.env.NODE_ENV === 'production'
     response.cookies.set({
       name: AUTH_COOKIE_NAME,

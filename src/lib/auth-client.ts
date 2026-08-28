@@ -9,6 +9,7 @@ export interface UserSession {
   role: 'pelajar' | 'umkm' | 'sekolah'
   sekolah?: string
   nisn?: string
+  registrationId?: string
   namaUsaha?: string
   nomorWa?: string
   namaSekolah?: string

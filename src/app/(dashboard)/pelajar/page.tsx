@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -14,7 +14,9 @@ import {
   Clock,
   MessageSquare,
   CheckCircle2,
-  Info
+  Info,
+  Copy,
+  Share2
 } from 'lucide-react'
 import { formatRupiah, formatDate } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync } from '@/lib/auth-client'
@@ -25,6 +27,7 @@ import { useJasaStore } from '@/lib/jasa-store'
 export default function PelajarDashboard() {
   const user = useAuthUser()
   useRealtimeVerificationSync()
+  const [copiedRegId, setCopiedRegId] = useState(false)
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
   const jasaList = useJasaStore()
@@ -117,20 +120,63 @@ export default function PelajarDashboard() {
       </div>
 
       {!isVerifiedAccount && user && (
-        <div className="border border-blue-200 bg-blue-50 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <Info className="text-blue-600 w-5 h-5 mt-0.5 shrink-0" />
-            <div>
-              <h3 className="font-bold text-sm text-blue-900">Akun Menunggu Verifikasi Sekolah</h3>
-              <p className="text-xs text-blue-700 mt-1">
-                Verifikasi sekolah memastikan keaslian status pelajar (tanpa perlu KTP/bank). Sekolah Anda or Admin Mitra Muda dapat menyetujui akun Anda.
-              </p>
+        <div className="border border-amber-200 bg-amber-50/70 rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-xs">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-extrabold uppercase tracking-wider">
+                Menunggu Persetujuan Sekolah
+              </span>
+            </div>
+            <h3 className="font-extrabold text-base sm:text-lg text-gray-900 tracking-tight">
+              Kirim ID Registrasi Anda ke Guru / Admin Sekolah
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 max-w-2xl leading-relaxed">
+              Agar profil Anda terverifikasi resmi dan dapat menerima pembayaran proyek, berikan ID Registrasi berikut kepada pihak sekolah:
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="px-4 py-2 bg-white border-2 border-dashed border-[#FF9B71] rounded-2xl font-mono text-sm sm:text-base font-black text-gray-900 tracking-wider">
+                {user?.registrationId || user?.nisn || 'MM-2026-PENDING'}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(user?.registrationId || user?.nisn || '')
+                  setCopiedRegId(true)
+                  setTimeout(() => setCopiedRegId(false), 2500)
+                }}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              >
+                {copiedRegId ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-[#FF9B71]" />
+                    <span>Salin ID</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto shrink-0">
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                `Halo Bapak/Ibu Guru, saya ${namaSiswa} telah mendaftar di Mitra Muda. Ini ID Registrasi saya: ${
+                  user?.registrationId || user?.nisn || ''
+                }. Mohon disetujui melalui portal sekolah. Terima kasih!`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Kirim via WA ke Guru</span>
+            </a>
             <Link
               href="/panduan"
-              className="text-xs font-bold bg-blue-600 text-white px-3.5 py-2 rounded-full hover:bg-blue-700 transition-colors"
+              className="px-4 py-2.5 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs text-center transition-colors"
             >
               Panduan Verifikasi
             </Link>

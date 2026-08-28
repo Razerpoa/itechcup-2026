@@ -14,7 +14,12 @@ import {
   Check,
   GraduationCap,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  CheckCircle2,
+  Share2,
+  School,
+  Search
 } from 'lucide-react'
 import { setCurrentUser } from '@/lib/auth-client'
 import { useRedirectIfLoggedIn } from '@/hooks/use-auth-guard'
@@ -34,13 +39,18 @@ export default function RegisterPelajarPage() {
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
   const [isRegisteredSuccess, setIsRegisteredSuccess] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [schools, setSchools] = useState<Array<{ id: string; namaSekolah: string; npsn: string }>>([])
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('')
+  const [schoolSearch, setSchoolSearch] = useState<string>('')
+  const [isCustomSchool, setIsCustomSchool] = useState(false)
+  const [registrationId, setRegistrationId] = useState<string>('')
+  const [copiedId, setCopiedId] = useState(false)
 
   const [formData, setFormData] = useState({
     nama: '',
     email: '',
     tempatLahir: '',
     tanggalLahir: '',
-    namaIbu: '',
     password: '',
     sekolah: '',
     nisn: '',
@@ -48,6 +58,15 @@ export default function RegisterPelajarPage() {
   })
 
   useEffect(() => {
+    fetch('/api/sekolah')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.data)) {
+          setSchools(data.data)
+        }
+      })
+      .catch(() => {})
+
     const draftEmail = sessionStorage.getItem('google_draft_email')
     const draftNama = sessionStorage.getItem('google_draft_nama')
     if (draftEmail) {
@@ -118,6 +137,17 @@ export default function RegisterPelajarPage() {
     setIsSubmitting(true)
     setErrorMessage(null)
 
+    const finalSchoolName = isCustomSchool
+      ? schoolSearch.trim()
+      : (schools.find((s) => s.id === selectedSchoolId)?.namaSekolah || schoolSearch.trim() || formData.sekolah.trim())
+    const finalSchoolId = isCustomSchool ? undefined : (selectedSchoolId || undefined)
+
+    if (!finalSchoolName) {
+      setErrorMessage('Silakan pilih atau masukkan asal sekolah Anda.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/pelajar', {
         method: 'POST',
@@ -127,11 +157,11 @@ export default function RegisterPelajarPage() {
           email: formData.email,
           password: formData.password,
           jenisKelamin: gender === 'Laki-laki' ? 'LAKI_LAKI' : 'PEREMPUAN',
-          tempatLahir: formData.tempatLahir,
-          tanggalLahir: formData.tanggalLahir,
-          namaIbu: formData.namaIbu,
-          nisn: formData.nisn,
-          sekolah: formData.sekolah,
+          tempatLahir: formData.tempatLahir || undefined,
+          tanggalLahir: formData.tanggalLahir || undefined,
+          nisn: formData.nisn || undefined,
+          sekolah: finalSchoolName,
+          sekolahId: finalSchoolId,
           nomorWa: formData.nomorWa,
           bidangKeahlian: selectedSkills,
           fotoKartuPelajar: filePreview || undefined
@@ -151,6 +181,11 @@ export default function RegisterPelajarPage() {
         return
       }
 
+      if (data.data) {
+        setCurrentUser(data.data)
+      }
+      const regId = data.registrationId || data.data?.registrationId || data.data?.nisn || 'MM-2026-REG'
+      setRegistrationId(regId)
       setIsSubmitting(false)
       setIsRegisteredSuccess(true)
     } catch {
@@ -171,51 +206,82 @@ export default function RegisterPelajarPage() {
   }
 
   if (isRegisteredSuccess) {
+    const waText = encodeURIComponent(
+      `Halo Bapak/Ibu Guru, saya ${formData.nama} telah mendaftar di Mitra Muda dengan ID Registrasi: ${registrationId}. Mohon persetujuan verifikasi akun saya melalui portal sekolah. Terima kasih!`
+    )
+
     return (
       <div className="min-h-screen bg-[#F6F3EE] flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-[#E6DFD5] max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-3xl bg-[#FFF1EB] border border-[#FFD9CA] text-[#964825] flex items-center justify-center mx-auto shadow-xs">
-            <Check className="w-8 h-8 text-[#FF9B71]" />
+        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-[#E6DFD5] max-w-lg w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
+            <Check className="w-8 h-8 text-emerald-600" />
           </div>
 
           <div className="space-y-2">
-            <span className="px-3 py-1 rounded-full bg-[#FFF1EB] text-[#964825] text-[11px] font-extrabold uppercase tracking-wider">
-              Pendaftaran Berhasil
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold uppercase tracking-wider">
+              Pendaftaran Berhasil & Aktif
             </span>
             <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-              Cek Email Anda
+              Selamat Bergabung, {formData.nama}!
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Tautan verifikasi akun telah dikirimkan ke alamat email:
+              Akun Anda telah berhasil dibuat. Simpan <strong>ID Registrasi</strong> Anda berikut untuk proses verifikasi oleh guru/sekolah Anda:
             </p>
-            <div className="p-2.5 bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl font-bold text-xs text-[#964825] break-all inline-block max-w-full">
-              {formData.email}
+          </div>
+
+          <div className="p-4 bg-[#FAF8F5] border-2 border-dashed border-[#FF9B71]/40 rounded-2xl space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#964825]">
+              ID Registrasi Siswa Anda
+            </span>
+            <div className="flex items-center justify-center gap-3">
+              <span className="font-mono text-xl sm:text-2xl font-black text-gray-900 tracking-wider">
+                {registrationId}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(registrationId)
+                  setCopiedId(true)
+                  setTimeout(() => setCopiedId(false), 2500)
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white border border-gray-200 hover:border-[#FF9B71] text-xs font-bold text-gray-700 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              >
+                {copiedId ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-[#FF9B71]" />
+                    <span>Salin ID</span>
+                  </>
+                )}
+              </button>
             </div>
-          </div>
-
-          <div className="p-4 bg-[#FFF7F3] border border-[#FFD9CA] rounded-2xl text-left space-y-2">
-            <p className="text-xs text-[#964825] leading-relaxed">
-              <strong>Langkah selanjutnya:</strong> Buka inbox atau folder spam di Gmail Anda, lalu klik tombol <strong>"Verifikasi & Masuk Akun"</strong> untuk mengaktifkan akun dan langsung masuk ke dashboard talenta pelajar.
+            <p className="text-[11px] text-gray-500">
+              Guru/pihak sekolah Anda memerlukan ID ini untuk menyetujui akun Anda di Portal Sekolah.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={() => router.push('/pelajar')}
+              className="w-full h-12 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+            >
+              <span>Masuk ke Dashboard Siswa Sekarang</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
             <a
-              href="https://mail.google.com"
+              href={`https://api.whatsapp.com/send?text=${waText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-12 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+              className="w-full h-11 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] border border-[#25D366]/30 rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors"
             >
-              <span>Buka Gmail Sekarang</span>
-              <ArrowRight className="w-4 h-4" />
+              <Share2 className="w-4 h-4 text-[#25D366]" />
+              <span>Kirim ID Registrasi ke Guru via WhatsApp</span>
             </a>
-
-            <Link
-              href="/login"
-              className="w-full h-11 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full font-bold text-xs flex items-center justify-center transition-colors"
-            >
-              <span>Kembali ke Halaman Masuk</span>
-            </Link>
           </div>
         </div>
       </div>
@@ -440,20 +506,6 @@ export default function RegisterPelajarPage() {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="font-bold text-xs text-gray-700 uppercase tracking-wider" htmlFor="namaIbu">
-                      Nama Ibu Kandung
-                    </label>
-                    <input
-                      className="h-12 bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl px-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
-                      id="namaIbu"
-                      placeholder="Untuk verifikasi keamanan penarikan saldo tanpa rekening bank"
-                      type="text"
-                      required
-                      value={formData.namaIbu}
-                      onChange={(e) => setFormData({ ...formData, namaIbu: e.target.value })}
-                    />
-                  </div>
 
                     <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <label className="font-bold text-xs text-gray-700 uppercase tracking-wider" htmlFor="password">
@@ -532,37 +584,94 @@ export default function RegisterPelajarPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="font-bold text-xs text-gray-700 uppercase tracking-wider" htmlFor="sekolah">
-                      Nama Asal Sekolah / Kampus
-                    </label>
-                    <input
-                      className="h-12 bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl px-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
-                      id="sekolah"
-                      placeholder="Contoh: SMKN 2 Tasikmalaya"
-                      type="text"
-                      required
-                      value={formData.sekolah}
-                      onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-                    />
+                  <div className="flex flex-col gap-2 sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-xs text-gray-700 uppercase tracking-wider" htmlFor="sekolah">
+                        Asal Sekolah / Institusi
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomSchool(!isCustomSchool)
+                          if (!isCustomSchool) {
+                            setSelectedSchoolId('')
+                          }
+                        }}
+                        className="text-[11px] font-bold text-[#964825] hover:text-[#FF9B71] underline cursor-pointer"
+                      >
+                        {isCustomSchool ? '← Pilih dari Sekolah Terdaftar di Database' : '+ Sekolah Belum Terdaftar? Ketik Manual'}
+                      </button>
+                    </div>
+
+                    {!isCustomSchool && schools.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <select
+                            id="sekolah"
+                            value={selectedSchoolId}
+                            onChange={(e) => {
+                              setSelectedSchoolId(e.target.value)
+                              const sch = schools.find((s) => s.id === e.target.value)
+                              if (sch) setFormData({ ...formData, sekolah: sch.namaSekolah })
+                            }}
+                            className="h-12 w-full bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl px-4 text-sm text-gray-900 outline-none transition-all cursor-pointer"
+                          >
+                            <option value="">-- Pilih Sekolah Terdaftar di Database Mitra Muda --</option>
+                            {schools.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.namaSekolah} (NPSN: {s.npsn})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {selectedSchoolId ? (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Terverifikasi di Database — Akun Anda otomatis terhubung ke portal sekolah ini</span>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-gray-500">
+                            Pilih sekolah Anda agar guru / admin sekolah dapat langsung menyetujui akun Anda.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <input
+                          className="h-12 bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl px-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
+                          id="sekolah"
+                          placeholder="Masukkan nama lengkap sekolah (misal: SMKN 2 Tasikmalaya)"
+                          type="text"
+                          required
+                          value={schoolSearch || formData.sekolah}
+                          onChange={(e) => {
+                            setSchoolSearch(e.target.value)
+                            setFormData({ ...formData, sekolah: e.target.value })
+                          }}
+                        />
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] font-medium">
+                          <School className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>Sekolah ini belum terdaftar di database. Anda tetap bisa mendaftar dan akun dapat diverifikasi admin pusat.</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <div className="flex items-center justify-between">
                       <label className="font-bold text-xs text-gray-700 uppercase tracking-wider" htmlFor="nisn">
-                        NIS / NISN Siswa
+                        NIS / NISN Siswa <span className="text-gray-400 font-normal text-[11px]">(Opsional)</span>
                       </label>
                       <div className="flex items-center gap-1 bg-gray-100 px-2.5 py-0.5 rounded-full">
                         <Lock className="w-3 h-3 text-[#964825]" />
-                        <span className="text-[10px] text-gray-600 font-bold">Privat (Hanya Sekolah & Sistem)</span>
+                        <span className="text-[10px] text-gray-600 font-bold">Privat</span>
                       </div>
                     </div>
                     <input
                       className="h-12 bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl px-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
                       id="nisn"
-                      placeholder="Nomor Induk Siswa Nasional"
+                      placeholder="Kosongkan jika belum tahu (ID Registrasi dibuat otomatis)"
                       type="text"
-                      required
                       value={formData.nisn}
                       onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
                     />

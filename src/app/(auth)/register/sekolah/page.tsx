@@ -80,6 +80,18 @@ export default function RegisterSekolahPage() {
         return
       }
 
+      if (data.data) {
+        setCurrentUser({
+          id: data.data.id,
+          nama: data.data.namaPenanggungJawab,
+          namaSekolah: data.data.namaSekolah,
+          email: data.data.emailResmi,
+          role: 'sekolah',
+          isVerified: false,
+          verificationStatus: 'PENDING'
+        })
+      }
+
       setIsSubmitting(false)
       setIsRegisteredSuccess(true)
     } catch {
@@ -103,41 +115,36 @@ export default function RegisterSekolahPage() {
     return (
       <div className="min-h-screen bg-[#F6F3EE] flex flex-col items-center justify-center p-4">
         <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-[#E6DFD5] max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-3xl bg-[#FFF1EB] border border-[#FFD9CA] text-[#964825] flex items-center justify-center mx-auto shadow-xs">
-            <Check className="w-8 h-8 text-[#FF9B71]" />
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
+            <Check className="w-8 h-8 text-emerald-600" />
           </div>
 
           <div className="space-y-2">
-            <span className="px-3 py-1 rounded-full bg-[#FFF1EB] text-[#964825] text-[11px] font-extrabold uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold uppercase tracking-wider">
               Pendaftaran Berhasil
             </span>
             <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-              Cek Email Anda
+              Selamat Datang, {formData.namaSekolah}!
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Tautan verifikasi akun sekolah <strong>{formData.namaSekolah}</strong> telah dikirimkan ke:
+              Akun lembaga sekolah Anda telah terdaftar. Anda dapat langsung masuk ke dashboard kemitraan sekolah untuk memantau siswa Anda.
             </p>
-            <div className="p-2.5 bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl font-bold text-xs text-[#964825] break-all inline-block max-w-full">
-              {formData.emailResmi}
-            </div>
           </div>
 
           <div className="p-4 bg-[#FFF7F3] border border-[#FFD9CA] rounded-2xl text-left space-y-2">
             <p className="text-xs text-[#964825] leading-relaxed">
-              <strong>Langkah selanjutnya:</strong> Buka inbox atau folder spam di Gmail Anda, lalu klik tombol <strong>"Verifikasi & Masuk Akun"</strong> untuk mengaktifkan akun dan masuk ke portal kemitraan sekolah.
+              <strong>Info Verifikasi:</strong> Akun sekolah Anda berstatus awal <em>Menunggu Verifikasi</em>. Siswa Anda sudah dapat memilih sekolah ini saat mendaftar dan memberikan ID Registrasi mereka.
             </p>
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
-            <a
-              href="https://mail.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full h-12 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+            <button
+              onClick={() => router.push('/sekolah')}
+              className="w-full h-12 bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
             >
-              <span>Buka Gmail Sekarang</span>
+              <span>Masuk ke Dashboard Sekolah Sekarang</span>
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </button>
 
             <Link
               href="/login"

@@ -198,6 +198,26 @@ node --import ./tsx-hooks.mjs --test src/lib/compare-school-names.test.ts
 
 ---
 
+## 🎓 Alur Verifikasi Siswa & ID Registrasi Baru
+
+Untuk mempermudah sekolah dan siswa serta menjaga privasi data:
+
+1. **Pemilihan Sekolah Otomatis dari Database:**
+   - Siswa memilih sekolah yang sudah terdaftar di database Mitra Muda (`/api/sekolah`).
+   - Sistem secara otomatis mengaitkan `sekolahId` di tabel `Pelajar` database PostgreSQL, sehingga siswa langsung terdaftar di antrean portal sekolah terkait.
+2. **Generasi ID Registrasi Siswa:**
+   - Setiap pendaftaran siswa menghasilkan ID unik format `MM-2026-XXXXX`.
+   - Field yang tidak relevan seperti `namaIbu` telah dihilangkan dan `nisn` bersifat opsional.
+3. **Persetujuan Cepat Guru (Quick Approve):**
+   - Siswa dapat menyalin ID Registrasi dan mengirimkannya ke guru via WhatsApp.
+   - Pihak sekolah di dashboard `/sekolah` memiliki kotak input *Verifikasi Cepat* untuk langsung menyetujui akun siswa berdasarkan ID Registrasi tersebut.
+4. **Bebas Hambatan Email:**
+   - Setelah pendaftaran, akun langsung aktif dengan sesi terotentikasi dan tombol langsung masuk ke dashboard, sehingga siswa/UMKM/sekolah tidak terhambat jika pengiriman email konfirmasi mengalami antrean/delay.
+5. **Modal Penolakan & Pencabutan Status di Admin (`/tuan`):**
+   - Menggantikan browser `prompt()` lama dengan Modal In-App modern untuk aksi Tolak dan Cabut Verifikasi, lengkap dengan pilihan kategori alasan (dokumen buram, data tidak sesuai, permintaan pencabutan, dll).
+
+---
+
 ## 📋 Checklist Sebelum Push / Pull Request
 
 Sebelum melakukan `git commit` dan `git push`:
