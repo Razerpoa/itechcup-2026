@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         nis: body.nis,
         kelas: body.kelas,
         verificationStatus: body.verificationStatus as VerificationStatus | undefined,
-        catatanPenolakan: body.catatanPenolakan,
+        catatanPenolakan: body.verificationStatus === 'VERIFIED' && body.catatanPenolakan === undefined ? null : body.catatanPenolakan,
       },
       include: { sekolah: true, profil: true },
     })

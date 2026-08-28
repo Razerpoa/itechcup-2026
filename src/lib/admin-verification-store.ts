@@ -67,6 +67,11 @@ const INITIAL_DATA: AdminVerificationData = {
 let cachedData: AdminVerificationData = INITIAL_DATA
 let lastRaw: string | null = '__init__'
 const listeners = new Set<() => void>()
+const recentMutations = new Map<string, { status: string; timestamp: number }>()
+
+export function recordRecentMutation(id: string, status: string) {
+  recentMutations.set(id, { status, timestamp: Date.now() })
+}
 
 function emitChange() {
   lastRaw = '__dirty__'
@@ -102,7 +107,6 @@ function saveVerificationState(data: AdminVerificationData) {
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
     } catch {
-      // ignore
     }
   }
   emitChange()
@@ -117,6 +121,7 @@ export async function syncAdminUsersFromDB(): Promise<void> {
     ])
 
     const currentState = getVerificationState()
+    const now = Date.now()
 
     const localRegistry: any[] = typeof window !== 'undefined'
       ? JSON.parse(localStorage.getItem('mitra_muda_all_registered_users_v1') || '[]')
@@ -127,6 +132,14 @@ export async function syncAdminUsersFromDB(): Promise<void> {
           const matchedUser = localRegistry.find((u: any) => u.email === p.email || u.id === p.id)
           const actualWa = matchedUser?.nomorWa || p.profil?.kontakWa || p.nomorWa || p.noHp || ''
           const docPhoto = p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || undefined
+          const mutation = recentMutations.get(p.id) || (p.email ? recentMutations.get(p.email) : undefined)
+          const effectiveStatus = (mutation && now - mutation.timestamp < 10000)
+            ? (mutation.status as 'PENDING' | 'VERIFIED' | 'REJECTED')
+            : (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING'
+          const effectiveCatatan = (mutation && now - mutation.timestamp < 10000 && mutation.status === 'VERIFIED')
+            ? undefined
+            : (p.catatanPenolakan || matchedUser?.catatanPenolakan || undefined)
+
           return {
             id: p.id,
             namaLengkap: p.namaLengkap,
@@ -139,33 +152,46 @@ export async function syncAdminUsersFromDB(): Promise<void> {
             namaIbu: p.namaIbu || '',
             fotoKartuPelajar: docPhoto,
             nomorWa: actualWa,
-            verificationStatus: (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING',
+            verificationStatus: effectiveStatus,
+            catatanPenolakan: effectiveCatatan,
             createdAt: p.createdAt || new Date().toISOString()
           }
         })
       : []
 
     const sekolahFromDB: AdminSekolahItem[] = Array.isArray(resSekolah.data)
-      ? resSekolah.data.map((s: any) => ({
-          id: s.id,
-          namaSekolah: s.namaSekolah,
-          npsn: s.npsn,
-          emailResmi: s.emailResmi,
-          namaPenanggungJawab: s.namaPenanggungJawab,
-          jabatanAdmin: s.jabatanAdmin || 'Kepala Sekolah / Waka Hubin',
-          alamatLengkap: s.alamatLengkap || '',
-          kontakSekolah: s.kontakSekolah || '',
-          verificationStatus: (s.verificationStatus as any) || 'PENDING_REVIEW',
-          officialNama: s.officialNama || s.namaSekolah,
-          akreditasi: s.akreditasi || 'A',
-          createdAt: s.createdAt || new Date().toISOString()
-        }))
+      ? resSekolah.data.map((s: any) => {
+          const mutation = recentMutations.get(s.id) || (s.emailResmi ? recentMutations.get(s.emailResmi) : undefined)
+          const effectiveStatus = (mutation && now - mutation.timestamp < 10000)
+            ? (mutation.status as any)
+            : (s.verificationStatus as any) || 'PENDING_REVIEW'
+
+          return {
+            id: s.id,
+            namaSekolah: s.namaSekolah,
+            npsn: s.npsn,
+            emailResmi: s.emailResmi,
+            namaPenanggungJawab: s.namaPenanggungJawab,
+            jabatanAdmin: s.jabatanAdmin || 'Kepala Sekolah / Waka Hubin',
+            alamatLengkap: s.alamatLengkap || '',
+            kontakSekolah: s.kontakSekolah || '',
+            verificationStatus: effectiveStatus,
+            officialNama: s.officialNama || s.namaSekolah,
+            akreditasi: s.akreditasi || 'A',
+            createdAt: s.createdAt || new Date().toISOString()
+          }
+        })
       : []
 
     const umkmFromDB: AdminUMKMItem[] = Array.isArray(resUmkm.data)
       ? resUmkm.data.map((u: any) => {
           const matchedUser = localRegistry.find((m: any) => m.email === u.email || m.id === u.id)
           const legalDoc = u.buktiLegalitas || matchedUser?.buktiLegalitas || undefined
+          const mutation = recentMutations.get(u.id) || (u.email ? recentMutations.get(u.email) : undefined)
+          const effectiveIsVerified = (mutation && now - mutation.timestamp < 10000)
+            ? mutation.status === 'VERIFIED'
+            : Boolean(u.isVerified)
+
           return {
             id: u.id,
             namaUsaha: u.namaUsaha,
@@ -175,7 +201,7 @@ export async function syncAdminUsersFromDB(): Promise<void> {
             kategori: u.kategori || 'Kuliner & F&B',
             ukuranBisnis: u.ukuranBisnis || 'Kecil',
             alamat: u.alamat || '',
-            isVerified: Boolean(u.isVerified),
+            isVerified: effectiveIsVerified,
             verifikasiType: u.verifikasiType || (legalDoc ? 'Dokumen Legalitas / NIB' : 'Verifikasi Manual Admin'),
             buktiLegalitas: legalDoc,
             createdAt: u.createdAt || new Date().toISOString()
@@ -189,15 +215,21 @@ export async function syncAdminUsersFromDB(): Promise<void> {
       umkmList: umkmFromDB.length > 0 ? umkmFromDB : currentState.umkmList
     })
   } catch {
-    // ignore
   }
 }
 
 export async function adminVerifyPelajar(id: string): Promise<boolean> {
+  recordRecentMutation(id, 'VERIFIED')
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
+  if (targetPelajar?.email) {
+    recordRecentMutation(targetPelajar.email, 'VERIFIED')
+  }
+
   const updated = state.pelajarList.map((p) =>
-    p.id === id ? { ...p, verificationStatus: 'VERIFIED' as const, catatanPenolakan: undefined } : p
+    p.id === id || (targetPelajar && p.email === targetPelajar.email)
+      ? { ...p, verificationStatus: 'VERIFIED' as const, catatanPenolakan: undefined }
+      : p
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
@@ -215,7 +247,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
         const allUsers = JSON.parse(allUsersRaw)
         const updatedAll = allUsers.map((u: any) => {
           if (u.id === id || (targetPelajar && u.email === targetPelajar.email)) {
-            return { ...u, verificationStatus: 'VERIFIED', isVerified: true }
+            return { ...u, verificationStatus: 'VERIFIED', isVerified: true, catatanPenolakan: null }
           }
           return u
         })
@@ -229,13 +261,8 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     await fetch(`/api/pelajar/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
+      body: JSON.stringify({ verificationStatus: 'VERIFIED', catatanPenolakan: null })
     })
-    await fetch(`/api/siswa/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
-    }).catch(() => {})
   } catch (err) {
     console.error('Error verifying pelajar in DB:', err)
   }
@@ -244,11 +271,17 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
 }
 
 export async function adminRejectPelajar(id: string, reason?: string): Promise<boolean> {
+  recordRecentMutation(id, 'REJECTED')
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
+  if (targetPelajar?.email) {
+    recordRecentMutation(targetPelajar.email, 'REJECTED')
+  }
   const cleanReason = reason || 'Dokumen kartu pelajar tidak sesuai persyaratan'
   const updated = state.pelajarList.map((p) =>
-    p.id === id ? { ...p, verificationStatus: 'REJECTED' as const, catatanPenolakan: cleanReason } : p
+    p.id === id || (targetPelajar && p.email === targetPelajar.email)
+      ? { ...p, verificationStatus: 'REJECTED' as const, catatanPenolakan: cleanReason }
+      : p
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
@@ -266,7 +299,7 @@ export async function adminRejectPelajar(id: string, reason?: string): Promise<b
         const allUsers = JSON.parse(allUsersRaw)
         const updatedAll = allUsers.map((u: any) => {
           if (u.id === id || (targetPelajar && u.email === targetPelajar.email)) {
-            return { ...u, verificationStatus: 'REJECTED', isVerified: false }
+            return { ...u, verificationStatus: 'REJECTED', isVerified: false, catatanPenolakan: cleanReason }
           }
           return u
         })
@@ -282,11 +315,6 @@ export async function adminRejectPelajar(id: string, reason?: string): Promise<b
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: cleanReason })
     })
-    await fetch(`/api/siswa/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: cleanReason })
-    }).catch(() => {})
   } catch (err) {
     console.error('Error rejecting pelajar in DB:', err)
   }
@@ -295,8 +323,12 @@ export async function adminRejectPelajar(id: string, reason?: string): Promise<b
 }
 
 export async function adminVerifySekolah(id: string): Promise<boolean> {
+  recordRecentMutation(id, 'VERIFIED')
   const state = getVerificationState()
   const targetSekolah = state.sekolahList.find((s) => s.id === id)
+  if (targetSekolah?.emailResmi) {
+    recordRecentMutation(targetSekolah.emailResmi, 'VERIFIED')
+  }
   const updated = state.sekolahList.map((s) =>
     s.id === id ? { ...s, verificationStatus: 'VERIFIED' as const } : s
   )
@@ -323,8 +355,12 @@ export async function adminVerifySekolah(id: string): Promise<boolean> {
 }
 
 export async function adminRejectSekolah(id: string): Promise<boolean> {
+  recordRecentMutation(id, 'REJECTED')
   const state = getVerificationState()
   const targetSekolah = state.sekolahList.find((s) => s.id === id)
+  if (targetSekolah?.emailResmi) {
+    recordRecentMutation(targetSekolah.emailResmi, 'REJECTED')
+  }
   const updated = state.sekolahList.map((s) =>
     s.id === id ? { ...s, verificationStatus: 'REJECTED' as const } : s
   )
@@ -351,8 +387,12 @@ export async function adminRejectSekolah(id: string): Promise<boolean> {
 }
 
 export async function adminVerifyUMKM(id: string): Promise<boolean> {
+  recordRecentMutation(id, 'VERIFIED')
   const state = getVerificationState()
   const targetUMKM = state.umkmList.find((u) => u.id === id)
+  if (targetUMKM?.email) {
+    recordRecentMutation(targetUMKM.email, 'VERIFIED')
+  }
   const updated = state.umkmList.map((u) =>
     u.id === id ? { ...u, isVerified: true } : u
   )
@@ -379,8 +419,12 @@ export async function adminVerifyUMKM(id: string): Promise<boolean> {
 }
 
 export async function adminRevokeUMKM(id: string): Promise<boolean> {
+  recordRecentMutation(id, 'REJECTED')
   const state = getVerificationState()
   const targetUMKM = state.umkmList.find((u) => u.id === id)
+  if (targetUMKM?.email) {
+    recordRecentMutation(targetUMKM.email, 'REJECTED')
+  }
   const updated = state.umkmList.map((u) =>
     u.id === id ? { ...u, isVerified: false } : u
   )

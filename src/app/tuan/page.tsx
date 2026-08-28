@@ -45,6 +45,7 @@ export default function MasterAdminEscrowPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
   const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [rejectRevokeModal, setRejectRevokeModal] = useState<{
     isOpen: boolean
     title: string
@@ -202,24 +203,45 @@ export default function MasterAdminEscrowPage() {
   }
 
   const handleVerifyPelajar = async (id: string, nama: string) => {
-    await adminVerifyPelajar(id)
-    setActionSuccess(`Pelajar ${nama} berhasil diverifikasi resmi!`)
-    await syncAdminUsersFromDB()
-    setTimeout(() => setActionSuccess(null), 3000)
+    if (actionLoadingId) return
+    setActionLoadingId(id)
+    try {
+      await adminVerifyPelajar(id)
+      setActionSuccess(`Pelajar ${nama} berhasil diverifikasi resmi!`)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoadingId(null)
+      setTimeout(() => setActionSuccess(null), 3000)
+    }
   }
 
   const handleVerifySekolah = async (id: string, nama: string) => {
-    await adminVerifySekolah(id)
-    setActionSuccess(`Sekolah ${nama} berhasil diverifikasi resmi!`)
-    await syncAdminUsersFromDB()
-    setTimeout(() => setActionSuccess(null), 3000)
+    if (actionLoadingId) return
+    setActionLoadingId(id)
+    try {
+      await adminVerifySekolah(id)
+      setActionSuccess(`Sekolah ${nama} berhasil diverifikasi resmi!`)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoadingId(null)
+      setTimeout(() => setActionSuccess(null), 3000)
+    }
   }
 
   const handleVerifyUMKM = async (id: string, nama: string) => {
-    await adminVerifyUMKM(id)
-    setActionSuccess(`UMKM ${nama} berhasil diverifikasi resmi!`)
-    await syncAdminUsersFromDB()
-    setTimeout(() => setActionSuccess(null), 3000)
+    if (actionLoadingId) return
+    setActionLoadingId(id)
+    try {
+      await adminVerifyUMKM(id)
+      setActionSuccess(`UMKM ${nama} berhasil diverifikasi resmi!`)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoadingId(null)
+      setTimeout(() => setActionSuccess(null), 3000)
+    }
   }
 
   useEffect(() => {
@@ -659,15 +681,23 @@ export default function MasterAdminEscrowPage() {
                               {p.verificationStatus === 'PENDING' ? (
                                 <div className="inline-flex items-center gap-1.5">
                                   <button
+                                    type="button"
+                                    disabled={actionLoadingId === p.id}
                                     onClick={() => handleVerifyPelajar(p.id, p.namaLengkap)}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-60"
                                   >
-                                    <Check className="w-3.5 h-3.5" />
-                                    <span>Setujui</span>
+                                    {actionLoadingId === p.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Check className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>{actionLoadingId === p.id ? 'Menyimpan...' : 'Setujui'}</span>
                                   </button>
                                   <button
+                                    type="button"
+                                    disabled={actionLoadingId === p.id}
                                     onClick={() => openRejectModal('reject_pelajar', p.id, p.namaLengkap)}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-60"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                     <span>Tolak</span>
@@ -675,19 +705,27 @@ export default function MasterAdminEscrowPage() {
                                 </div>
                               ) : p.verificationStatus === 'VERIFIED' ? (
                                 <button
+                                  type="button"
+                                  disabled={actionLoadingId === p.id}
                                   onClick={() => openRejectModal('revoke_pelajar', p.id, p.namaLengkap)}
-                                  className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                  className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-60"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                                   <span>Cabut Verifikasi</span>
                                 </button>
                               ) : (
                                 <button
+                                  type="button"
+                                  disabled={actionLoadingId === p.id}
                                   onClick={() => handleVerifyPelajar(p.id, p.namaLengkap)}
-                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-60"
                                 >
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>Pulihkan & Setujui</span>
+                                  {actionLoadingId === p.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  )}
+                                  <span>{actionLoadingId === p.id ? 'Menyimpan...' : 'Pulihkan & Setujui'}</span>
                                 </button>
                               )}
                             </td>
@@ -755,63 +793,53 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {s.verificationStatus === 'VERIFIED' ? (
                               <button
-                                onClick={() => {
-                                  setRejectRevokeModal({
-                                    isOpen: true,
-                                    title: 'Cabut Verifikasi Sekolah',
-                                    subtitle: `Cabut verifikasi lembaga ${s.namaSekolah}:`,
-                                    actionType: 'revoke_sekolah',
-                                    targetId: s.id,
-                                    targetName: s.namaSekolah
-                                  })
-                                }}
-                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                type="button"
+                                disabled={actionLoadingId === s.id}
+                                onClick={() => openRejectModal('revoke_sekolah', s.id, s.namaSekolah)}
+                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-60"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" />
+                                <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                                 <span>Cabut Verifikasi</span>
                               </button>
                             ) : s.verificationStatus === 'REJECTED' ? (
                               <button
-                                onClick={() => {
-                                  adminVerifySekolah(s.id)
-                                  setActionSuccess(`Sekolah ${s.namaSekolah} dipulihkan & disetujui`)
-                                  setTimeout(() => setActionSuccess(null), 3000)
-                                }}
-                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                type="button"
+                                disabled={actionLoadingId === s.id}
+                                onClick={() => handleVerifySekolah(s.id, s.namaSekolah)}
+                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-60"
                               >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Pulihkan & Setujui</span>
+                                {actionLoadingId === s.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                )}
+                                <span>{actionLoadingId === s.id ? 'Menyimpan...' : 'Pulihkan & Setujui'}</span>
                               </button>
                             ) : (
-                              <>
+                              <div className="inline-flex items-center gap-1.5">
                                 <button
-                                  onClick={() => {
-                                    adminVerifySekolah(s.id)
-                                    setActionSuccess(`Sekolah ${s.namaSekolah} terverifikasi`)
-                                    setTimeout(() => setActionSuccess(null), 3000)
-                                  }}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  type="button"
+                                  disabled={actionLoadingId === s.id}
+                                  onClick={() => handleVerifySekolah(s.id, s.namaSekolah)}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-60"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Setujui</span>
+                                  {actionLoadingId === s.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>{actionLoadingId === s.id ? 'Menyimpan...' : 'Setujui'}</span>
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    setRejectRevokeModal({
-                                      isOpen: true,
-                                      title: 'Tolak Verifikasi Sekolah',
-                                      subtitle: `Pilih alasan penolakan untuk lembaga ${s.namaSekolah}:`,
-                                      actionType: 'reject_sekolah',
-                                      targetId: s.id,
-                                      targetName: s.namaSekolah
-                                    })
-                                  }}
-                                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  type="button"
+                                  disabled={actionLoadingId === s.id}
+                                  onClick={() => openRejectModal('reject_sekolah', s.id, s.namaSekolah)}
+                                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-60"
                                 >
                                   <X className="w-3.5 h-3.5" />
                                   <span>Tolak</span>
                                 </button>
-                              </>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -886,16 +914,24 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
                             {!u.isVerified ? (
                               <button
+                                type="button"
+                                disabled={actionLoadingId === u.id}
                                 onClick={() => handleVerifyUMKM(u.id, u.namaUsaha)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-60"
                               >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Setujui</span>
+                                {actionLoadingId === u.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5" />
+                                )}
+                                <span>{actionLoadingId === u.id ? 'Menyimpan...' : 'Setujui'}</span>
                               </button>
                             ) : (
                               <button
+                                type="button"
+                                disabled={actionLoadingId === u.id}
                                 onClick={() => openRejectModal('revoke_umkm', u.id, u.namaUsaha)}
-                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-60"
                               >
                                 <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                                 <span>Cabut Verifikasi</span>
