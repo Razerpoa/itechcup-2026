@@ -56,6 +56,8 @@ src/
 │   │   ├── login/page.tsx        # Login Admin Terproteksi Rate Limiter
 │   │   └── page.tsx              # Dashboard Admin Verifikasi (Pelajar, UMKM, Sekolah, Escrow)
 │   ├── api/                      # RESTful Backend API Endpoints
+│   │   ├── admin/
+│   │   │   └── reset-db/route.ts # Endpoint Reset & Re-Seed Database Aman
 │   │   ├── ai/
 │   │   │   └── assistant/route.ts # Google Gemini AI Chat Assistant Endpoint (1.5-Flash & 2.0-Flash)
 │   │   ├── auth/                 # login, admin-login, google-check, reset-password (POST & PUT)
