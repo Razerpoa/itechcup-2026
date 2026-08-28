@@ -57,6 +57,48 @@ export default function MasterAdminEscrowPage() {
   const [reasonCategory, setReasonCategory] = useState('Dokumen tidak sesuai')
   const [customReasonText, setCustomReasonText] = useState('')
 
+  const [isResetDbModalOpen, setIsResetDbModalOpen] = useState(false)
+  const [resetConfirmationText, setResetConfirmationText] = useState('')
+  const [isResettingDb, setIsResettingDb] = useState(false)
+
+  const handleResetDatabase = async () => {
+    if (resetConfirmationText !== 'RESET') {
+      alert('Ketik kata "RESET" dengan huruf kapital untuk mengonfirmasi pembersihan database.')
+      return
+    }
+    setIsResettingDb(true)
+    try {
+      const res = await fetch('/api/admin/reset-db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmation: 'RESET' })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mereset database')
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mitra_muda_admin_users_v1')
+        localStorage.removeItem('mitra_muda_akad_data_v2')
+        localStorage.removeItem('mitra_muda_escrow_data_v1')
+        localStorage.removeItem('mitra_muda_custom_projects_v2')
+        localStorage.removeItem('mitra_muda_all_registered_users_v1')
+      }
+
+      setIsResetDbModalOpen(false)
+      setActionSuccess('Database berhasil di-reset dan data awal berhasil di-seed ulang!')
+      setTimeout(() => setActionSuccess(null), 5000)
+
+      await syncAdminUsersFromDB()
+      await syncEscrowWithDB()
+    } catch (err: any) {
+      alert(err?.message || 'Terjadi kesalahan saat mereset database')
+    } finally {
+      setIsResettingDb(false)
+    }
+  }
+
   const openRejectModal = (
     actionType: 'reject_pelajar' | 'revoke_pelajar' | 'reject_sekolah' | 'revoke_sekolah' | 'revoke_umkm' | 'reject_deposit' | 'reject_withdrawal',
     targetId: string,
@@ -472,6 +514,18 @@ export default function MasterAdminEscrowPage() {
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Keamanan</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setResetConfirmationText('')
+                setIsResetDbModalOpen(true)
+              }}
+              className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              title="Reset & Seed Ulang Database"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset DB</span>
             </button>
 
             <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
@@ -1281,6 +1335,66 @@ export default function MasterAdminEscrowPage() {
         isOpen={is2FAModalOpen}
         onClose={() => setIs2FAModalOpen(false)}
       />
+
+      {/* Reset Database Modal */}
+      {isResetDbModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-rose-200 text-left space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-950">Reset & Seed Ulang Database</h3>
+                <p className="text-[11px] text-gray-500">Pembersihan data pengujian platform</p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 text-xs text-rose-900/90 leading-relaxed space-y-2">
+              <p className="font-semibold">Perhatian Penting:</p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-rose-800">
+                <li>Seluruh data transaksi, proposal lamaran, dan lowongan pengujian akan dihapus bersih.</li>
+                <li>Database akan di-seed ulang dengan 3 sekolah resmi Kemendikdasmen, akun siswa default, dan akun UMKM default.</li>
+                <li>Data tidak dapat dikembalikan setelah tombol konfirmasi ditekan.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700 block">
+                Ketik kata <span className="text-rose-600 font-mono font-black">RESET</span> untuk konfirmasi:
+              </label>
+              <input
+                type="text"
+                value={resetConfirmationText}
+                onChange={(e) => setResetConfirmationText(e.target.value)}
+                placeholder="RESET"
+                disabled={isResettingDb}
+                className="w-full h-11 px-4 bg-[#FAF8F5] border border-gray-200 focus:border-rose-500 rounded-xl text-xs font-bold tracking-wider outline-none text-gray-900 uppercase disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                disabled={isResettingDb}
+                onClick={() => setIsResetDbModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isResettingDb || resetConfirmationText !== 'RESET'}
+                onClick={handleResetDatabase}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isResettingDb && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isResettingDb ? 'Mereset Database...' : 'Konfirmasi Hapus & Reset'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
