@@ -68,12 +68,19 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 | **Verifikasi Sekolah & ID Registrasi Siswa** | Alur pendaftaran pelajar yang terhubung langsung ke database sekolah terdaftar dengan kode unik `MM-2026-XXXXX`. | Mencegah kecurangan akun; guru dapat menyetujui siswa secara instan via fitur *Quick Approval* tanpa perlu mengunggah KTP/buku tabungan. |
 | **Marketplace Proyek & Jasa Siswa** | Portal lowongan pekerjaan dua arah: UMKM mempublikasikan lowongan proyek, dan pelajar menawarkan katalog paket keahlian (Basic, Standard, Premium). | Memudahkan pencocokan kebutuhan UMKM dengan keahlian spesifik pelajar secara transparan dan terstruktur. |
 | **Sistem Akad Escrow (Rekening Bersama)** | Penguncian uang muka (DP 30%–50%) di dompet penampung aman sistem sebelum pekerjaan dimulai hingga serah terima hasil. | Menghilangkan risiko gagal bayar bagi siswa dan melindungi dana UMKM jika pengerjaan tidak memenuhi standar akad. |
+| **Kwitansi & Invoice Resmi Digital (UMKM)** | Penerbitan dan pencetakan faktur digital berstandar pembukuan akuntansi UMKM lengkap dengan nomor transaksi unik, rincian biaya, dan validasi QR sistem. | Memberikan bukti pengeluaran sah bagi pembukuan kas UMKM dan rekam jejak formal transaksi. |
+| **Surat Pengalaman Kerja Industri (Pelajar)** | Penerbitan surat keterangan pengalaman kerja resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, dan rating kepuasan kerja. | Dokumen berharga yang dapat dilampirkan langsung oleh pelajar untuk persyaratan magang/PKL, portofolio kelulusan, atau melamar kerja. |
 | **Asisten Virtual AI (Google Gemini Multi-Tier)** | Chatbot cerdas terpadu di pojok aplikasi untuk konsultasi platform, pembuatan ringkasan penawaran, dan bantuan teknis. | Menggunakan arsitektur *waterfall* cerdas (hemat token) dengan perlindungan keamanan anti-kebocoran kredensial tingkat tinggi. |
 
-### Fitur Tambahan
+### Fitur Tambahan & Kepatuhan Publik
+* **Kepatuhan Regulasi UU PDP No. 27/2022:** Perlindungan ketat data pribadi pelajar di bawah umur, enkripsi database, dan jaminan tanpa penjualan data ke pihak ketiga (`/kebijakan-privasi`).
+* **Pedoman Perlindungan Talenta Pelajar:** Perlindungan jam wajib belajar sekolah, etika interaksi profesional, larangan eksploitasi kerja, dan hotline darurat (`/perlindungan-pelajar`).
+* **Syarat & Ketentuan Layanan (0% Komisi Pelajar):** Regulasi perlindungan hak kekayaan intelektual (HAKI) karya siswa dan prosedur mediasi sengketa formal (`/syarat-ketentuan`).
+* **Template Penawaran Sopan & Profesional:** Tombol bantuan otomatis di form lamaran proyek bagi siswa untuk menghasilkan kalimat proposal santun kepada pemilik usaha.
+* **Koordinasi Cepat via WhatsApp:** Tautan interaktif satu klik dengan pesan kontekstual ruang akad proyek antara siswa dan UMKM.
 * **Integrasi Lookup Kemendikdasmen RI:** Validasi otomatis NPSN 8-digit dan nama sekolah resmi secara *real-time* saat pendaftaran sekolah.
 * **Dompet Digital Siswa:** Pencairan saldo aman langsung ke berbagai e-wallet (GoPay, OVO, DANA, ShopeePay) dengan verifikasi nama pemilik akun.
-* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app.
+* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app dengan sistem *Mutation Lock*.
 * **Multi-Factor Authentication (2FA Modal):** Pengamanan verifikasi transaksi dan penarikan saldo melalui kode autentikasi instan.
 
 ---
@@ -83,14 +90,19 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 ### Live Demo
 🔗 **Kunjungi Website Resmi:** [https://www.mitramuda.biz.id](https://www.mitramuda.biz.id)
 
-### Screenshot Aplikasi
+### Screenshot & Halaman Aplikasi
 
 * **Homepage (`/`)** — Tampilan utama platform yang memperkenalkan ekosistem kolaborasi pelajar dan UMKM dengan estetika *Collaborative Vitality*.
 * **Marketplace (`/marketplace`)** — Feed lowongan proyek UMKM serta katalog etalase jasa siswa lengkap dengan filter kategori dan pencarian cerdas.
+* **Detail Proyek & Proposal (`/marketplace/[id]`)** — Lembar spesifikasi proyek UMKM dilengkapi fitur *Template Penawaran Sopan* bagi siswa.
+* **Ruang Akad Transaksi (`/umkm/transaksi/[id]`, `/pelajar/transaksi/[id]`)** — Ruang kolaborasi terpadu dengan serah terima berkas, koordinasi WhatsApp, cetak invoice kas resmi UMKM, dan unduh surat pengalaman kerja siswa.
 * **Dashboard Pelajar (`/pelajar`)** — Panel kontrol siswa untuk memantau ID Registrasi, status verifikasi sekolah, transaksi aktif, dan dompet digital.
 * **Dashboard UMKM (`/umkm`)** — Panel manajemen lowongan proyek, pemantauan proposal lamaran masuk, dan deposit rekening escrow.
 * **Dashboard Sekolah (`/sekolah`)** — Portal verifikasi siswa dengan fitur *Quick Approval* berbasis ID Registrasi dan monitoring portofolio.
 * **Portal Master Admin (`/tuan`)** — Panel moderasi verifikasi berkas legalitas UMKM, persetujuan penarikan saldo, dan mediasi transaksi aman.
+* **Syarat & Ketentuan Layanan (`/syarat-ketentuan`)** — Landasan hukum kerja sama, transparansi sistem escrow, 0% komisi pelajar, dan resolusi sengketa.
+* **Kebijakan Privasi (`/kebijakan-privasi`)** — Kepatuhan standar keamanan data pribadi nasional sesuai amanat UU PDP No. 27/2022.
+* **Pedoman Perlindungan Pelajar (`/perlindungan-pelajar`)** — Standar perlindungan hak anak, jam wajib belajar sekolah, dan kanal pengaduan cepat.
 
 ### Video Demo
 📹 **Link Video Demo:** *(Tersedia dalam berkas penyerahan juri ITECHNO CUP 2026)*

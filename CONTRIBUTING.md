@@ -49,6 +49,9 @@ src/
 │   │   └── callback/page.tsx     # Callback Handler (Verifikasi Email Signup & Reset Password Form)
 │   ├── marketplace/              # Marketplace Feed Proyek UMKM & Katalog Jasa Pelajar
 │   ├── profil/[id]/              # Halaman Portofolio Publik & Rating Siswa
+│   ├── syarat-ketentuan/         # Halaman Syarat & Ketentuan Layanan (HAKI & 0% Komisi)
+│   ├── kebijakan-privasi/        # Halaman Kepatuhan UU PDP No. 27/2022
+│   ├── perlindungan-pelajar/     # Pedoman Perlindungan Jam Wajib Belajar & Anti-Eksploitasi
 │   ├── tuan/                     # Portal Admin (Warm Editorial Design)
 │   │   ├── login/page.tsx        # Login Admin Terproteksi Rate Limiter
 │   │   └── page.tsx              # Dashboard Admin Verifikasi (Pelajar, UMKM, Sekolah, Escrow)
@@ -72,6 +75,7 @@ src/
 │   ├── layout/                   # Navbar, Sidebar, Footer
 │   ├── marketplace/              # ProyekCard, JasaCard
 │   ├── ai-assistant.tsx          # Widget Terpadu AI Chatbot (Google Gemini) & CS WhatsApp
+│   ├── invoice-modal.tsx         # Generator Cetak Kwitansi Resmi & Surat Pengalaman Kerja
 │   └── two-factor-modal.tsx      # Modal 2FA Security
 ├── lib/
 │   ├── prisma.ts                 # Prisma ORM v7 Client Singleton
@@ -215,6 +219,55 @@ Untuk mempermudah sekolah dan siswa serta menjaga privasi data:
    - Setelah pendaftaran, akun langsung aktif dengan sesi terotentikasi dan tombol langsung masuk ke dashboard, sehingga siswa/UMKM/sekolah tidak terhambat jika pengiriman email konfirmasi mengalami antrean/delay.
 5. **Modal Penolakan & Pencabutan Status di Admin (`/tuan`):**
    - Menggantikan browser `prompt()` lama dengan Modal In-App modern untuk aksi Tolak dan Cabut Verifikasi, lengkap dengan pilihan kategori alasan (dokumen buram, data tidak sesuai, permintaan pencabutan, dll).
+6. **Mutation Lock Mechanism & Pemulihan Akun (Anti Double-Click Bug):**
+   - Menyelesaikan masalah race-condition polling background: `recordRecentMutation(id, status)` di `admin-verification-store.ts` mengunci status mutasi selama 10 detik. Background polling tidak akan menimpa (revert) status optimistik UI sebelum mutasi selesai di database PostgreSQL.
+   - Database Prisma otomatis membersihkan `catatanPenolakan: null` saat akun yang sebelumnya ditolak dipulihkan kembali ke status `VERIFIED`.
+   - Tombol aksi moderasi admin dilengkapi status loading `<Loader2 className="animate-spin" />` dan atribut `disabled` saat request sedang diproses.
+
+---
+
+## 🧾 Dokumen Resmi Digital & Surat Pengalaman Kerja
+
+Untuk menjamin nilai nyata bagi dunia usaha dan masa depan pelajar:
+
+1. **Komponen Modal Dokumen (`src/components/invoice-modal.tsx`):**
+   - Mendukung dua mode tampilan cetak: `type="invoice"` dan `type="certificate"`.
+   - Menggunakan utility `@media print` murni: saat tombol *Cetak / Simpan PDF* diklik, browser membuka print preview bersih format A4 tanpa navbar, sidebar, atau tombol dialog modal.
+2. **Kwitansi / Faktur Kas Resmi UMKM:**
+   - Diterbitkan dengan format nomor faktur unik: `INV-MM-[ID]-[TAHUN]`.
+   - Mencantumkan identitas Klien UMKM, identitas Pelajar, rincian biaya proyek, status pelunasan, pencatatan DP rekening bersama, dan jaminan biaya platform 0% komisi bagi siswa.
+   - Dilengkapi QR Code verifikasi digital keabsahan dokumen.
+3. **Surat Keterangan Pengalaman Kerja Industri Pelajar:**
+   - Diterbitkan dengan nomor registrasi sertifikasi: `CERT-MM-[ID]-VOKASI`.
+   - Menerangkan bahwa siswa dari sekolah kejuruan/menengah terkait telah berhasil menyelesaikan proyek industri riil dari UMKM dengan mutu memuaskan dan rating kepuasan bintang.
+   - Diakui sebagai portofolio kerja nyata untuk lampiran lamaran PKL/magang atau kerja setelah lulus sekolah.
+
+---
+
+## 🛡️ Kepatuhan Regulasi, Keamanan Data & Etika Publik
+
+Sebagai platform publik nasional, Mitra Muda mematuhi regulasi ketat:
+
+1. **Kepatuhan UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP):**
+   - Halaman resmi `/kebijakan-privasi` menjamin data pribadi pelajar di bawah umur (seperti foto kartu pelajar, NISN, dan kontak) tidak pernah diperjualbelikan kepada pihak ketiga.
+   - Mendukung hak subjek data (*Right to Access & Right to be Forgotten*).
+2. **Pedoman Perlindungan Talenta Pelajar (`/perlindungan-pelajar`):**
+   - Perlindungan waktu wajib belajar: pengerjaan proyek dilarang mengganggu jam sekolah, tugas kurikulum, dan waktu istirahat malam siswa.
+   - Larangan kerja paksa atau eksploitatif dan kewajiban kompensasi yang adil dan transparan.
+   - Larangan pertemuan fisik luring (offline) berdua saja antara klien dan pelajar tanpa pendampingan pihak sekolah atau orang tua/wali.
+   - Hotline darurat aduan perlindungan anak & mediasi: `lapor@mitramuda.biz.id`.
+3. **Syarat & Ketentuan Layanan (`/syarat-ketentuan`):**
+   - Penegasan hak kekayaan intelektual (HAKI): hak cipta otomatis beralih sah ke klien UMKM setelah pembayaran lunas 100%, sementara pelajar memegang hak moral portofolio non-komersial.
+   - Komisi 0% bagi pelajar demi pemenuhan hak ekonomi siswa seutuhnya.
+
+---
+
+## 💬 Fitur Interaksi: Template Penawaran & WhatsApp Coordinator
+
+1. **Template Penawaran Sopan Siswa (`/marketplace/[id]`):**
+   - Tombol *"✨ Template Sopan"* di modal proposal otomatis menyusun pengantar penawaran yang santun, menyebutkan nama sekolah dan kesiapan bekerja secara disiplin, membantu siswa vokasi yang baru pertama kali berinteraksi dengan dunia usaha.
+2. **WhatsApp Direct Coordinator (`/umkm/transaksi/[id]` & `/pelajar/transaksi/[id]`):**
+   - Tombol *"WA Siswa"* dan *"WA UMKM"* memformat tautan `https://wa.me/?text=...` dengan parameter judul proyek dan URL ruang akad transaksi untuk komunikasi cepat tanpa ribet menyalin nomor secara manual.
 
 ---
 
