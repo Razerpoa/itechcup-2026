@@ -26,9 +26,9 @@ By **DragonTech**
 
 | Nama | Peran | GitHub |
 | :--- | :--- | :--- |
-| **Raffa Rizqi Ramdani** | Project Lead & Full Stack Developer | [@Razerpoa](https://github.com/Razerpoa) |
-| **Faaiz Hamdy** | Frontend Developer & UI/UX Designer | [@Hamdy-35](https://github.com/Hamdy-35) |
-| **Fathan Assidqi Dwipayana** | Backend Developer | [@AssidqiDwipayana](https://github.com/AssidqiDwipayana) |
+| **Raffa Rizqi Ramdani** | Project Lead & Full Stack Developer | [@RaffaRizqi](https://github.com/RaffaRizqi) |
+| **Faaiz Hamdy** | Frontend Developer & UI/UX Designer | [@Faaizhamdhy](https://github.com/Faaizhamdhy) |
+| **Fathan Assidqi Dwipayana** | Backend Developer | [@Razerpoa](https://github.com/Razerpoa) |
 
 ---
 
