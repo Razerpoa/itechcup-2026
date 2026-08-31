@@ -35,13 +35,13 @@ By **DragonTech**
 ## 🎯 Tentang Proyek
 
 ### Latar Belakang
-Indonesia memiliki lebih dari **64 juta unit Usaha Mikro, Kecil, dan Menengah (UMKM)** yang menjadi tulang punggung ekonomi nasional, namun lebih dari 70% di antaranya masih menghadapi keterbatasan dalam transformasi digital akibat mahalnya biaya jasa agensi profesional. Di saat yang sama, jutaan pelajar kejuruan (SMK) dan menengah atas (SMA) memiliki keterampilan digital mumpuni di bidang desain grafis, pengembangan web, penulisan konten, dan multimedia.
+Indonesia memiliki lebih dari **64 juta unit Usaha Mikro, Kecil, dan Menengah (UMKM)** yang menjadi tulang punggung ekonomi nasional, namun lebih dari 70% di antaranya masih menghadapi keterbatasan da[...]
 
-Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tidak memiliki KTP/NPWP** dan **tidak memenuhi syarat pembukaan rekening bank komersial**, sehingga tereksklusi dari platform pekerja lepas global. Ketiadaan wadah legal yang aman dan terverifikasi pihak sekolah sering kali menghadapkan pelajar pada risiko penipuan pengerjaan serta keterlambatan atau ketiadaan pembayaran.
+Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tidak memiliki KTP/NPWP** dan **tidak memenuhi syarat pembukaan rekening bank komersial**, sehingga tereksklusi dari platfo[...]
 
 ### Solusi yang Ditawarkan
-**Mitra Muda** hadir sebagai platform marketplace kolaboratif yang menghubungkan pelajar bertalenta dengan pelaku UMKM melalui sistem verifikasi legal institusional sekolah dan rekening bersama (*escrow*). Solusi inovatif ini memungkinkan:
-1. **Pemberdayaan Pelajar Tanpa Rekening Bank:** Menghubungkan dompet digital siswa langsung ke layanan e-wallet nasional (GoPay, OVO, DANA, ShopeePay) dengan verifikasi identitas yang sah melalui pihak sekolah.
+**Mitra Muda** hadir sebagai platform marketplace kolaboratif yang menghubungkan pelajar bertalenta dengan pelaku UMKM melalui sistem verifikasi legal institusional sekolah dan rekening bersama (*escr[...]
+1. **Pemberdayaan Pelajar Tanpa Rekening Bank:** Menghubungkan dompet digital siswa langsung ke layanan e-wallet nasional (GoPay, OVO, DANA, ShopeePay) dengan verifikasi identitas yang sah melalui pih[...]
 2. **Jaminan Keamanan Escrow:** Menjaga dana proyek dari UMKM di dalam rekening penampung bersama hingga pekerjaan selesai diverifikasi secara memuaskan.
 3. **Verifikasi Sekolah & ID Registrasi:** Menautkan status siswa ke database sekolah terdaftar dan data resmi Kemendikdasmen RI melalui alur persetujuan guru berbasis ID Registrasi (`MM-2026-XXXXX`).
 4. **Pendamping AI Cerdas:** Membantu pembuatan profil, penulisan proposal, dan konsultasi interaktif melalui AI Virtual Assistant terintegrasi Google Gemini.
@@ -65,12 +65,12 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 | Fitur | Deskripsi | Keunggulan |
 | :--- | :--- | :--- |
-| **Verifikasi Sekolah & ID Registrasi Siswa** | Alur pendaftaran pelajar yang terhubung langsung ke database sekolah terdaftar dengan kode unik `MM-2026-XXXXX`. | Mencegah kecurangan akun; guru dapat menyetujui siswa secara instan via fitur *Quick Approval* tanpa perlu mengunggah KTP/buku tabungan. |
-| **Marketplace Proyek & Jasa Siswa** | Portal lowongan pekerjaan dua arah: UMKM mempublikasikan lowongan proyek, dan pelajar menawarkan katalog paket keahlian (Basic, Standard, Premium). | Memudahkan pencocokan kebutuhan UMKM dengan keahlian spesifik pelajar secara transparan dan terstruktur. |
-| **Sistem Akad Escrow (Rekening Bersama)** | Penguncian uang muka (DP 30%–50%) di dompet penampung aman sistem sebelum pekerjaan dimulai hingga serah terima hasil. | Menghilangkan risiko gagal bayar bagi siswa dan melindungi dana UMKM jika pengerjaan tidak memenuhi standar akad. |
-| **Kwitansi & Invoice Resmi Digital (UMKM)** | Penerbitan dan pencetakan faktur digital berstandar pembukuan akuntansi UMKM lengkap dengan nomor transaksi unik, rincian biaya, dan validasi QR sistem. | Memberikan bukti pengeluaran sah bagi pembukuan kas UMKM dan rekam jejak formal transaksi. |
-| **Surat Pengalaman Kerja Industri (Pelajar)** | Penerbitan surat keterangan pengalaman kerja resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, dan rating kepuasan kerja. | Dokumen berharga yang dapat dilampirkan langsung oleh pelajar untuk persyaratan magang/PKL, portofolio kelulusan, atau melamar kerja. |
-| **Asisten Virtual AI (Google Gemini Multi-Tier)** | Chatbot cerdas terpadu di pojok aplikasi untuk konsultasi platform, pembuatan ringkasan penawaran, dan bantuan teknis. | Menggunakan arsitektur *waterfall* cerdas (hemat token) dengan perlindungan keamanan anti-kebocoran kredensial tingkat tinggi. |
+| **Verifikasi Sekolah & ID Registrasi Siswa** | Alur pendaftaran pelajar yang terhubung langsung ke database sekolah terdaftar dengan kode unik `MM-2026-XXXXX`. | Mencegah kecurangan akun; guru dapat[...]
+| **Marketplace Proyek & Jasa Siswa** | Portal lowongan pekerjaan dua arah: UMKM mempublikasikan lowongan proyek, dan pelajar menawarkan katalog paket keahlian (Basic, Standard, Premium). | Memudahkan[...]
+| **Sistem Akad Escrow (Rekening Bersama)** | Penguncian uang muka (DP 30%–50%) di dompet penampung aman sistem sebelum pekerjaan dimulai hingga serah terima hasil. | Menghilangkan risiko gagal baya[...]
+| **Kwitansi & Invoice Resmi Digital (UMKM)** | Penerbitan dan pencetakan faktur digital berstandar pembukuan akuntansi UMKM lengkap dengan nomor transaksi unik, rincian biaya, dan validasi QR sistem.[...]
+| **Surat Pengalaman Kerja Industri (Pelajar)** | Penerbitan surat keterangan pengalaman kerja resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, dan rating kepuasan kerja. | Dok[...]
+| **Asisten Virtual AI (Google Gemini Multi-Tier)** | Chatbot cerdas terpadu di pojok aplikasi untuk konsultasi platform, pembuatan ringkasan penawaran, dan bantuan teknis. | Menggunakan arsitektur *w[...]
 
 ### Fitur Tambahan & Kepatuhan Publik
 * **Kepatuhan Regulasi UU PDP No. 27/2022:** Perlindungan ketat data pribadi pelajar di bawah umur, enkripsi database, dan jaminan tanpa penjualan data ke pihak ketiga (`/kebijakan-privasi`).
@@ -80,7 +80,7 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 * **Koordinasi Cepat via WhatsApp:** Tautan interaktif satu klik dengan pesan kontekstual ruang akad proyek antara siswa dan UMKM.
 * **Integrasi Lookup Kemendikdasmen RI:** Validasi otomatis NPSN 8-digit dan nama sekolah resmi secara *real-time* saat pendaftaran sekolah.
 * **Dompet Digital Siswa:** Pencairan saldo aman langsung ke berbagai e-wallet (GoPay, OVO, DANA, ShopeePay) dengan verifikasi nama pemilik akun.
-* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app dengan sistem *Mutation Lock*.
+* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app dengan sistem *Mutation [...]
 * **Multi-Factor Authentication (2FA Modal):** Pengamanan verifikasi transaksi dan penarikan saldo melalui kode autentikasi instan.
 
 ---
@@ -89,19 +89,19 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 ### Live Demo
 🔗 **Kunjungi Website Resmi:** [https://www.mitramuda.biz.id](https://www.mitramuda.biz.id)
-**Login Admin**
-username tuan
-pw tuan123
-[https://www.mitramuda.biz.id/tuan/login]
-(https://www.mitramuda.biz.id/tuan/login)
 
+### Login Admin
+Untuk mengakses portal admin, gunakan kredensial berikut:
+- **Username:** `tuan`
+- **Password:** `tuan123`
+- **URL:** [https://www.mitramuda.biz.id/tuan/login](https://www.mitramuda.biz.id/tuan/login)
 
 ### Screenshot & Halaman Aplikasi
 
 * **Homepage (`/`)** — Tampilan utama platform yang memperkenalkan ekosistem kolaborasi pelajar dan UMKM dengan estetika *Collaborative Vitality*.
 * **Marketplace (`/marketplace`)** — Feed lowongan proyek UMKM serta katalog etalase jasa siswa lengkap dengan filter kategori dan pencarian cerdas.
 * **Detail Proyek & Proposal (`/marketplace/[id]`)** — Lembar spesifikasi proyek UMKM dilengkapi fitur *Template Penawaran Sopan* bagi siswa.
-* **Ruang Akad Transaksi (`/umkm/transaksi/[id]`, `/pelajar/transaksi/[id]`)** — Ruang kolaborasi terpadu dengan serah terima berkas, koordinasi WhatsApp, cetak invoice kas resmi UMKM, dan unduh surat pengalaman kerja siswa.
+* **Ruang Akad Transaksi (`/umkm/transaksi/[id]`, `/pelajar/transaksi/[id]`)** — Ruang kolaborasi terpadu dengan serah terima berkas, koordinasi WhatsApp, cetak invoice kas resmi UMKM, dan unduh sur[...]
 * **Dashboard Pelajar (`/pelajar`)** — Panel kontrol siswa untuk memantau ID Registrasi, status verifikasi sekolah, transaksi aktif, dan dompet digital.
 * **Dashboard UMKM (`/umkm`)** — Panel manajemen lowongan proyek, pemantauan proposal lamaran masuk, dan deposit rekening escrow.
 * **Dashboard Sekolah (`/sekolah`)** — Portal verifikasi siswa dengan fitur *Quick Approval* berbasis ID Registrasi dan monitoring portofolio.
@@ -142,7 +142,7 @@ pw tuan123
 
 | Teknologi | Alasan Pemilihan |
 | :--- | :--- |
-| **Next.js 16 (App Router)** | Memadukan kapabilitas *Server-Side Rendering* (SSR) dan *Static Site Generation* (SSG) dengan Turbopack untuk performa kompilasi sub-detik serta keamanan *Server Actions*. |
+| **Next.js 16 (App Router)** | Memadukan kapabilitas *Server-Side Rendering* (SSR) dan *Static Site Generation* (SSG) dengan Turbopack untuk performa kompilasi sub-detik serta keamanan *Server Action[...]
 | **Tailwind CSS v4** | Menghadirkan engine baru berbasis CSS-first murni tanpa overhead konfigurasi JavaScript lama, memastikan beban aset web minimal dan rendering instan. |
 | **Prisma ORM v7** | Menjamin integritas data relasional dengan *type-safety* TypeScript penuh, migrasi skema deklaratif, dan performa tinggi melalui driver adapter PostgreSQL. |
 | **Google Gemini AI (Multi-Tier)** | Menyediakan inferensi cerdas dengan latensi sangat rendah serta efisiensi kuota token berkat skema eskalasi model bertingkat (*waterfall*). |
