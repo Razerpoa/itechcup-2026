@@ -89,6 +89,12 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 ### Live Demo
 🔗 **Kunjungi Website Resmi:** [https://www.mitramuda.biz.id](https://www.mitramuda.biz.id)
+**Login Admin**
+username tuan
+pw tuan123
+[https://www.mitramuda.biz.id/tuan/login]
+(https://www.mitramuda.biz.id/tuan/login)
+
 
 ### Screenshot & Halaman Aplikasi
 
