@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Lock, ShieldCheck, AlertCircle, Clock, CheckCircle2, X } from 'lucide-react'
-import { formatRupiah, formatDate } from '@/lib/utils'
+import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, submitPelajarWithdrawal } from '@/lib/escrow-store'
 
@@ -82,10 +82,10 @@ export default function DompetPage() {
     }
   ]
 
-  const handleWithdraw = (e: React.FormEvent) => {
+    const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
-    const num = Number(amount)
+    const num = parseThousand(amount)
 
     if (isNaN(num) || num < 20000) {
       setErrorMessage('Minimal penarikan adalah Rp 20.000')
@@ -228,9 +228,11 @@ export default function DompetPage() {
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 font-extrabold text-sm text-gray-500">Rp</span>
                 <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatThousand(amount)}
+                  onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+                  placeholder="500.000"
                   className="w-full h-12 bg-[#F5F5F5] rounded-2xl pl-12 pr-4 text-base font-extrabold text-[#964825] outline-none focus:ring-2 focus:ring-[#FF9B71]"
                   required
                 />

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const raw = await prisma.pelajar.findUnique({
+    let raw = await prisma.pelajar.findUnique({
       where: { id },
       include: {
         profil: true,
@@ -13,6 +13,43 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         lamaran: true
       }
     })
+
+    if (!raw) {
+      // Fallback 1: Cek apakah ID yang dikirim merupakan ID Jasa
+      const jasaItem = await prisma.jasa.findUnique({
+        where: { id },
+        select: { pelajarId: true }
+      })
+      if (jasaItem?.pelajarId) {
+        raw = await prisma.pelajar.findUnique({
+          where: { id: jasaItem.pelajarId },
+          include: {
+            profil: true,
+            sekolah: true,
+            jasa: true,
+            lamaran: true
+          }
+        })
+      }
+    }
+
+    if (!raw) {
+      // Fallback 2: Cek apakah ID yang dikirim berupa email atau NIS
+      raw = await prisma.pelajar.findFirst({
+        where: {
+          OR: [
+            { email: id },
+            { nis: id }
+          ]
+        },
+        include: {
+          profil: true,
+          sekolah: true,
+          jasa: true,
+          lamaran: true
+        }
+      })
+    }
 
     if (!raw) {
       return NextResponse.json({ error: 'Pelajar tidak ditemukan' }, { status: 404 })

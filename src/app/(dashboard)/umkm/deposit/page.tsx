@@ -17,7 +17,7 @@ import {
   AlertCircle,
   ArrowDownLeft
 } from 'lucide-react'
-import { formatRupiah, formatDate } from '@/lib/utils'
+import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, submitUMKMDeposit, syncEscrowWithDB } from '@/lib/escrow-store'
 
@@ -98,7 +98,7 @@ export default function UMKMSaldoDepositPage() {
     e.preventDefault()
     setErrorMessage(null)
 
-    const finalAmount = customNominal ? parseInt(customNominal, 10) : selectedNominal
+    const finalAmount = customNominal ? parseThousand(customNominal) : selectedNominal
     if (!finalAmount || finalAmount < 50000) {
       setErrorMessage('Nominal deposit minimal adalah Rp 50.000')
       return
@@ -251,10 +251,11 @@ export default function UMKMSaldoDepositPage() {
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-xs text-gray-500">Rp</span>
                   <input
-                    type="number"
-                    value={customNominal}
-                    onChange={(e) => setCustomNominal(e.target.value)}
-                    placeholder="Contoh: 1500000"
+                    type="text"
+                    inputMode="numeric"
+                    value={formatThousand(customNominal)}
+                    onChange={(e) => setCustomNominal(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Contoh: 1.500.000"
                     className="w-full h-12 bg-[#F5F5F5] rounded-2xl pl-10 pr-4 text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
                   />
                 </div>

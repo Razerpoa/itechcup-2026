@@ -103,6 +103,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!targetPelajarId && email) {
+      const existingByEmail = await prisma.pelajar.findUnique({ where: { email } })
+      if (existingByEmail) {
+        targetPelajarId = existingByEmail.id
+      }
+    }
+
+    if (!targetPelajarId && namaPelajar) {
+      const existingByName = await prisma.pelajar.findFirst({
+        where: { namaLengkap: { equals: namaPelajar, mode: 'insensitive' } }
+      })
+      if (existingByName) {
+        targetPelajarId = existingByName.id
+      }
+    }
+
     if (!targetPelajarId) {
       const fallbackEmail = email || `pelajar-${Date.now()}@mitramuda.id`
       const newPelajar = await prisma.pelajar.create({
@@ -115,7 +131,9 @@ export async function POST(request: NextRequest) {
           profil: {
             create: {
               bidangKeahlian: tags ?? ['Web Dev', 'UI/UX'],
-              skills: tags ?? ['Web Dev', 'UI/UX']
+              skills: tags ?? ['Web Dev', 'UI/UX'],
+              ratingRata: 5.0,
+              jumlahProyekSelesai: 1
             }
           }
         }
@@ -145,13 +163,37 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             namaLengkap: true,
+            email: true,
+            verificationStatus: true,
             profil: { select: { fotoProfil: true, ratingRata: true, jumlahProyekSelesai: true } }
           }
         }
       }
     })
 
-    return NextResponse.json({ data: jasa }, { status: 201 })
+    const mapped = {
+      id: jasa.id,
+      pelajarId: jasa.pelajarId,
+      namaPelajar: jasa.pelajar?.namaLengkap || namaPelajar || 'Pelajar Mitra Muda',
+      fotoProfil: jasa.pelajar?.profil?.fotoProfil || undefined,
+      ratingRata: jasa.pelajar?.profil?.ratingRata || 5.0,
+      jumlahProyekSelesai: jasa.pelajar?.profil?.jumlahProyekSelesai || 0,
+      judul: jasa.judul,
+      keteranganSingkat: jasa.keteranganSingkat,
+      keteranganPanjang: jasa.keteranganPanjang,
+      kategori: jasa.kategori,
+      tags: jasa.tags,
+      foto: jasa.foto || undefined,
+      hargaBasic: jasa.hargaBasic,
+      deskripsiBasic: jasa.deskripsiBasic || undefined,
+      hargaStandard: jasa.hargaStandard || undefined,
+      deskripsiStandard: jasa.deskripsiStandard || undefined,
+      hargaPremium: jasa.hargaPremium || undefined,
+      deskripsiPremium: jasa.deskripsiPremium || undefined,
+      createdAt: jasa.createdAt.toISOString()
+    }
+
+    return NextResponse.json({ data: mapped }, { status: 201 })
   } catch (error) {
     console.error('Error creating Jasa in DB:', error)
     return NextResponse.json({ error: 'Gagal membuat jasa ke database' }, { status: 500 })

@@ -20,12 +20,14 @@ import {
   Camera,
   Image as ImageIcon,
   Sparkles,
-  Briefcase
+  Briefcase,
+  MessageCircle,
+  Loader2
 } from 'lucide-react'
 import JasaCard from '@/components/marketplace/jasa-card'
 import { useAuthUser, logoutUser, setCurrentUser } from '@/lib/auth-client'
 import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
-import { useJasaStore } from '@/lib/jasa-store'
+import { useJasaStore, syncJasaWithDB } from '@/lib/jasa-store'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatDate } from '@/lib/utils'
 
@@ -35,6 +37,11 @@ export default function ProfilPage() {
   const profileId = (params?.id as string) || ''
   const user = useAuthUser()
   const akadState = useAkadStore()
+  const allJasa = useJasaStore()
+
+  const [dbPelajar, setDbPelajar] = useState<any>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'menu' | 'edit'>('menu')
   const [savedSuccess, setSavedSuccess] = useState(false)
@@ -42,7 +49,31 @@ export default function ProfilPage() {
 
   useEffect(() => {
     syncAkadWithDB()
+    syncJasaWithDB()
   }, [])
+
+  useEffect(() => {
+    async function fetchStudentProfile() {
+      setIsLoadingProfile(true)
+      try {
+        const targetId = profileId || user?.id
+        if (targetId) {
+          const res = await fetch(`/api/pelajar/${targetId}`)
+          if (res.ok) {
+            const json = await res.json()
+            if (json.data) {
+              setDbPelajar(json.data)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load student profile:', err)
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+    fetchStudentProfile()
+  }, [profileId, user?.id])
 
   const [customProfile, setCustomProfile] = useState<{
     nama?: string
@@ -57,21 +88,31 @@ export default function ProfilPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
-  const nama = customProfile.nama || user?.nama || 'Profil Talenta Pelajar'
-  const sekolah = user?.sekolah || 'SMK / SMA Terdaftar'
-  const lokasi = customProfile.lokasi || 'Indonesia'
-  const foto = customProfile.foto || user?.fotoProfil || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(nama))
-  const cover = customProfile.cover || ''
-  const nomorWa = customProfile.nomorWa || user?.nomorWa || ''
-  
+  const isOwner = Boolean(
+    user && (
+      (dbPelajar && (user.id === dbPelajar.id || user.email === dbPelajar.email)) ||
+      (!dbPelajar && (profileId === user.id || !profileId || profileId === '1'))
+    )
+  )
+
+  const nama = customProfile.nama || dbPelajar?.namaLengkap || (isOwner ? user?.nama : undefined) || 'Profil Talenta Pelajar'
+  const sekolah = dbPelajar?.sekolah?.namaSekolah || (isOwner ? user?.sekolah : undefined) || 'SMK / SMA Terdaftar'
+  const lokasi = customProfile.lokasi || dbPelajar?.profil?.alamat || (dbPelajar?.sekolah?.kabupatenKota ? `Kab/Kota ${dbPelajar.sekolah.kabupatenKota}` : 'Indonesia')
+  const foto = customProfile.foto || dbPelajar?.profil?.fotoProfil || (isOwner ? user?.fotoProfil : undefined) || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(nama))
+  const cover = customProfile.cover || dbPelajar?.profil?.fotoBanner || ''
+  const nomorWa = customProfile.nomorWa || dbPelajar?.profil?.kontakWa || (isOwner ? user?.nomorWa : undefined) || ''
+  const isVerified = dbPelajar?.verificationStatus === 'VERIFIED' || (isOwner && (user?.isVerified || user?.verificationStatus === 'VERIFIED'))
+
   const completedAkad = akadState.akadList.filter((a) => a.step === 4)
-  const proyekSelesai = completedAkad.length
-  const rating = proyekSelesai > 0
-    ? (completedAkad.reduce((acc, a) => acc + (a.rating || 5), 0) / proyekSelesai).toFixed(1)
-    : '0.0'
-  const tepatWaktu = proyekSelesai > 0 ? (user?.onTimeRate ?? 100) : 0
-  const skills = user?.skills && user.skills.length > 0 ? user.skills : (customProfile.skills || ['Web Dev', 'UI/UX'])
-  const bio = customProfile.bio || 'Pelajar berbakat yang siap berkarya dan membantu UMKM Indonesia go digital!'
+  const proyekSelesai = dbPelajar?.profil?.jumlahProyekSelesai ?? (completedAkad.length || 2)
+  const rating = dbPelajar?.profil?.ratingRata 
+    ? Number(dbPelajar.profil.ratingRata).toFixed(1) 
+    : (completedAkad.length > 0 ? (completedAkad.reduce((acc, a) => acc + (a.rating || 5), 0) / completedAkad.length).toFixed(1) : '5.0')
+  const tepatWaktu = proyekSelesai > 0 ? (user?.onTimeRate ?? 100) : 100
+  const skills = (dbPelajar?.profil?.skills && dbPelajar.profil.skills.length > 0)
+    ? dbPelajar.profil.skills
+    : (isOwner && user?.skills && user.skills.length > 0 ? user.skills : (customProfile.skills || ['Web Dev', 'UI/UX', 'Figma']))
+  const bio = customProfile.bio || dbPelajar?.profil?.bio || 'Pelajar berbakat yang siap berkarya dan membantu UMKM Indonesia go digital!'
 
   const [editForm, setEditForm] = useState({
     nama: nama,
@@ -82,10 +123,52 @@ export default function ProfilPage() {
     nomorWa: nomorWa
   })
 
-  const allJasa = useJasaStore()
-  const myJasa = allJasa.filter((j: any) => (user?.id && j.pelajarId === user.id) || (user?.nama && j.namaPelajar && j.namaPelajar.toLowerCase() === user.nama.toLowerCase()))
+  // Sinkronkan editForm saat dbPelajar selesai dimuat
+  useEffect(() => {
+    setEditForm({
+      nama,
+      lokasi,
+      bio,
+      foto,
+      cover,
+      nomorWa
+    })
+  }, [nama, lokasi, bio, foto, cover, nomorWa])
 
-  const userJasa = myJasa
+  // Gabungkan Jasa dari Database + Client Store yang sesuai dengan pelajar ini
+  const dbJasaList = (dbPelajar?.jasa || []).map((dj: any) => ({
+    id: dj.id,
+    pelajarId: dj.pelajarId,
+    namaPelajar: nama,
+    fotoProfil: foto,
+    ratingRata: Number(rating) || 5.0,
+    jumlahProyekSelesai: proyekSelesai,
+    judul: dj.judul,
+    keteranganSingkat: dj.keteranganSingkat,
+    keteranganPanjang: dj.keteranganPanjang,
+    kategori: dj.kategori,
+    tags: dj.tags || [],
+    foto: dj.foto,
+    hargaBasic: dj.hargaBasic,
+    deskripsiBasic: dj.deskripsiBasic,
+    hargaStandard: dj.hargaStandard,
+    deskripsiStandard: dj.deskripsiStandard,
+    hargaPremium: dj.hargaPremium,
+    deskripsiPremium: dj.deskripsiPremium,
+    createdAt: dj.createdAt
+  }))
+
+  const matchingClientJasa = allJasa.filter((j: any) => 
+    (dbPelajar?.id && j.pelajarId === dbPelajar.id) || 
+    (profileId && j.pelajarId === profileId) ||
+    (profileId && j.id === profileId) ||
+    (nama && j.namaPelajar && j.namaPelajar.toLowerCase() === nama.toLowerCase())
+  )
+
+  const userJasa = [
+    ...matchingClientJasa,
+    ...dbJasaList.filter((dj: any) => !matchingClientJasa.some((cj) => cj.id === dj.id))
+  ]
 
   const userPortfolio: number[] = []
 
@@ -185,18 +268,22 @@ export default function ProfilPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="font-extrabold text-base md:text-lg text-gray-900 tracking-tight">Mitra Muda</h1>
-        <button
-          onClick={() => {
-            setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
-            setActiveTab('menu')
-            setIsSettingsOpen(true)
-          }}
-          className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-[#964825] hover:bg-[#FFF1EB] rounded-full transition-colors cursor-pointer"
-          title="Pengaturan Profil"
-          aria-label="Pengaturan Profil"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        {isOwner ? (
+          <button
+            onClick={() => {
+              setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
+              setActiveTab('menu')
+              setIsSettingsOpen(true)
+            }}
+            className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-[#964825] hover:bg-[#FFF1EB] rounded-full transition-colors cursor-pointer"
+            title="Pengaturan Profil"
+            aria-label="Pengaturan Profil"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        ) : (
+          <div className="w-10 h-10" />
+        )}
       </header>
 
       <main className="max-w-5xl mx-auto px-4 md:px-8 pt-6">
@@ -212,17 +299,19 @@ export default function ProfilPage() {
                 <div className="w-full h-full bg-[radial-gradient(#FF9B71_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
               </div>
             )}
-            <button
-              onClick={() => {
-                setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
-                setActiveTab('edit')
-                setIsSettingsOpen(true)
-              }}
-              className="absolute right-4 top-4 bg-white/90 hover:bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-            >
-              <Camera className="w-3.5 h-3.5 text-[#FF9B71]" />
-              <span>Ganti Sampul</span>
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => {
+                  setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
+                  setActiveTab('edit')
+                  setIsSettingsOpen(true)
+                }}
+                className="absolute right-4 top-4 bg-white/90 hover:bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5 text-[#FF9B71]" />
+                <span>Ganti Sampul</span>
+              </button>
+            )}
           </div>
 
           <div className="px-6 sm:px-10 pb-8 relative">
@@ -230,25 +319,28 @@ export default function ProfilPage() {
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white shadow-md overflow-hidden bg-white relative shrink-0 group">
                   <Image src={foto} alt={nama} fill className="object-cover" unoptimized />
-                  <button
-                    onClick={() => {
-                      setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
-                      setActiveTab('edit')
-                      setIsSettingsOpen(true)
-                    }}
-                    className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    aria-label="Ubah Foto Profil"
-                  >
-                    <Camera className="w-6 h-6" />
-                    <span className="text-[10px] font-bold mt-1">Ubah Foto</span>
-                  </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => {
+                        setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
+                        setActiveTab('edit')
+                        setIsSettingsOpen(true)
+                      }}
+                      className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      aria-label="Ubah Foto Profil"
+                    >
+                      <Camera className="w-6 h-6" />
+                      <span className="text-[10px] font-bold mt-1">Ubah Foto</span>
+                    </button>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{nama}</h2>
-                    {user?.isVerified || user?.verificationStatus === 'VERIFIED' ? (
-                      <span className="text-teal-600 bg-teal-50 p-1 rounded-full flex items-center justify-center" title="Terverifikasi Sekolah">
-                        <CheckCircle className="w-4 h-4" />
+                    {isVerified ? (
+                      <span className="text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full flex items-center gap-1 text-[11px] font-bold border border-teal-200" title="Terverifikasi Sekolah">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Siswa Terverifikasi</span>
                       </span>
                     ) : (
                       <span className="text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full flex items-center gap-1 text-[11px] font-bold border border-amber-200" title="Menunggu Verifikasi Sekolah">
@@ -264,23 +356,49 @@ export default function ProfilPage() {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-3">
-                <Link
-                  href="/pelajar/dompet"
-                  className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors shadow-2xs"
-                >
-                  Lihat Dompet
-                </Link>
-                <button
-                  onClick={() => {
-                    setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
-                    setActiveTab('edit')
-                    setIsSettingsOpen(true)
-                  }}
-                  className="px-6 py-2.5 rounded-full bg-[#FF9B71] text-white font-bold text-xs hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-2xs cursor-pointer"
-                >
-                  Edit Profil
-                </button>
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {isOwner ? (
+                  <>
+                    <Link
+                      href="/pelajar/dompet"
+                      className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors shadow-2xs"
+                    >
+                      Lihat Dompet
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setEditForm({ nama, lokasi, bio, foto, cover, nomorWa })
+                        setActiveTab('edit')
+                        setIsSettingsOpen(true)
+                      }}
+                      className="px-6 py-2.5 rounded-full bg-[#FF9B71] text-white font-bold text-xs hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-2xs cursor-pointer"
+                    >
+                      Edit Profil
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {nomorWa ? (
+                      <a
+                        href={`https://wa.me/${nomorWa.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `Halo ${nama}, saya melihat portofolio dan katalog jasa Anda di Mitra Muda. Saya tertarik untuk berdiskusi terkait kebutuhan proyek!`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Hubungi via WhatsApp</span>
+                      </a>
+                    ) : null}
+                    <Link
+                      href="/marketplace"
+                      className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors shadow-2xs"
+                    >
+                      Lihat Proyek Lain
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 

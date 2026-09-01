@@ -17,7 +17,7 @@ import {
   Check,
   Tag
 } from 'lucide-react'
-import { cn, formatRupiah } from '@/lib/utils'
+import { cn, formatRupiah, formatThousand, parseThousand } from '@/lib/utils'
 import { addProject } from '@/lib/projects-store'
 import { useAuthUser } from '@/lib/auth-client'
 
@@ -98,7 +98,7 @@ export default function BuatProyekPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    const numBudget = Number(budget) || 1000000
+    const numBudget = parseThousand(budget) || 1000000
     const namaUsaha = user?.namaUsaha || user?.nama || 'UMKM Indonesia'
 
     addProject({
@@ -404,11 +404,12 @@ export default function BuatProyekPage() {
                   Rp
                 </span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   required
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  placeholder="0"
+                  value={formatThousand(budget)}
+                  onChange={(e) => setBudget(e.target.value.replace(/\D/g, ''))}
+                  placeholder="1.000.000"
                   className="w-full bg-[#F5F5F5] border border-transparent rounded-xl pl-12 pr-4 py-3.5 text-base font-extrabold text-gray-900 focus:bg-white focus:border-[#FF9B71] focus:ring-2 focus:ring-[#FFD9CA] outline-none transition-all"
                 />
               </div>

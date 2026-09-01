@@ -18,7 +18,7 @@ import {
   Store,
   Layers
 } from 'lucide-react'
-import { cn, formatRupiah } from '@/lib/utils'
+import { cn, formatRupiah, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { addJasa } from '@/lib/jasa-store'
 
@@ -83,14 +83,14 @@ export default function BuatJasaPelajarPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!judul.trim() || !keteranganSingkat.trim()) return
 
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      addJasa({
+    try {
+      await addJasa({
         pelajarId: user?.id || 'pelajar-active',
         namaPelajar: user?.nama || 'Pelajar Mitra Muda',
         fotoProfil: user?.fotoProfil || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(user?.nama || 'Siswa'),
@@ -100,17 +100,19 @@ export default function BuatJasaPelajarPage() {
         kategori,
         tags: selectedTags,
         foto: fotoPreview || 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800&auto=format&fit=crop',
-        hargaBasic: Number(hargaBasic) || 100000,
+        hargaBasic: parseThousand(hargaBasic) || 100000,
         deskripsiBasic,
-        hargaStandard: hargaStandard ? Number(hargaStandard) : undefined,
+        hargaStandard: hargaStandard ? parseThousand(hargaStandard) : undefined,
         deskripsiStandard,
-        hargaPremium: hargaPremium ? Number(hargaPremium) : undefined,
+        hargaPremium: hargaPremium ? parseThousand(hargaPremium) : undefined,
         deskripsiPremium
       })
-
+    } catch (err) {
+      console.error('Error creating jasa:', err)
+    } finally {
       setIsSubmitting(false)
       setShowSuccessModal(true)
-    }, 600)
+    }
   }
 
   return (
@@ -188,13 +190,12 @@ export default function BuatJasaPelajarPage() {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      min={50000}
-                      step={25000}
-                      placeholder="150000"
-                      value={hargaBasic}
-                      onChange={(e) => setHargaBasic(e.target.value)}
+                      placeholder="150.000"
+                      value={formatThousand(hargaBasic)}
+                      onChange={(e) => setHargaBasic(e.target.value.replace(/\D/g, ''))}
                       className="w-full h-12 bg-[#F5F5F5] rounded-2xl pl-10 pr-4 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71] border border-transparent focus:bg-white transition-all font-bold"
                     />
                   </div>
@@ -299,7 +300,7 @@ export default function BuatJasaPelajarPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Harga Paket:</p>
-                  <p className="text-lg font-extrabold text-[#964825]">{formatRupiah(Number(hargaBasic) || 0)}</p>
+                  <p className="text-lg font-extrabold text-[#964825]">{formatRupiah(parseThousand(hargaBasic) || 0)}</p>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Rincian Hasil Pekerjaan:</label>
@@ -321,13 +322,17 @@ export default function BuatJasaPelajarPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Harga Paket:</p>
-                  <input
-                    type="number"
-                    value={hargaStandard}
-                    onChange={(e) => setHargaStandard(e.target.value)}
-                    placeholder="300000"
-                    className="w-full h-9 bg-gray-50 border border-gray-200 rounded-xl px-3 text-xs font-bold text-gray-900 outline-none"
-                  />
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatThousand(hargaStandard)}
+                      onChange={(e) => setHargaStandard(e.target.value.replace(/\D/g, ''))}
+                      placeholder="300.000"
+                      className="w-full h-9 bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:border-[#FF9B71]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Rincian Hasil Pekerjaan:</label>
@@ -349,13 +354,17 @@ export default function BuatJasaPelajarPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Harga Paket:</p>
-                  <input
-                    type="number"
-                    value={hargaPremium}
-                    onChange={(e) => setHargaPremium(e.target.value)}
-                    placeholder="500000"
-                    className="w-full h-9 bg-gray-50 border border-gray-200 rounded-xl px-3 text-xs font-bold text-gray-900 outline-none"
-                  />
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatThousand(hargaPremium)}
+                      onChange={(e) => setHargaPremium(e.target.value.replace(/\D/g, ''))}
+                      placeholder="500.000"
+                      className="w-full h-9 bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:border-[#FF9B71]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Rincian Hasil Pekerjaan:</label>

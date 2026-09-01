@@ -22,7 +22,7 @@ import {
   ArrowRight,
   Zap
 } from 'lucide-react'
-import { formatRupiah } from '@/lib/utils'
+import { formatRupiah, formatThousand, parseThousand } from '@/lib/utils'
 import { useProjects, syncProjectsWithDB } from '@/lib/projects-store'
 import { useAuthUser } from '@/lib/auth-client'
 import { useAkadStore, submitLamaran, sendAkadChat, syncAkadWithDB } from '@/lib/akad-store'
@@ -84,7 +84,7 @@ export default function DetailProyekPage() {
     const targetUmkmId = foundProyek?.umkmId || 'umkm-default'
     const targetNamaUsaha = foundProyek?.namaUsaha || mockProyek.namaUsaha || 'UMKM Mitra Muda'
     const targetJudul = foundProyek?.judul || mockProyek.judul || 'Lowongan Proyek Kemitraan UMKM'
-    const targetBudget = Number(hargaTawar) || foundProyek?.budgetMax || mockProyek.budgetMax || 1000000
+    const targetBudget = parseThousand(hargaTawar) || foundProyek?.budgetMax || mockProyek.budgetMax || 1000000
 
     submitLamaran({
       proyekId: id,
@@ -107,7 +107,7 @@ export default function DetailProyekPage() {
     const targetUmkmId = foundProyek?.umkmId || 'umkm-default'
     const targetNamaUsaha = foundProyek?.namaUsaha || mockProyek.namaUsaha || 'UMKM Mitra Muda'
     const targetJudul = foundProyek?.judul || mockProyek.judul || 'Lowongan Proyek Kemitraan UMKM'
-    const targetBudget = Number(hargaTawar) || foundProyek?.budgetMax || 1000000
+    const targetBudget = parseThousand(hargaTawar) || foundProyek?.budgetMax || 1000000
 
     submitLamaran({
       proyekId: id,
@@ -425,13 +425,18 @@ export default function DetailProyekPage() {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Harga Penawaran (Rp)</label>
-                  <input
-                    type="number"
-                    value={hargaTawar}
-                    onChange={(e) => setHargaTawar(e.target.value)}
-                    className="h-12 bg-[#F5F5F5] rounded-xl px-4 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-xs text-gray-400">Rp</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatThousand(hargaTawar)}
+                      onChange={(e) => setHargaTawar(e.target.value.replace(/\D/g, ''))}
+                      placeholder="800.000"
+                      className="w-full h-12 bg-[#F5F5F5] rounded-xl pl-10 pr-4 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">

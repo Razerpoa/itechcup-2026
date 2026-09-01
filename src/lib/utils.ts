@@ -50,3 +50,18 @@ export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str
   return str.slice(0, maxLength).trimEnd() + '...'
 }
+
+export function formatThousand(val: string | number): string {
+  if (val === undefined || val === null || val === '') return ''
+  const digits = String(val).replace(/\D/g, '')
+  if (!digits) return ''
+  return Number(digits).toLocaleString('id-ID')
+}
+
+export function parseThousand(val: string | number): number {
+  if (typeof val === 'number') return val
+  if (!val) return 0
+  const digits = String(val).replace(/\D/g, '')
+  return digits ? Number(digits) : 0
+}
+

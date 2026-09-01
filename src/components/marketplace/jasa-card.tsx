@@ -5,6 +5,7 @@ import { cn, formatRupiah } from '@/lib/utils'
 
 export interface JasaCardProps {
   id: string | number
+  pelajarId?: string
   judul: string
   namaPelajar: string
   fotoProfil?: string
@@ -17,6 +18,7 @@ export interface JasaCardProps {
 
 export default function JasaCard({
   id,
+  pelajarId,
   judul,
   namaPelajar,
   fotoProfil,
@@ -26,10 +28,12 @@ export default function JasaCard({
   tags,
   className
 }: JasaCardProps) {
+  const profileTargetId = pelajarId || id
+
   return (
     <article className={cn("bg-white rounded-2xl p-6 border border-[#EAEAEA] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-5", className)}>
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-[#FAFAFA] overflow-hidden border border-[#EAEAEA] relative">
+        <Link href={`/profil/${profileTargetId}`} className="w-12 h-12 rounded-full bg-[#FAFAFA] overflow-hidden border border-[#EAEAEA] relative shrink-0 hover:opacity-90 transition-opacity">
           {fotoProfil ? (
             <Image src={fotoProfil} alt={namaPelajar} fill className="object-cover" unoptimized />
           ) : (
@@ -37,9 +41,11 @@ export default function JasaCard({
               {namaPelajar.charAt(0)}
             </div>
           )}
-        </div>
+        </Link>
         <div>
-          <h3 className="font-bold text-sm text-gray-900">{namaPelajar}</h3>
+          <Link href={`/profil/${profileTargetId}`} className="hover:text-[#964825] transition-colors">
+            <h3 className="font-bold text-sm text-gray-900">{namaPelajar}</h3>
+          </Link>
           <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
             <span className="flex items-center text-amber-500 font-medium">
               <Star className="w-3 h-3 fill-current mr-1" />
@@ -80,7 +86,7 @@ export default function JasaCard({
           </p>
         </div>
         <Link 
-          href={`/profil/${id}`}
+          href={`/profil/${profileTargetId}`}
           className="text-[#FF9B71] hover:text-[#F5865A] font-bold text-sm flex items-center gap-1 transition-colors"
         >
           Lihat Jasa
