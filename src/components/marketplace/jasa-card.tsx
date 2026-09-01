@@ -14,6 +14,7 @@ export interface JasaCardProps {
   hargaBasic: number
   tags: string[]
   className?: string
+  onOrder?: (jasa: JasaCardProps) => void
 }
 
 export default function JasaCard({
@@ -26,7 +27,8 @@ export default function JasaCard({
   jumlahProyekSelesai,
   hargaBasic,
   tags,
-  className
+  className,
+  onOrder
 }: JasaCardProps) {
   const profileTargetId = pelajarId || id
 
@@ -78,20 +80,31 @@ export default function JasaCard({
         </div>
       </div>
       
-      <div className="mt-auto flex justify-between items-end pt-4 border-t border-gray-100">
+      <div className="mt-auto flex justify-between items-center pt-4 border-t border-gray-100">
         <div>
           <p className="font-medium text-xs text-gray-500 mb-0.5">Mulai dari</p>
           <p className="font-bold text-[#964825] tracking-tight">
             {formatRupiah(hargaBasic)}
           </p>
         </div>
-        <Link 
-          href={`/profil/${profileTargetId}`}
-          className="text-[#FF9B71] hover:text-[#F5865A] font-bold text-sm flex items-center gap-1 transition-colors"
-        >
-          Lihat Jasa
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-2">
+          {onOrder ? (
+            <button
+              type="button"
+              onClick={() => onOrder({ id, pelajarId, judul, namaPelajar, fotoProfil, ratingRata, jumlahProyekSelesai, hargaBasic, tags })}
+              className="px-4 py-2 rounded-full bg-[#FFF1EB] text-[#964825] hover:bg-[#FFD9CA] font-bold text-xs transition-colors cursor-pointer"
+            >
+              Pesan Jasa
+            </button>
+          ) : null}
+          <Link 
+            href={`/profil/${profileTargetId}`}
+            className="text-[#FF9B71] hover:text-[#F5865A] font-bold text-sm flex items-center gap-1 transition-colors"
+          >
+            <span>Lihat Profil</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </article>
   )

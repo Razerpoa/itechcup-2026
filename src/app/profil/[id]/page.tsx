@@ -25,6 +25,7 @@ import {
   Loader2
 } from 'lucide-react'
 import JasaCard from '@/components/marketplace/jasa-card'
+import JasaOrderModal from '@/components/marketplace/jasa-order-modal'
 import { useAuthUser, logoutUser, setCurrentUser } from '@/lib/auth-client'
 import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
 import { useJasaStore, syncJasaWithDB } from '@/lib/jasa-store'
@@ -46,6 +47,9 @@ export default function ProfilPage() {
   const [activeTab, setActiveTab] = useState<'menu' | 'edit'>('menu')
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
+
+  const [selectedJasaForOrder, setSelectedJasaForOrder] = useState<any>(null)
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
 
   useEffect(() => {
     syncAkadWithDB()
@@ -378,19 +382,30 @@ export default function ProfilPage() {
                   </>
                 ) : (
                   <>
-                    {nomorWa ? (
-                      <a
-                        href={`https://wa.me/${nomorWa.replace(/\D/g, '')}?text=${encodeURIComponent(
-                          `Halo ${nama}, saya melihat portofolio dan katalog jasa Anda di Mitra Muda. Saya tertarik untuk berdiskusi terkait kebutuhan proyek!`
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Hubungi via WhatsApp</span>
-                      </a>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedJasaForOrder(
+                          userJasa[0] || {
+                            id: profileId,
+                            pelajarId: dbPelajar?.id || profileId,
+                            namaPelajar: nama,
+                            fotoProfil: foto,
+                            sekolah,
+                            nomorWa,
+                            judul: `Konsultasi & Jasa Keahlian Siswa (${skills.slice(0, 2).join(', ') || 'Talenta Siswa'})`,
+                            kategori: 'Jasa & Proyek Khusus',
+                            hargaBasic: 100000,
+                            deskripsiBasic: 'Diskusi & pengerjaan proyek kustom sesuai kesepakatan'
+                          }
+                        )
+                        setIsOrderModalOpen(true)
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Hubungi Siswa / Pesan Jasa</span>
+                    </button>
                     <Link
                       href="/marketplace"
                       className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors shadow-2xs"
@@ -445,7 +460,18 @@ export default function ProfilPage() {
           {userJasa.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {userJasa.map((jasa: any) => (
-                <JasaCard key={jasa.id} {...jasa} />
+                <JasaCard
+                  key={jasa.id}
+                  {...jasa}
+                  onOrder={
+                    !isOwner
+                      ? (jasaItem) => {
+                          setSelectedJasaForOrder({ ...jasa, nomorWa, sekolah })
+                          setIsOrderModalOpen(true)
+                        }
+                      : undefined
+                  }
+                />
               ))}
             </div>
           ) : (
@@ -776,6 +802,13 @@ export default function ProfilPage() {
         userRole="pelajar"
         isOpen={is2FAModalOpen}
         onClose={() => setIs2FAModalOpen(false)}
+      />
+
+      {/* Jasa Order & Contact Modal */}
+      <JasaOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        jasa={selectedJasaForOrder}
       />
     </div>
   )

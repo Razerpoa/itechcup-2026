@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import ProyekCard from '@/components/marketplace/proyek-card'
 import JasaCard from '@/components/marketplace/jasa-card'
+import JasaOrderModal from '@/components/marketplace/jasa-order-modal'
 import { cn } from '@/lib/utils'
 import { useAuthUser, logoutUser } from '@/lib/auth-client'
 import { useProjects, syncProjectsWithDB } from '@/lib/projects-store'
@@ -58,6 +59,9 @@ export default function MarketplacePage() {
   const [dpFilter, setDpFilter] = useState('semua')
   const [sortBy, setSortBy] = useState('terbaru')
   const [minRating, setMinRating] = useState(0)
+
+  const [selectedJasaForOrder, setSelectedJasaForOrder] = useState<any>(null)
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
 
   const profileRef = useRef<HTMLDivElement>(null)
 
@@ -569,7 +573,14 @@ export default function MarketplacePage() {
           filteredJasa.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredJasa.map((jasa) => (
-                <JasaCard key={jasa.id} {...jasa} />
+                <JasaCard
+                  key={jasa.id}
+                  {...jasa}
+                  onOrder={(jasaItem) => {
+                    setSelectedJasaForOrder(jasaItem)
+                    setIsOrderModalOpen(true)
+                  }}
+                />
               ))}
             </div>
           ) : (
@@ -789,6 +800,13 @@ export default function MarketplacePage() {
           </div>
         </div>
       )}
+
+      {/* Modal Hubungi & Pesan Jasa Pelajar */}
+      <JasaOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        jasa={selectedJasaForOrder}
+      />
     </div>
   )
 }
