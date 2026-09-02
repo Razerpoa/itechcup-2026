@@ -214,7 +214,7 @@ export default function UmkmTransaksiRoomPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[860px] flex flex-col bg-white rounded-3xl shadow-xs border border-[#EAEAEA] overflow-hidden">
+    <div className="max-w-4xl mx-auto h-[calc(100dvh-5rem)] min-h-[580px] max-h-[900px] flex flex-col bg-white rounded-3xl shadow-xs border border-[#EAEAEA] overflow-hidden">
       <header className="px-6 py-4 border-b border-[#EAEAEA] bg-gray-50/70 flex flex-col gap-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
