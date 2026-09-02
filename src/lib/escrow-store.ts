@@ -164,7 +164,24 @@ export function getUMKMBalance(umkmId: string): number {
 
 export function getPelajarBalance(pelajarId: string): number {
   const state = getEscrowState()
-  return state.pelajarBalances[pelajarId] || 0
+  const targetKey = pelajarId || 'pelajar-active'
+  const releasedForStudent = state.escrows
+    .filter(
+      (e) =>
+        (e.pelajarId === targetKey || targetKey === 'pelajar-active' || e.pelajarId === 'pelajar-active') &&
+        e.pelunasanStatus === 'RELEASED_TO_PELAJAR'
+    )
+    .reduce((sum, e) => sum + (e.nominalTotal || 0), 0)
+
+  const totalWithdrawn = state.withdrawals
+    .filter((w) => (w.pelajarId === targetKey || targetKey === 'pelajar-active' || w.pelajarId === 'pelajar-active') && w.status !== 'REJECTED')
+    .reduce((sum, w) => sum + (w.nominal || 0), 0)
+
+  if (releasedForStudent > 0) {
+    return Math.max(0, releasedForStudent - totalWithdrawn)
+  }
+
+  return state.pelajarBalances[targetKey] || 0
 }
 
 export function submitUMKMDeposit(payload: {
@@ -482,6 +499,9 @@ export function releaseProjectCompletionToPelajar(
   let updatedEscrows = [...state.escrows]
   if (existingIndex >= 0) {
     const existing = state.escrows[existingIndex]
+    if (existing.pelunasanStatus === 'RELEASED_TO_PELAJAR' && existing.dpStatus === 'RELEASED_TO_PELAJAR') {
+      return { success: true }
+    }
     effectivePelajarId = existing.pelajarId || pelajarId
     effectiveNominal = existing.nominalTotal || nominalTotal
     updatedEscrows[existingIndex] = {
@@ -510,15 +530,20 @@ export function releaseProjectCompletionToPelajar(
   }
 
   const targetKey = effectivePelajarId || 'pelajar-active'
-  const currentBal = state.pelajarBalances[targetKey] || 0
+  const totalEarnedForStudent = updatedEscrows
+    .filter((e) => (e.pelajarId === targetKey || targetKey === 'pelajar-active' || e.pelajarId === 'pelajar-active') && e.pelunasanStatus === 'RELEASED_TO_PELAJAR')
+    .reduce((sum, e) => sum + (e.nominalTotal || 0), 0)
+
+  const totalWithdrawnForStudent = state.withdrawals
+    .filter((w) => (w.pelajarId === targetKey || targetKey === 'pelajar-active' || w.pelajarId === 'pelajar-active') && w.status !== 'REJECTED')
+    .reduce((sum, w) => sum + (w.nominal || 0), 0)
+
+  const accurateBalance = Math.max(0, totalEarnedForStudent - totalWithdrawnForStudent)
+
   const updatedPelajarBalances: Record<string, number> = {
     ...state.pelajarBalances,
-    [targetKey]: currentBal + effectiveNominal
-  }
-
-  if (targetKey !== 'pelajar-active') {
-    const activeBal = state.pelajarBalances['pelajar-active'] || 0
-    updatedPelajarBalances['pelajar-active'] = activeBal + effectiveNominal
+    [targetKey]: accurateBalance,
+    'pelajar-active': accurateBalance
   }
 
   saveEscrowState({

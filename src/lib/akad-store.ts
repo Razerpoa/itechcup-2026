@@ -297,17 +297,19 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
 
           let newStep: 1 | 2 | 3 | 4 = akad.step
           if (matchingTrx.status === 'SELESAI' || matchingTrx.fullPaid) {
+            if (akad.step !== 4) {
+              releaseProjectCompletionToPelajar({
+                proyekId: akad.proyekId,
+                pelajarId: akad.pelajarId,
+                namaPelajar: akad.namaPelajar,
+                nominalTotal: matchingTrx.totalAmount || akad.nominalTotal,
+                nominalDP: matchingTrx.dpAmount || akad.nominalDP,
+                umkmId: akad.umkmId,
+                namaUsaha: akad.namaUsaha,
+                judulProyek: akad.judulProyek
+              })
+            }
             newStep = 4
-            releaseProjectCompletionToPelajar({
-              proyekId: akad.proyekId,
-              pelajarId: akad.pelajarId,
-              namaPelajar: akad.namaPelajar,
-              nominalTotal: matchingTrx.totalAmount || akad.nominalTotal,
-              nominalDP: matchingTrx.dpAmount || akad.nominalDP,
-              umkmId: akad.umkmId,
-              namaUsaha: akad.namaUsaha,
-              judulProyek: akad.judulProyek
-            })
           } else if (matchingTrx.status === 'DIREVISE') {
             newStep = 2
           } else if (matchingTrx.status === 'SUBMITTED' || (matchingTrx.deliverablesJson && matchingTrx.deliverablesJson.length > 5)) {

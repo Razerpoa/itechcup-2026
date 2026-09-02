@@ -55,13 +55,10 @@ export default function DompetPage() {
     .reduce((acc, curr) => acc + curr.nominal, 0)
 
   const directBalance = escrowState.pelajarBalances[pelajarId] || 0
-  const activeBalance = isDemoPelajar ? (escrowState.pelajarBalances['pelajar-active'] || 0) : 0
-
-  const saldoSiapCair = Math.max(
-    directBalance,
-    activeBalance,
-    Math.max(0, completedEarnings - totalWithdrawn)
-  )
+  const saldoSiapCair =
+    completedEarnings > 0
+      ? Math.max(0, completedEarnings - totalWithdrawn)
+      : Math.max(0, directBalance - totalWithdrawn)
 
   const myEscrows = escrowState.escrows.filter(
     (e) => e.pelajarId === pelajarId || (isDemoPelajar && e.pelajarId === 'pelajar-active')

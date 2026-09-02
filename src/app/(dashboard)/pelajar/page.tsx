@@ -160,8 +160,10 @@ export default function PelajarDashboard() {
     .filter((w) => w.status !== 'REJECTED')
     .reduce((acc, curr) => acc + curr.nominal, 0)
   const directBal = escrowState.pelajarBalances[pelajarId] || 0
-  const activeBal = isDemoPelajar ? (escrowState.pelajarBalances['pelajar-active'] || 0) : 0
-  const totalPendapatan = Math.max(directBal, activeBal, Math.max(0, completedEarnings - totalWithdrawn))
+  const totalPendapatan =
+    completedEarnings > 0
+      ? Math.max(0, completedEarnings - totalWithdrawn)
+      : Math.max(0, directBal - totalWithdrawn)
   const activeEscrowAmount = ongoingAkad.reduce((acc, a) => acc + (a.nominalTotal || 500000), 0)
 
   const avgRating =
