@@ -39,6 +39,8 @@ export interface DeliverableItem {
   fileName: string
   fileSize: string
   fileUrl?: string
+  filePreview?: string
+  fileType?: string
   uploadedAt: string
   catatan?: string
 }
@@ -95,6 +97,8 @@ if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
             chatMessages: [...state.chatMessages, incoming]
           })
         }
+      } else if (event.data?.type === 'SYNC_AKAD') {
+        syncAkadWithDB()
       }
     }
   } catch {
@@ -134,6 +138,10 @@ function saveAkadState(data: AkadStoreData) {
       const serialized = JSON.stringify(data)
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
+      window.dispatchEvent(new Event('storage'))
+      if (chatBroadcastChannel) {
+        chatBroadcastChannel.postMessage({ type: 'SYNC_AKAD' })
+      }
     } catch {
     }
   }
@@ -375,7 +383,6 @@ export function sendAkadChat(payload: {
         })
       }
       window.dispatchEvent(new CustomEvent('mitramuda_new_chat', { detail: newChat }))
-      window.dispatchEvent(new Event('storage'))
     } catch {
     }
   }
@@ -477,22 +484,27 @@ export function rejectLamaran(lamaranId: string): boolean {
   return true
 }
 
-export function uploadDeliverableWork(akadId: string, item: Omit<DeliverableItem, 'id' | 'uploadedAt'>): boolean {
+export function uploadDeliverableWork(
+  akadId: string,
+  item: Omit<DeliverableItem, 'id' | 'uploadedAt'>
+): boolean {
   const state = getAkadState()
-  const targetAkad = state.akadList.find((a) => a.id === akadId)
+  const targetAkad = state.akadList.find(
+    (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
+  )
   if (!targetAkad) return false
 
   const newDeliverable: DeliverableItem = {
-    id: 'deliv-' + Date.now(),
+    id: 'deliv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
     ...item,
     uploadedAt: new Date().toISOString()
   }
 
   const updated = state.akadList.map((a) => {
-    if (a.id === akadId) {
+    if (a.id === targetAkad.id) {
       return {
         ...a,
-        step: (a.step === 2 ? 3 : a.step) as 1 | 2 | 3 | 4,
+        step: 3 as const,
         deliverables: [...a.deliverables, newDeliverable]
       }
     }
@@ -504,14 +516,66 @@ export function uploadDeliverableWork(akadId: string, item: Omit<DeliverableItem
     akadList: updated
   })
 
+  sendAkadChat({
+    proyekId: targetAkad.proyekId,
+    judulProyek: targetAkad.judulProyek,
+    senderId: targetAkad.pelajarId,
+    senderName: targetAkad.namaPelajar,
+    senderRole: 'pelajar',
+    recipientId: targetAkad.umkmId,
+    recipientName: targetAkad.namaUsaha,
+    namaUsaha: targetAkad.namaUsaha,
+    text: `[Penyerahan Karya]: Berkas "${item.fileName}" telah saya serahkan untuk ditinjau.`
+  })
+
   return true
 }
 
 export const submitPelajarDeliverable = uploadDeliverableWork
 
+export function requestRevisionWork(akadId: string, catatanRevisi: string): boolean {
+  const state = getAkadState()
+  const targetAkad = state.akadList.find(
+    (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
+  )
+  if (!targetAkad) return false
+
+  const updated = state.akadList.map((a) => {
+    if (a.id === targetAkad.id) {
+      return {
+        ...a,
+        step: 2 as const,
+        ulasan: catatanRevisi
+      }
+    }
+    return a
+  })
+
+  saveAkadState({
+    ...state,
+    akadList: updated
+  })
+
+  sendAkadChat({
+    proyekId: targetAkad.proyekId,
+    judulProyek: targetAkad.judulProyek,
+    senderId: targetAkad.umkmId || 'umkm-default',
+    senderName: targetAkad.namaUsaha || 'Pemilik UMKM',
+    senderRole: 'umkm',
+    recipientId: targetAkad.pelajarId,
+    recipientName: targetAkad.namaPelajar,
+    namaUsaha: targetAkad.namaUsaha,
+    text: `[Permintaan Revisi]: ${catatanRevisi}`
+  })
+
+  return true
+}
+
 export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: string): boolean {
   const state = getAkadState()
-  const targetAkad = state.akadList.find((a) => a.id === akadId)
+  const targetAkad = state.akadList.find(
+    (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
+  )
   if (!targetAkad) return false
 
   releaseProjectCompletionToPelajar({
@@ -526,7 +590,7 @@ export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: s
   })
 
   const updated = state.akadList.map((a) => {
-    if (a.id === akadId) {
+    if (a.id === targetAkad.id) {
       return {
         ...a,
         step: 4 as const,
