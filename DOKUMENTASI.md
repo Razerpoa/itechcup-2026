@@ -1,205 +1,150 @@
 # Dokumentasi Proyek: Mitra Muda (Platform Talenta Pelajar Indonesia)
 
-Dokumen ini merupakan rekam jejak teknis, arsitektur sistem, dan spesifikasi fitur dari proyek **Mitra Muda**. Dokumen ini dirancang sebagai referensi utama (Single Source of Truth) bagi tim *developer* yang akan melanjutkan, memelihara, atau menambahkan fitur baru di masa mendatang.
+Dokumen ini merupakan rekam jejak teknis, arsitektur sistem, dan spesifikasi fitur dari proyek **Mitra Muda**. Dokumen ini dirancang sebagai referensi utama (Single Source of Truth) bagi tim pengembang untuk pemeliharaan dan pengembangan fitur.
 
 ---
 
-## 👨‍💻 Inisiator & Pengembang Utama (Tahap 1)
-**Nama:** Raffa (Raffa)  
-**Email:** raffaxzee@gmail.com  
-**WhatsApp:** 0895622494773  
-**Periode Pengerjaan:** Agustus 2026  
+## Tim Pengembang & Inisiator
 
-*Tahap 1 mencakup perancangan sistem dari nol (scratch), pembuatan seluruh alur basis data, integrasi frontend & backend, sistem keamanan, hingga kesiapan deployment ke server produksi.*
+- **Raffa Rizqi Ramdani** — Project Lead & Full Stack Developer (`raffaxzee@gmail.com` / WhatsApp: 0895622494773)
+- **Faaiz Hamdy** — Frontend Developer & UI/UX Designer
+- **Fathan Assidqi Dwipayana** — Backend Developer
 
 ---
 
-## 🏗️ 1. Arsitektur & Tech Stack
+## 1. Arsitektur & Tech Stack
+
 Proyek ini dibangun menggunakan standar pengembangan web modern dengan performa tinggi:
-*   **Core Framework:** Next.js 16.3.1 (App Router, Turbopack).
-*   **UI & Styling:** Tailwind CSS v4, dikonfigurasi secara *CSS-first* pada `globals.css`. Menggunakan Design System "Collaborative Vitality" (Warna Utama: Pastel Orange `#FF9B71`, Gelap: `#964825`).
-*   **Bahasa Pemrograman:** TypeScript 5 (Strict Mode) & React 19.2.8.
-*   **Database ORM:** Prisma v7 (`@prisma/client`).
-*   **Database Engine:** PostgreSQL (berjalan dengan `@prisma/adapter-pg`).
-*   **State Management:** React Hooks, API Data Fetching, dan kombinasi LocalStorage (sebagai *in-memory cache* untuk verifikasi).
+- **Core Framework:** Next.js 16.3.1 (App Router, Turbopack).
+- **UI & Styling:** Tailwind CSS v4, dikonfigurasi secara CSS-first pada `globals.css`. Menggunakan Design System "Collaborative Vitality" (Warna Utama: Pastel Orange `#FF9B71`, Gelap: `#964825`, Charcoal: `#2D2319`, Sand: `#F6F3EE`).
+- **Bahasa Pemrograman:** TypeScript 5 (Strict Mode) & React 19.2.8.
+- **Database ORM:** Prisma v7 (`@prisma/client`).
+- **Database Engine:** PostgreSQL (berjalan dengan `@prisma/adapter-pg` driver adapter).
+- **State Management & Real-Time Sync:** React Hooks, `useSyncExternalStore`, `BroadcastChannel('mitra_muda_chat_sync')`, dan bidirectional HTTP polling (`/api/transaksi` & `/api/deposit`).
+- **AI Integration:** Google Gemini Flash API (`gemini-3.1-flash-lite`, `gemini-3.5-flash`, `gemini-3.6-flash`, `gemini-3.7-flash`) dengan sanitasi kredensial otomatis.
+- **Email Service:** Resend API (`noreply@mitramuda.raffzdigital.biz.id`).
 
 ---
 
-## 🗄️ 2. Struktur Database (Schema Prisma)
+## 2. Struktur Database (Schema Prisma)
+
 Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pengguna yang saling berinteraksi:
 
-1.  **Model `Pelajar` & `PelajarProfile`**
-    *   Menyimpan data siswa (NIS/NISN, Nama, Email).
-    *   Terkoneksi *One-to-One* ke `PelajarProfile` yang memuat biodata, Portofolio, Skill, Rating, Nomor WhatsApp (`kontakWa`), dan rincian E-Wallet (Bank/Gopay/Dana).
-2.  **Model `UMKM`**
-    *   Menyimpan entitas bisnis (Nama Usaha, Pemilik, Email, Nomor WA, Alamat).
-    *   UMKM mempublikasikan `Proyek` dan melakukan transaksi dengan Pelajar.
-3.  **Model `Sekolah`**
-    *   Menyimpan institusi (NPSN unik, Nama Sekolah, Alamat).
-    *   Sekolah memiliki relasi *One-to-Many* dengan Pelajar (satu sekolah menaungi banyak siswa).
-4.  **Model Pekerjaan: `Jasa` & `Proyek`**
-    *   `Jasa`: Layanan yang dijual oleh Pelajar (mendukung harga paket Basic, Standard, Premium).
-    *   `Proyek`: Lowongan yang dipublikasikan UMKM lengkap dengan Budget dan persentase DP.
-5.  **Model Transaksi: `Lamaran` & `Transaksi`**
-    *   `Lamaran`: Pengajuan proposal dari pelajar ke UMKM.
-    *   `Transaksi`: Sistem "Akad" digital yang mencatat status pekerjaan (`PENDING`, `PROSES`, `SELESAI`) serta alur pembayaran *Escrow*.
+1. **Model `Pelajar` & `PelajarProfile`**
+   - Menyimpan data siswa (NIS, Nama, Email, Password Hash bcryptjs).
+   - Terkoneksi One-to-One ke `PelajarProfile` yang memuat biodata, Portofolio, Skill, Rating, Nomor WhatsApp (`kontakWa`), dan preferensi E-Wallet (GoPay, DANA, OVO, ShopeePay).
+2. **Model `UMKM`**
+   - Menyimpan entitas bisnis (Nama Usaha, Pemilik, Email, Nomor WA, Alamat, NIB/NPWP, Bukti Legalitas, Status Verifikasi).
+   - UMKM mempublikasikan `Proyek` dan melakukan transaksi dengan Pelajar.
+3. **Model `Sekolah`**
+   - Menyimpan institusi (NPSN unik 8-digit, Nama Sekolah, Email Resmi, Alamat, Penanggung Jawab, Status Verifikasi Kemendikdasmen).
+   - Sekolah memiliki relasi One-to-Many dengan Pelajar (satu sekolah menaungi banyak siswa).
+4. **Model Pekerjaan: `Jasa` & `Proyek`**
+   - `Jasa`: Layanan yang dijual oleh Pelajar (mendukung harga paket Basic, Standard, Premium).
+   - `Proyek`: Lowongan yang dipublikasikan UMKM lengkap dengan Budget dan persentase DP.
+5. **Model Transaksi: `Lamaran` & `Transaksi`**
+   - `Lamaran`: Pengajuan proposal dari pelajar ke UMKM.
+   - `Transaksi`: Sistem Akad digital yang mencatat status pekerjaan (`MENUNGGU_PEMBAYARAN`, `DP_DIBAYAR`, `DIKERJAKAN`, `MENUNGGU_REVIEW`, `SELESAI`) serta alur pembayaran Escrow.
 
 ---
 
-## 🔐 3. Sistem Autentikasi & Pendaftaran (Authentication Logic)
-Sistem login dirancang sangat fleksibel namun ketat di sisi server:
+## 3. Fitur Utama yang Telah Selesai Dikerjakan
 
-*   **Google OAuth & Registrasi Manual:** Mendukung login instan via Google (tanpa password) atau registrasi formulir manual.
-*   **Penanganan Error Database Otomatis (NIS Auto-Generate):** Pada PostgreSQL, field `nis` bersifat unik. Jika pelajar mendaftar manual *tanpa* mengisi NIS/NISN, sistem backend (`POST /api/pelajar`) secara cerdas akan me-nolak pengiriman string kosong `""` yang memicu error `P2002 Unique Constraint`, dan menggantinya dengan ID terenkripsi (misal: `NIS-48932498`).
-*   **Integrasi Kemendikdasmen & Fallback System:** Pendaftaran Sekolah terhubung ke API NPSN Kementerian. Jika server kementerian *down* atau NPSN tidak ditemukan, backend tidak memblokir pendaftar, melainkan menyimpan sekolah tersebut dengan status `PENDING_REVIEW` agar bisa ditinjau manual oleh admin.
-*   **Penyimpanan Registri Lokal:** Seluruh form registrasi tersinkronisasi ke `localStorage` (`mitra_muda_all_registered_users_v1`), memastikan dasbor admin dapat langsung mendeteksi pendaftar sedetik setelah mereka menekan tombol "Daftar".
+### A. Pengunggahan Berkas Karya Siswa Langsung dari Perangkat (Direct Device File Picker)
+- **Lokasi:** `src/app/(dashboard)/pelajar/transaksi/[id]/page.tsx`
+- **Spesifikasi:**
+  - Tombol **Foto dari Galeri / Kamera** (`accept="image/*"`) untuk penyerahan karya berbasis visual atau desain.
+  - Tombol **Berkas dari Folder (ZIP/PDF)** (`accept="*/*"`) untuk penyerahan file dokumen, source code, dan arsip zip tanpa batasan format.
+  - Pratinjau kartu berkas otomatis dengan nama file, ukuran asli dalam KB/MB, dan status siap serahkan.
+  - Dukungan link cloud eksternal (Google Drive / Figma) sebagai opsi alternatif.
+  - Saat berkas dikirim, status akad otomatis beralih ke tahap 3 (*Karya Diserahkan & Sedang Ditinjau UMKM*).
 
----
+### B. Kontrol Status Proyek Mandiri & Moderasi Admin
+- **Lokasi:**
+  - UMKM: `src/app/(dashboard)/umkm/page.tsx` & `src/app/(dashboard)/umkm/transaksi/[id]/page.tsx`
+  - Admin: `src/app/tuan/page.tsx`
+- **Spesifikasi:**
+  - **UMKM:** Kontrol langsung status proyek (*Pengerjaan*, *Review UMKM*, *Selesai*) pada dashboard dan ruang transaksi dengan modal rating & ulasan bintang.
+  - **Admin Panel (`/tuan`):** Tabel kontrol transaksi proyek pada tab *Escrow Vault* dilengkapi dua tombol aksi langsung:
+    1. **Minta Revisi**: Mengembalikan status proyek ke tahap 2 (*Dalam Pengerjaan / Revisi*) dan mengirim notifikasi revisi ke siswa.
+    2. **Done & Cairkan**: Menyelesaikan transaksi ke tahap 4 (*Selesai & Lunas*), mencairkan dana escrow secara otomatis ke dompet siswa, dan menandai `fullPaid: true`.
 
-## 🎓 4. Alur Kerja (Workflow) Dashboard Pelajar
-*Lokasi: `src/app/(dashboard)/pelajar`*
-*   **Real-time Verifikasi:** Saat siswa diverifikasi oleh Admin/Sekolah, badge mereka di dashboard secara *live* berubah menjadi hijau ("Terverifikasi") berkat interval sinkronisasi data API.
-*   **Dompet Digital (E-Wallet):** Sistem pelacakan finansial siswa. Siswa dapat melihat riwayat penghasilan, jumlah saldo yang ditahan di sistem Escrow, dan mengajukan "Tarik Saldo".
-*   **Manajemen Jasa:** UI untuk menambah, mengedit, dan menghapus layanan (*Jasa*) yang ditawarkan ke UMKM.
-*   **Ruang Akad (Transaksi):** Halaman khusus per proyek tempat Pelajar dan UMKM berdiskusi, menyepakati nilai akhir, dan menyelesaikan pekerjaan.
+### C. Dompet Siswa & Kalkulasi Saldo Idempotent
+- **Lokasi:** `src/lib/escrow-store.ts`, `src/app/(dashboard)/pelajar/dompet/page.tsx`, `src/app/(dashboard)/pelajar/page.tsx`
+- **Spesifikasi:**
+  - Pelepasan dana escrow diproteksi *idempotent* sehingga tidak dapat dieksekusi lebih dari 1 kali per nomor proyek.
+  - Saldo dihitung akurat dari formula:
+    `Saldo Siap Cair = Total Nilai Riil Proyek Selesai - Total Penarikan yang Telah Diproses`
+  - Tampilan saldo konsisten antara dashboard siswa dan dompet pencairan.
 
----
+### D. Integrasi Logo Resmi Kanal Pembayaran E-Wallet
+- **Lokasi:** `src/app/(dashboard)/pelajar/dompet/page.tsx`, `public/images/wallets/`
+- **Spesifikasi:**
+  - Pemasangan logo resmi untuk 4 penyedia e-wallet:
+    1. **GoPay**
+    2. **DANA**
+    3. **OVO**
+    4. **ShopeePay**
+  - Kartu pemilih e-wallet modern dengan preset nominal penarikan cepat (Rp 100rb, Rp 250rb, Rp 500rb, Rp 1jt).
 
-## 🏪 5. Alur Kerja (Workflow) Dashboard UMKM
-*Lokasi: `src/app/(dashboard)/umkm`*
-*   **Manajemen Proyek:** UMKM dapat memposting pekerjaan, mengatur anggaran, dan meninjau pelamar (Pelajar) yang mengirimkan proposal.
-*   **Sistem Escrow / Deposit:** Untuk keamanan siswa, UMKM yang menyetujui pekerja wajib membayarkan DP/Biaya penuh yang akan ditahan (Escrow) oleh sistem Mitra Muda. Dana baru diteruskan ke siswa saat UMKM menekan tombol "Proyek Selesai".
+### E. Sinkronisasi Dua Arah Real-Time Penarikan Dana Siswa (Bidirectional Sync)
+- **Lokasi:** `src/app/api/deposit/route.ts`, `src/lib/escrow-store.ts`, `src/app/tuan/page.tsx`
+- **Spesifikasi:**
+  - Pengajuan penarikan dana siswa dikirim ke backend melalui endpoint `POST /api/deposit` dengan tipe `WITHDRAWAL` dan `SYNC`.
+  - Admin Panel (`/tuan`) melakukan sinkronisasi otomatis setiap 2 detik. Semua pengajuan penarikan langsung muncul di tab *Penarikan Siswa* dengan status *Menunggu* (Pending).
+  - Admin dapat menyetujui (*Setujui*) atau menolak (*Tolak*) penarikan, yang langsung disebarkan ke perangkat siswa secara real-time.
 
----
+### F. Responsivitas Mobile & Dynamic Viewport Height
+- **Lokasi:** `src/app/(dashboard)/*`
+- **Spesifikasi:**
+  - Penggunaan CSS Dynamic Viewport: `h-[calc(100dvh-5rem)] min-h-[580px] max-h-[900px]`.
+  - Memastikan seluruh kontrol bawah ruang transaksi dan dashboard tidak terpotong di layar smartphone.
 
-## 🏫 6. Alur Kerja Dashboard Sekolah & Master Admin (Tuan)
-*Lokasi Sekolah: `src/app/(dashboard)/sekolah` | Lokasi Admin: `src/app/tuan`*
-*   **Kontrol Verifikasi:** Sekolah dapat melihat daftar siswanya, sementara Tuan (Master Admin) dapat mengontrol *semua* Pelajar, UMKM, dan Sekolah.
-*   **Direct WhatsApp Connect:** Tuan (Admin) dapat langsung menghubungi pendaftar (terutama yang bermasalah/pending) melalui tautan API WhatsApp otomatis yang membaca kolom `nomorWa` / `kontakWa` aktual dari database PostgreSQL pengguna.
-*   **Analitik Dashboard:** Ringkasan statistik performa (Total Pengguna, Transaksi Aktif, Volume Keuangan).
+### G. Chatbot Asisten AI Google Gemini Multi-Tier Waterfall
+- **Lokasi:** `src/app/api/ai/assistant/route.ts`, `src/components/ai-assistant.tsx`
+- **Spesifikasi:**
+  - Waterfall tier: `gemini-3.1-flash-lite` -> `gemini-3.5-flash` -> `gemini-3.6-flash` -> `gemini-3.7-flash`.
+  - Output redactor untuk menyaring API key atau JWT token.
+  - Fallback HTTP 429 ke tombol Customer Service WhatsApp saat kuota model habis.
 
----
+### H. Dokumen Resmi Digital & Surat Pengalaman Kerja
+- **Lokasi:** `src/components/invoice-modal.tsx`
+- **Spesifikasi:**
+  - Kwitansi Faktur Kas Resmi UMKM (`INV-MM-[ID]-[TAHUN]`) dengan QR Code keabsahan dan 0% komisi siswa.
+  - Surat Keterangan Pengalaman Kerja Industri Pelajar Vokasi (`CERT-MM-[ID]-VOKASI`) siap cetak format A4 (@media print).
 
-## 🚀 7. Pembersihan & Kesiapan Produksi (Production Ready)
-Sebelum proyek ini diserahkan untuk Tahap 2, Raffa telah memastikan sistem bersih dan siap dipublikasikan:
-*   **Zero Dummy Data:** Seluruh data demo statis (`isDemoPelajar`, mock projects, mock services) telah **dimusnahkan** dari source code. Seluruh aplikasi membaca 100% data riil dari database.
-*   **Full Build Passed:** Kode dikompilasi menggunakan `npm run build` dan **LULUS 100%** (Seluruh 34 halaman dan rute API). Tidak ada error TypeScript, rute yang bocor, maupun komponen yang gagal di-*render*.
-
----
----
-
-## 🛠️ [Area Pengembangan Tim - Tahap 2]
-*(Bagi anggota tim developer yang bergabung setelah Agustus 2026, silakan dokumentasikan perubahan, penambahan fitur, atau perbaikan bug yang Anda kerjakan di bawah baris ini. Format wajib mencantumkan Nama, Kontak, Tanggal, dan Deskripsi Perubahan).*
-
-### [Contoh: Pembuatan Fitur Chat Real-Time]
-**Nama:** [Nama Anggota Tim]
-**Kontak:** [Email/WA]
-**Tanggal:** [Tanggal Penyelesaian]
-**Deskripsi Perubahan:**
-*   Menambahkan WebSocket (Socket.io) untuk live chat di ruang Akad.
-*   Membuat tabel `Messages` di database Prisma.
-*   *Detail lainnya...*
-
-*(Tambahkan pembaruan tim di bawah ini...)*
-
----
-
-## 🔄 CHANGELOG — Sesi Pengembangan Agustus 2026
-
-> **Developer:** Raffa Rizqi Ramdani (@Razerpoa)  
-> **Tanggal:** 22–25 Agustus 2026  
-> **Domain Live:** https://www.mitramuda.biz.id
-
----
-
-### [v1.1.0] — 25 Agustus 2026 · Keamanan & Bug Fix
-
-#### 🔒 Keamanan
-
-**Admin Login — Server-Side Rate Limiting**
-- **File baru:** `src/app/api/auth/admin-login/route.ts`
-- **Masalah sebelumnya:** Rate limiter hanya berbasis `useRef` di browser → bisa di-bypass dengan refresh halaman atau ganti IP
-- **Solusi:** Endpoint server baru menggunakan `RateLimiter` berbasis IP (`x-forwarded-for`)
-  - Lockout 10 menit setelah 5x gagal
-  - Tidak bisa di-bypass dengan refresh/tab baru
-  - Login berhasil → menerbitkan `HttpOnly cookie` admin session (TTL 8 jam)
-- `src/app/tuan/login/page.tsx` — form sekarang POST ke `/api/auth/admin-login`
-
-**Google OAuth — Perbaikan Bypass Dashboard**
-- **File:** `src/app/api/auth/google-check/route.ts`
-- **Masalah:** User baru yang belum daftar bisa langsung masuk dashboard via Google Login (auto-create akun tanpa pilih role)
-- **Perbaikan:** Route sekarang hanya mengecek DB, **tidak pernah auto-create**. Jika email tidak ditemukan → return `{ exists: false }` → redirect ke halaman pilih role (`/?google_new=1`) → user wajib mendaftar terlebih dahulu
-- **File:** `src/app/(auth)/login/page.tsx` — handle `exists: false` → simpan email ke `sessionStorage` → redirect ke halaman onboarding
-
-#### 🐛 Bug Fix
-
-**Registrasi Akun Gagal di Production (IPv6 vs IPv4)**
-- **Masalah:** Vercel serverless (AWS) tidak bisa connect ke Supabase via IPv6 (direct host, port 5432)
-- **Solusi:** `DATABASE_URL` di `.env` diganti ke **IPv4 Connection Pooler** Supabase:
-  ```
-  aws-0-ap-northeast-2.pooler.supabase.com:6543
-  ```
-- Registrasi Pelajar, UMKM, dan Sekolah kini berhasil di production
-
-**Saldo Mobile Menembus Card**
-- **File:** `src/app/(dashboard)/pelajar/dompet/page.tsx`
-- Tambah `overflow-hidden` pada wrapper card saldo
-- Font size diubah dari `text-3xl sm:text-4xl` → `text-2xl sm:text-3xl`
-- Tambah `break-all min-w-0 leading-tight` pada elemen nominal
-- Tambah `flex-wrap gap-2` + `shrink-0` pada header badge
-
-#### ✨ Fitur
-
-**JWT Session Cookie pada Registrasi**
-- **File:** `src/app/api/pelajar/route.ts`, `src/app/api/umkm/route.ts`
-- Setelah registrasi berhasil, server langsung menerbitkan `HttpOnly JWT session cookie`
-- User tidak perlu login ulang setelah mendaftar
-
-**Verifikasi UMKM di Panel Admin**
-- Tab "Verifikasi UMKM" di `/tuan` sudah terhubung ke database PostgreSQL
-- Tombol "Setujui" → `PATCH /api/umkm/[id]` → update `isVerified: true`
-- Tombol "Cabut" → update `isVerified: false`
-- **File terkait:** `src/lib/admin-verification-store.ts`, `src/app/api/umkm/[id]/route.ts`
+### I. Kepatuhan Regulasi & Perlindungan Pelajar
+- **Lokasi:** `/kebijakan-privasi`, `/perlindungan-pelajar`, `/syarat-ketentuan`
+- **Spesifikasi:**
+  - Kepatuhan UU PDP No. 27/2022 untuk perlindungan data anak di bawah umur.
+  - Pedoman jam wajib belajar dan anti-eksploitasi siswa.
+  - Pengalihan HAKI sah setelah pelunasan dan 0% potongan bagi pelajar.
 
 ---
 
-### [v1.1.0-ui] — 25 Agustus 2026 · Redesign UI Admin
+## 4. Standar Keamanan Data & Server (Security SSS-Tier)
 
-#### 🎨 Admin Login Page (`/tuan/login`)
-Total redesign dari tampilan sederhana ke **dark cyberpunk premium**:
-- Background `#050A14` dengan CSS grid cyber lines
-- Terminal-style header bar dengan "traffic lights" (●●●) dan `MITRA-MUDA://ADMIN — RESTRICTED`
-- Card glassmorphism dark `#0D1117` dengan box shadow glow orange
-- Icon Lock dengan **pulse ring animation** (ping 3 detik)
-- Button submit dengan **shimmer effect** saat hover
-- Loading state: spinner + teks monospace `AUTHENTICATING...`
-- State terkunci: ikon Lock + pesan lockout berwarna orange
-
-#### 🎨 Admin Dashboard (`/tuan`)
-Upgrade visual sidebar + header ke **dark premium**:
-
-| Elemen | Sebelum | Sesudah |
-|--------|---------|---------|
-| Background | `#F8FAFC` | `#0A0F1A` |
-| Sidebar | `bg-white` | `bg-[#0D1117]` |
-| Nav item aktif | orange muda | `bg-[#FF9B71]/10` + border glow |
-| Badge pending | abu-abu | `bg-red-500/20 text-red-400` |
-| Header bar | putih | `bg-[#0D1117]/95 backdrop-blur` |
-| Live indicator | static | `animate-pulse` (berkedip) |
-| Subtitle | plain text | `font-mono mitra-muda://admin` |
+1. **Zero Credential Exposure:** Kunci API disimpan di server environment (`process.env`) dan disaring pada seluruh output.
+2. **Zero Password Exposure:** Field password tidak pernah disertakan dalam payload response API.
+3. **Enterprise HTTP Security Headers (`next.config.ts`):**
+   - `X-Frame-Options: SAMEORIGIN`
+   - `X-Content-Type-Options: nosniff`
+   - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+   - `Referrer-Policy: strict-origin-when-cross-origin`
+   - `Permissions-Policy` (blokir akses kamera/mikrofon tanpa izin)
+   - `Cache-Control: no-store, max-age=0` pada seluruh endpoint `/api/*`
+4. **Rate Limiting Berlapis:**
+   - Login admin: 5 percobaan / 10 menit dengan lockout otomatis.
+   - Asisten AI: 12 request / menit per IP address.
 
 ---
 
-### [v1.0.x] — 22 Agustus 2026 · Domain & Git
+## 5. Changelog Pengembangan
 
-- **Domain:** Ganti dari `mitramuda.my.id` → `mitramuda.biz.id` (alias Vercel)
-- **Git History Rewrite:** Seluruh commit di-rewrite via `git filter-branch` → author diseragamkan ke `Raffa Rizqi Ramdani <raffarizki2010@gmail.com>` (@Razerpoa)
-
----
-
-### 📌 Known Issues & TODO (Per 25 Agustus 2026)
-
-- [ ] **Admin credentials hardcoded** di `src/app/api/auth/admin-login/route.ts` — pindah ke Vercel Env Vars (`ADMIN_USERNAME`, `ADMIN_PASSWORD`)
-- [ ] **Rate limiter admin in-memory** — reset saat Vercel cold start. Upgrade ke Upstash Redis untuk production-grade
-- [ ] **Halaman `/` belum tampilkan notif** saat redirect dari Google OAuth baru (`?google_new=1`) — tambahkan UI toast/banner
-- [ ] **2FA admin** masih berbasis `localStorage` (client-side) — pertimbangkan TOTP server-side
+### Sesi September 2026:
+- **feat:** Sinkronisasi dua arah real-time untuk penarikan dana pelajar ke dashboard admin (`/api/deposit` & `escrow-store.ts`).
+- **feat:** Pemasangan logo resmi kanal pembayaran e-wallet (GoPay, DANA, OVO, ShopeePay) pada formulir penarikan dompet siswa.
+- **fix:** Perbaikan kalkulasi saldo dompet siswa menjadi idempotent dan akurat sesuai nominal riil proyek selesai.
+- **feat:** Penambahan kontrol moderasi Minta Revisi dan Done & Cairkan oleh admin di panel `/tuan`.
+- **feat:** Penambahan pemilih berkas langsung dari galeri/kamera dan folder (ZIP/PDF) pada ruang transaksi siswa.
+- **feat:** Kontrol status proyek langsung pada dashboard UMKM dan perbaikan responsivitas mobile dynamic viewport height.
