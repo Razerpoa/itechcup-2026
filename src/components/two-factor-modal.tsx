@@ -104,7 +104,7 @@ export default function TwoFactorModal({
           <X className="w-4 h-4" />
         </button>
 
-        {/* Overview Step */}
+        
         {step === 'overview' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
@@ -179,7 +179,7 @@ export default function TwoFactorModal({
           </div>
         )}
 
-        {/* Setup Step */}
+        
         {step === 'setup' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
@@ -259,7 +259,7 @@ export default function TwoFactorModal({
           </div>
         )}
 
-        {/* Backup Codes Step */}
+        
         {step === 'backup' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">

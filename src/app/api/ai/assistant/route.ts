@@ -23,7 +23,7 @@ Konteks Utama Platform:
 Aturan Format & Kerapian Jawaban (WAJIB DIPATUHI):
 - Tulis jawaban dengan rapi, terstruktur, dan enak dibaca.
 - Selalu beri pemisah baris baru antar paragraf atau antar poin.
-- DILARANG menumpuk simbol markdown dalam satu baris (seperti '--- ### 💡').
+- DILARANG menumpuk simbol markdown dalam satu baris (seperti '--- ### tip').
 - Jika memberikan langkah-langkah, gunakan penomoran rapi (1. 2. 3.) dengan penjelasan di baris baru setelah judul poin.
 - Gunakan cetak tebal (**teks tebal**) hanya untuk kata kunci penting.
 - Buat jawaban ringkas, padat, dan langsung menjawab pertanyaan pengguna.

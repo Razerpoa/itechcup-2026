@@ -190,7 +190,7 @@ export default function RegisterSekolahPage() {
 
       <main className="max-w-2xl w-full mx-auto px-4 sm:px-6 flex-1">
         <div className="bg-white rounded-3xl border border-[#EAEAEA] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-10">
-          {/* Anti-Impostor Security Banner */}
+          
           <div className="mb-6 p-4 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-start gap-3">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0 mt-0.5">
               <Building2 className="w-4 h-4" />

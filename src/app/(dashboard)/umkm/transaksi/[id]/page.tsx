@@ -16,7 +16,8 @@ import {
   Wallet,
   Briefcase,
   Printer,
-  MessageCircle
+  MessageCircle,
+  Star
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
@@ -298,7 +299,7 @@ export default function UMKMTransaksiRoomPage() {
             ))}
 
             <div className="text-[11px] text-gray-600 leading-relaxed bg-gray-50 p-2.5 rounded-xl">
-              💡 Silakan periksa berkas hasil kerja siswa di atas. Anda dapat meminta revisi atau menyetujui hasil karya untuk melepaskan sisa dana dari escrow.
+               Silakan periksa berkas hasil kerja siswa di atas. Anda dapat meminta revisi atau menyetujui hasil karya untuk melepaskan sisa dana dari escrow.
             </div>
           </div>
         )}
@@ -378,9 +379,9 @@ export default function UMKMTransaksiRoomPage() {
                         onClick={() => setSelectedRating(star)}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
-                        className="text-3xl transition-transform hover:scale-110 cursor-pointer focus:outline-none"
+                        className="p-1 transition-transform hover:scale-110 cursor-pointer focus:outline-none"
                       >
-                        {isFilled ? '⭐' : '☆'}
+                        <Star className={`w-7 h-7 ${isFilled ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
                       </button>
                     )
                   })}
@@ -446,7 +447,7 @@ export default function UMKMTransaksiRoomPage() {
             </div>
             <h3 className="text-xl font-extrabold text-gray-900 mb-2">Proyek Berhasil Diselesaikan!</h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-4">
-              Rating bintang <span className="font-bold text-amber-600">⭐ {selectedRating}.0</span> dan dana proyek sebesar <span className="font-bold text-gray-900">{formatRupiah(activeAkad.nominalTotal)}</span> telah berhasil dicairkan langsung ke saldo dompet <span className="font-bold text-gray-900">{activeAkad.namaPelajar}</span>.
+              Rating bintang <span className="font-bold text-amber-600 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {selectedRating}.0</span> dan dana proyek sebesar <span className="font-bold text-gray-900">{formatRupiah(activeAkad.nominalTotal)}</span> telah berhasil dicairkan langsung ke saldo dompet <span className="font-bold text-gray-900">{activeAkad.namaPelajar}</span>.
             </p>
             <div className="p-3 bg-[#FFF1EB] rounded-2xl border border-[#FFD9CA] text-xs text-[#964825] mb-6 text-left">
               <span className="font-bold block mb-0.5">Ulasan Tersimpan:</span>
@@ -462,7 +463,7 @@ export default function UMKMTransaksiRoomPage() {
         </div>
       )}
 
-      {/* Official Invoice Modal */}
+      
       <InvoiceModal
         isOpen={showInvoice}
         onClose={() => setShowInvoice(false)}

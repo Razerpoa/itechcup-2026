@@ -79,8 +79,7 @@ export async function GET(_request: NextRequest) {
         status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED',
         createdAt: item.createdAt.toISOString()
       }))
-    } catch {
-      // ignore
+    } catch {
     }
 
     const mergedMap = new Map<string, SharedLamaranRecord>()
@@ -183,8 +182,7 @@ export async function POST(request: NextRequest) {
           }
         })
       }
-    } catch {
-      // ignore
+    } catch {
     }
 
     return NextResponse.json({ data: newRecord }, { status: 201 })

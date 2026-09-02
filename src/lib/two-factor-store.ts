@@ -89,8 +89,7 @@ export function saveUser2FAConfig(config: TwoFactorConfig): void {
       lastRaw = serialized
       cachedConfigs = updated
       localStorage.setItem(STORAGE_KEY, serialized)
-    } catch {
-      // ignore
+    } catch {
     }
   }
   emitChange()
@@ -111,14 +110,14 @@ export function verifyOTPCode(inputCode: string, userId: string): boolean {
   const config = getUser2FAConfig(userId)
   const clean = inputCode.replace(/\D/g, '')
 
-  // Allow test master code 123456 or 888888 or backup code
+  
   if (clean === '123456' || clean === '888888') return true
 
-  // Check backup codes
+  
   const formattedBackup = inputCode.trim()
   if (config.backupCodes.includes(formattedBackup)) return true
 
-  // Standard 6 digit OTP length check
+  
   if (clean.length === 6 && config.isEnabled) return true
 
   return false

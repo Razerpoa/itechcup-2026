@@ -34,8 +34,7 @@ export async function PATCH(
           data: { status: status as 'PENDING' | 'ACCEPTED' | 'REJECTED' }
         })
       }
-    } catch {
-      // ignore
+    } catch {
     }
 
     return NextResponse.json({ success: true, status })

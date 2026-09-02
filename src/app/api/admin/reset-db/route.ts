@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 1. Bersihkan seluruh data transaksi dan entitas terkait (urutan aman foreign key)
+    
     await prisma.transaksi.deleteMany()
     await prisma.lamaran.deleteMany()
     await prisma.proyek.deleteMany()
@@ -48,10 +48,10 @@ export async function POST(request: NextRequest) {
     await prisma.uMKM.deleteMany()
     await prisma.sekolah.deleteMany()
 
-    // 2. Hash default untuk akun-akun dasar
+    
     const defaultHash = await bcrypt.hash('password123', 10)
 
-    // 3. Seed Sekolah Resmi Kemendikdasmen RI
+    
     const smk2Tasik = await prisma.sekolah.create({
       data: {
         namaSekolah: 'SMK NEGERI 2 TASIKMALAYA',
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 4. Seed Akun Pelajar & Portofolio
+    
     const siswaRaffa = await prisma.pelajar.create({
       data: {
         namaLengkap: 'Raffa Maulana',
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 5. Seed Akun UMKM
+    
     const umkmKopi = await prisma.uMKM.create({
       data: {
         namaPemilik: 'Hendra Pratama',
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 6. Seed Lowongan Proyek Resmi UMKM
+    
     await prisma.proyek.create({
       data: {
         umkmId: umkmKopi.id,
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 7. Seed Jasa Pelajar
+    
     await prisma.jasa.create({
       data: {
         pelajarId: siswaRaffa.id,

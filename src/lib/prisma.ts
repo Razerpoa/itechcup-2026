@@ -24,7 +24,7 @@ function getConnectionString(): string {
 
   url = url.replace(/["'\r\n\s]/g, '').trim()
 
-  // Auto-upgrade Supabase pooler from session mode (5432) to transaction mode (6543)
+  
   if (url.includes('pooler.supabase.com:5432')) {
     url = url.replace('pooler.supabase.com:5432', 'pooler.supabase.com:6543')
     if (!url.includes('pgbouncer=true')) {

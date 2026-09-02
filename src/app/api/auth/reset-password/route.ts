@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendResetPasswordEmail } from '@/lib/mail'
+import { signJwt, verifyJwt } from '@/lib/jwt'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,21 +19,25 @@ export async function POST(request: NextRequest) {
 
     let userNama = 'Pengguna Mitra Muda'
     let found = false
+    let userRole: 'pelajar' | 'umkm' | 'sekolah' = 'pelajar'
 
     try {
       const pelajar = await prisma.pelajar.findUnique({ where: { email: trimmedEmail } })
       if (pelajar) {
         userNama = pelajar.namaLengkap
+        userRole = 'pelajar'
         found = true
       } else {
         const umkm = await prisma.uMKM.findUnique({ where: { email: trimmedEmail } })
         if (umkm) {
           userNama = umkm.namaPemilik
+          userRole = 'umkm'
           found = true
         } else {
           const sekolah = await prisma.sekolah.findUnique({ where: { emailResmi: trimmedEmail } })
           if (sekolah) {
             userNama = sekolah.namaPenanggungJawab
+            userRole = 'sekolah'
             found = true
           }
         }
@@ -49,9 +54,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const resetToken = 'rst-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+    const resetToken = signJwt(
+      { id: trimmedEmail, email: trimmedEmail, role: userRole },
+      60 * 60
+    )
 
-    const result = await sendResetPasswordEmail({
+    await sendResetPasswordEmail({
       to: trimmedEmail,
       userNama,
       resetToken
@@ -59,9 +67,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Instruksi pemulihan password berhasil dikirim ke ' + trimmedEmail,
-      resetUrl: result.resetUrl,
-      simulated: result.simulated ?? false
+      message: 'Instruksi pemulihan password berhasil dikirim ke ' + trimmedEmail
     })
   } catch (error: any) {
     console.error('Error in reset password:', error)
@@ -75,16 +81,35 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, newPassword } = body
+    const { email, newPassword, token } = body
 
-    if (!email || !newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
       return NextResponse.json(
         { error: 'Password baru minimal 8 karakter' },
         { status: 400 }
       )
     }
 
-    const trimmedEmail = email.trim().toLowerCase()
+    let targetEmail = ''
+
+    if (token) {
+      const payload = verifyJwt(token)
+      if (!payload) {
+        return NextResponse.json(
+          { error: 'Token pemulihan tidak valid atau sudah kadaluarsa. Silakan minta ulang link pemulihan.' },
+          { status: 401 }
+        )
+      }
+      targetEmail = payload.email.trim().toLowerCase()
+    } else if (email) {
+      targetEmail = email.trim().toLowerCase()
+    } else {
+      return NextResponse.json(
+        { error: 'Token atau email wajib disertakan' },
+        { status: 400 }
+      )
+    }
+
     const bcrypt = await import('bcryptjs')
     const hashedPassword = await bcrypt.hash(newPassword, 10)
 
@@ -92,14 +117,13 @@ export async function PUT(request: NextRequest) {
     let userRole = 'pelajar'
     let userData: any = null
 
-    // 1. Try Pelajar
     const pelajar = await prisma.pelajar.findUnique({
-      where: { email: trimmedEmail },
+      where: { email: targetEmail },
       include: { profil: true, sekolah: { select: { namaSekolah: true } } }
     })
     if (pelajar) {
       const p = await prisma.pelajar.update({
-        where: { email: trimmedEmail },
+        where: { email: targetEmail },
         data: { password: hashedPassword }
       })
       userRole = 'pelajar'
@@ -119,11 +143,10 @@ export async function PUT(request: NextRequest) {
       }
       updated = true
     } else {
-      // 2. Try UMKM
-      const umkm = await prisma.uMKM.findUnique({ where: { email: trimmedEmail } })
+      const umkm = await prisma.uMKM.findUnique({ where: { email: targetEmail } })
       if (umkm) {
         const u = await prisma.uMKM.update({
-          where: { email: trimmedEmail },
+          where: { email: targetEmail },
           data: { password: hashedPassword }
         })
         userRole = 'umkm'
@@ -139,11 +162,10 @@ export async function PUT(request: NextRequest) {
         }
         updated = true
       } else {
-        // 3. Try Sekolah
-        const sekolah = await prisma.sekolah.findUnique({ where: { emailResmi: trimmedEmail } })
+        const sekolah = await prisma.sekolah.findUnique({ where: { emailResmi: targetEmail } })
         if (sekolah) {
           const s = await prisma.sekolah.update({
-            where: { emailResmi: trimmedEmail },
+            where: { emailResmi: targetEmail },
             data: { password: hashedPassword }
           })
           userRole = 'sekolah'

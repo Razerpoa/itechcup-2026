@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'proyekId dan lamaranId wajib diisi' }, { status: 400 })
     }
 
-    // 1. Verifikasi integritas proyek dan lamaran di database
+    
     const proyek = await prisma.proyek.findUnique({ where: { id: proyekId } })
     if (!proyek) {
       return NextResponse.json({ error: 'Proyek tidak ditemukan di sistem' }, { status: 404 })
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lamaran tidak valid atau tidak cocok dengan proyek' }, { status: 400 })
     }
 
-    // 2. Kalkulasi nominal secara murni dari database untuk mencegah manipulasi
+    
     const calculatedTotal = Number(lamaran.hargaTawar) || Number(proyek.budgetMax) || 500000
     const dpPercentage = proyek.dpPersen || 30
     const calculatedDP = Math.round(calculatedTotal * (dpPercentage / 100))

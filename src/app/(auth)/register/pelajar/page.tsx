@@ -717,7 +717,7 @@ export default function RegisterPelajarPage() {
                       {filePreview ? (
                         <div className="flex flex-col items-center gap-2">
                           <div className="w-24 h-16 rounded-lg overflow-hidden border border-[#FFD9CA] shadow-xs relative bg-white">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            
                             <img src={filePreview} alt="Preview Kartu" className="w-full h-full object-cover" />
                           </div>
                           <div className="flex items-center gap-1.5 text-xs font-bold text-[#964825]">

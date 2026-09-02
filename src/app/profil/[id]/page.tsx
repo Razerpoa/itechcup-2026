@@ -22,7 +22,8 @@ import {
   Sparkles,
   Briefcase,
   MessageCircle,
-  Loader2
+  Loader2,
+  Star
 } from 'lucide-react'
 import JasaCard from '@/components/marketplace/jasa-card'
 import JasaOrderModal from '@/components/marketplace/jasa-order-modal'
@@ -127,7 +128,7 @@ export default function ProfilPage() {
     nomorWa: nomorWa
   })
 
-  // Sinkronkan editForm saat dbPelajar selesai dimuat
+  
   useEffect(() => {
     setEditForm({
       nama,
@@ -139,7 +140,7 @@ export default function ProfilPage() {
     })
   }, [nama, lokasi, bio, foto, cover, nomorWa])
 
-  // Gabungkan Jasa dari Database + Client Store yang sesuai dengan pelajar ini
+  
   const dbJasaList = (dbPelajar?.jasa || []).map((dj: any) => ({
     id: dj.id,
     pelajarId: dj.pelajarId,
@@ -222,7 +223,7 @@ export default function ProfilPage() {
       }
       setCurrentUser(updatedUser)
 
-      // Also update all-users registry
+      
       try {
         const raw = localStorage.getItem('mitra_muda_all_registered_users_v1')
         if (raw) {
@@ -236,7 +237,7 @@ export default function ProfilPage() {
         }
       } catch {}
 
-      // Update PostgreSQL Database via API
+      
       try {
         await fetch(`/api/pelajar/${user.id}`, {
           method: 'PATCH',
@@ -420,7 +421,10 @@ export default function ProfilPage() {
             <div className="grid grid-cols-3 gap-3 sm:gap-6 py-5 px-4 sm:px-6 bg-[#FAFAFA] rounded-2xl border border-gray-100 text-center mb-8">
               <div>
                 <p className="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Rating</p>
-                <p className="text-lg sm:text-2xl font-extrabold text-[#964825] mt-0.5">⭐ {rating}</p>
+                <p className="text-lg sm:text-2xl font-extrabold text-[#964825] mt-0.5 inline-flex items-center gap-1">
+                  <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                  <span>{rating}</span>
+                </p>
               </div>
               <div className="border-x border-gray-200">
                 <p className="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Proyek Selesai</p>
@@ -547,8 +551,8 @@ export default function ProfilPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-amber-500 text-sm font-bold">
-                        {Array.from({ length: akad.rating || 5 }).map((_, i) => (
-                          <span key={i}>⭐</span>
+                        {Array.from({ length: Math.min(Math.round(akad.rating || 5), 5) }).map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                         ))}
                         <span className="text-xs text-gray-600 font-extrabold ml-1">({akad.rating || 5}.0)</span>
                       </div>
@@ -795,7 +799,7 @@ export default function ProfilPage() {
           </div>
         </div>
       )}
-      {/* 2FA Modal */}
+      
       <TwoFactorModal
         userId={user?.id || 'pelajar-active'}
         userName={nama}
@@ -804,7 +808,7 @@ export default function ProfilPage() {
         onClose={() => setIs2FAModalOpen(false)}
       />
 
-      {/* Jasa Order & Contact Modal */}
+      
       <JasaOrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}

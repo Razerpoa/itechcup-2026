@@ -394,11 +394,11 @@ export default function SekolahDashboard() {
                           </div>
                         ) : student.status === 'VERIFIED' ? (
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
-                            ✓ Terverifikasi
+                             Terverifikasi
                           </span>
                         ) : (
                           <span className="text-xs font-bold text-red-700 bg-red-100 px-3 py-1 rounded-full border border-red-200">
-                            ✕ Ditolak
+                             Ditolak
                           </span>
                         )}
                       </td>
@@ -420,7 +420,7 @@ export default function SekolahDashboard() {
           )}
         </div>
       </section>
-      {/* 2FA Modal */}
+      
       <TwoFactorModal
         userId={user?.id || 'sekolah-active'}
         userName={namaSekolah}

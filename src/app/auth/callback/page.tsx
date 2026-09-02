@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { setCurrentUser, getCurrentUser } from '@/lib/auth-client'
-import { Loader2, KeyRound, CheckCircle2, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Loader2, KeyRound, CheckCircle2, AlertCircle, ArrowRight, Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter'
 
 export default function AuthCallbackPage() {
@@ -12,8 +12,9 @@ export default function AuthCallbackPage() {
   const [statusText, setStatusText] = useState('Memproses verifikasi akun...')
   const [isRecoveryMode, setIsRecoveryMode] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [recoveryToken, setRecoveryToken] = useState<string | null>(null)
+  const [isInvalidToken, setIsInvalidToken] = useState(false)
 
-  // Recovery Form State
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +29,6 @@ export default function AuthCallbackPage() {
         let nama: string | undefined = undefined
         let authType: string | null = null
 
-        // 1. Check URL hash (#access_token=...&type=recovery|signup|magiclink)
         if (typeof window !== 'undefined' && window.location.hash) {
           const hashParams = new URLSearchParams(window.location.hash.substring(1))
           const accessToken = hashParams.get('access_token')
@@ -48,33 +48,52 @@ export default function AuthCallbackPage() {
               email = parsedToken.email || parsedToken.user_metadata?.email
               nama = parsedToken.user_metadata?.full_name || parsedToken.user_metadata?.name || parsedToken.name
             } catch {
-              // ignore JWT decode error
             }
           }
         }
 
-        // 2. Check query params (?type=recovery&email=...)
         if (typeof window !== 'undefined' && !authType) {
           const searchParams = new URLSearchParams(window.location.search)
           authType = searchParams.get('type')
-          if (!email) email = searchParams.get('email') || undefined
         }
 
-        // 3. Fallback to Supabase active session
         if (!email) {
           const { data: { session } } = await supabase.auth.getSession()
           email = session?.user?.email
           nama = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name
         }
 
-        // Handle Recovery (Lupa Password)
         if (authType === 'recovery') {
-          setIsRecoveryMode(true)
-          if (email) setUserEmail(email)
+          const searchParams = new URLSearchParams(window.location.search)
+          const token = searchParams.get('token')
+
+          if (!token) {
+            setIsInvalidToken(true)
+            return
+          }
+
+          try {
+            const res = await fetch('/api/auth/verify-reset-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            })
+            const data = await res.json()
+
+            if (!res.ok || !data.valid) {
+              setIsInvalidToken(true)
+              return
+            }
+
+            setRecoveryToken(token)
+            setUserEmail(data.email)
+            setIsRecoveryMode(true)
+          } catch {
+            setIsInvalidToken(true)
+          }
           return
         }
 
-        // Fallback for local demo/dev mode
         if (!email) {
           const activeUser = getCurrentUser()
           if (activeUser) {
@@ -156,20 +175,23 @@ export default function AuthCallbackPage() {
       return
     }
 
+    if (!recoveryToken) {
+      setErrorMsg('Token pemulihan tidak ditemukan. Silakan minta ulang link pemulihan dari halaman login.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
-      // 1. Update in Supabase Auth if available
       try {
         await supabase.auth.updateUser({ password: newPassword })
       } catch {
-        // ignore if handled on backend
       }
 
-      // 2. Update in Postgres Database
       const res = await fetch('/api/auth/reset-password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: userEmail,
+          token: recoveryToken,
           newPassword
         })
       })
@@ -199,7 +221,33 @@ export default function AuthCallbackPage() {
     }
   }
 
-  // Recovery Form View
+  if (isInvalidToken) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-lg border border-[#EAEAEA] max-w-md w-full space-y-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto border border-red-200">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
+              Link Pemulihan Tidak Valid
+            </h2>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              Link pemulihan kata sandi ini tidak valid atau sudah kadaluarsa. Silakan minta ulang link pemulihan melalui halaman login.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/login')}
+            className="w-full h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer"
+          >
+            <span>Kembali ke Halaman Login</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (isRecoveryMode) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
@@ -289,7 +337,6 @@ export default function AuthCallbackPage() {
     )
   }
 
-  // Normal Automatic Auth / Verification Processing View
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4 text-center">
       <div className="bg-white p-8 rounded-3xl shadow-xs border border-[#EAEAEA] max-w-sm w-full space-y-4">

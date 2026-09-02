@@ -47,8 +47,7 @@ export async function syncJasaWithDB() {
         emitChange()
       }
     }
-  } catch {
-    // ignore
+  } catch {
   } finally {
     isFetching = false
   }

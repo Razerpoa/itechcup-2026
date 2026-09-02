@@ -28,7 +28,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
 
   return (
     <div className="mt-2 space-y-2 text-xs">
-      {/* Progress Bar */}
+      
       <div className="flex items-center gap-2">
         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div className={`h-full ${current.color} ${current.width} transition-all duration-300 rounded-full`} />
@@ -36,7 +36,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         <span className={`font-semibold ${current.text}`}>{current.label}</span>
       </div>
 
-      {/* Rules Checklist */}
+      
       <div className="grid grid-cols-2 gap-1 text-[11px] text-gray-500 pt-1">
         <div className="flex items-center gap-1.5">
           {hasLength ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <X className="w-3.5 h-3.5 text-gray-300" />}

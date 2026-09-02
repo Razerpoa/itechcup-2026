@@ -551,7 +551,7 @@ export default function MasterAdminEscrowPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Pelajar Card */}
+                
                 <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-[#FFF4EC] border border-[#FFE0D2] flex items-center justify-center">
@@ -569,7 +569,7 @@ export default function MasterAdminEscrowPage() {
                   )}
                 </div>
 
-                {/* Sekolah Card */}
+                
                 <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
@@ -587,7 +587,7 @@ export default function MasterAdminEscrowPage() {
                   )}
                 </div>
 
-                {/* Escrow Card */}
+                
                 <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
@@ -599,7 +599,7 @@ export default function MasterAdminEscrowPage() {
                   <p className="text-xs text-[#8B7E74] mt-1 font-medium">Dana tertahan di rekening bersama</p>
                 </div>
 
-                {/* Finansial Card */}
+                
                 <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
@@ -1215,7 +1215,7 @@ export default function MasterAdminEscrowPage() {
         </main>
       </div>
 
-      {/* Document Modal */}
+      
       {selectedProofImg && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-[#E8E2DA] relative">
@@ -1232,7 +1232,7 @@ export default function MasterAdminEscrowPage() {
               </button>
             </div>
             <div className="relative min-h-[300px] max-h-[500px] w-full rounded-2xl overflow-hidden bg-[#FAF8F5] border border-[#E8E2DA] mb-5 flex items-center justify-center p-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              
               <img
                 src={selectedProofImg.url}
                 alt={selectedProofImg.title}
@@ -1250,7 +1250,7 @@ export default function MasterAdminEscrowPage() {
           </div>
         </div>
       )}
-      {/* Reject / Revoke Modal */}
+      
       {rejectRevokeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-[#E8E2DA] space-y-4">
@@ -1327,7 +1327,7 @@ export default function MasterAdminEscrowPage() {
         </div>
       )}
 
-      {/* 2FA Modal */}
+      
       <TwoFactorModal
         userId="admin-master"
         userName="Admin Master System"
@@ -1336,7 +1336,7 @@ export default function MasterAdminEscrowPage() {
         onClose={() => setIs2FAModalOpen(false)}
       />
 
-      {/* Reset Database Modal */}
+      
       {isResetDbModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-rose-200 text-left space-y-4 animate-in fade-in zoom-in-95 duration-200">

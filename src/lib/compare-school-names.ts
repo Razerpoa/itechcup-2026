@@ -45,7 +45,7 @@ export function compareSchoolNames(userNormalized: string, officialName: string)
     return { match: 'MINOR' }
   }
 
-  // Token similarity check
+  
   const userTokens = cleanUser.split(' ')
   const officialTokens = cleanOfficial.split(' ')
   const commonTokens = userTokens.filter((t) => officialTokens.includes(t))
@@ -54,7 +54,7 @@ export function compareSchoolNames(userNormalized: string, officialName: string)
     return { match: 'MINOR' }
   }
 
-  // Substring abbreviation match (e.g. TASIK in TASIKMALAYA)
+  
   const hasPartialTokenMatch = userTokens.some((u) =>
     u.length >= 4 && officialTokens.some((o) => o.startsWith(u) || u.startsWith(o))
   )

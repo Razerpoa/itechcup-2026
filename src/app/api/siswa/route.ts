@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // If school was found, auto-link unlinked students found by name
+    
     if (school && data.length > 0) {
       const unlinkedIds = data.filter((d) => !d.sekolahId).map((d) => d.id)
       if (unlinkedIds.length > 0) {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       include: { sekolah: { select: { id: true, namaSekolah: true, npsn: true } } },
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    
     const { password: _, ...data } = raw
 
     return NextResponse.json({ data }, { status: 201 })

@@ -109,8 +109,7 @@ function saveAkadState(data: AkadStoreData) {
       const serialized = JSON.stringify(data)
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
-    } catch {
-      // ignore
+    } catch {
     }
   }
   emitChange()
@@ -221,8 +220,7 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
               ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
             }
           }
-        } catch {
-          // ignore
+        } catch {
         }
 
         const newState: AkadStoreData = {
@@ -235,8 +233,7 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
         return newState
       }
     }
-  } catch {
-    // ignore
+  } catch {
   }
   return currentState
 }
@@ -303,8 +300,7 @@ export function submitLamaran(payload: {
         createdAt: newItem.createdAt
       })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return newItem
@@ -341,8 +337,7 @@ export function sendAkadChat(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newChat)
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return newChat
@@ -399,8 +394,7 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ACCEPTED' })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return { success: true, akad: newAkad }
@@ -423,8 +417,7 @@ export function rejectLamaran(lamaranId: string): boolean {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'REJECTED' })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return true

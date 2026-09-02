@@ -19,7 +19,7 @@ export async function createSupabaseAuthUser(payload: {
     })
 
     if (error) {
-      // Jika email sudah ada di Supabase Auth, tidak apa-apa
+      
       return null
     }
 

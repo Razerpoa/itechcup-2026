@@ -69,7 +69,7 @@ export function verifyJwt(token: string): JwtPayload | null {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
 
-    // Constant-time comparison to prevent timing attacks
+    
     const sigBuffer = Buffer.from(signature)
     const expectedBuffer = Buffer.from(expectedSignature)
     if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
@@ -80,7 +80,7 @@ export function verifyJwt(token: string): JwtPayload | null {
 
     const now = Math.floor(Date.now() / 1000)
     if (payload.exp && payload.exp < now) {
-      return null // Expired
+      return null 
     }
 
     return payload

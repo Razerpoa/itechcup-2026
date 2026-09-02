@@ -139,11 +139,11 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Name normalization with graceful fallback
+    
     const nameResult = normalizeSchoolName(body.namaSekolah)
     const normalizedName = nameResult.normalized || body.namaSekolah.trim().toUpperCase()
 
-    // Check duplicate email
+    
     const existingByEmail = await prisma.sekolah.findUnique({ where: { emailResmi: cleanEmail } })
     if (existingByEmail) {
       return NextResponse.json({
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
     let sekolah
     if (existingSchool) {
-      // Claim / update existing unverified school record
+      
       sekolah = await prisma.sekolah.update({
         where: { id: existingSchool.id },
         data: {
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Auto-link existing students who registered with this school name
+    
     prisma.pelajar.updateMany({
       where: {
         sekolahId: null,
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
       }
     }).catch(() => {})
 
-    // Sync ke Supabase Authentication (auth.users)
+    
     createSupabaseAuthUser({
       email: cleanEmail,
       password: body.password,
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
       role: 'sekolah'
     }).catch(() => {})
 
-    // Kirim email verifikasi pendaftaran via Resend
+    
     const { sendConfirmationEmail } = await import('@/lib/mail')
     sendConfirmationEmail({
       to: cleanEmail,

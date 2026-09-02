@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Info,
   Copy,
-  Share2
+  Share2,
+  Star
 } from 'lucide-react'
 import { formatRupiah, formatDate } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
@@ -232,8 +233,9 @@ export default function PelajarDashboard() {
           <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Lamaran Terkirim</div>
         </div>
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#EAEAEA] shadow-xs hover:border-[#FF9B71] transition-colors">
-          <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 mb-1 flex items-center gap-1">
-            <span>⭐ {avgRating}</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 mb-1 flex items-center gap-1.5">
+            <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            <span>{avgRating}</span>
           </div>
           <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
             {completedAkad.length > 0 ? `${completedAkad.length} Proyek Selesai` : 'Belum Ada Ulasan'}
@@ -390,10 +392,10 @@ export default function PelajarDashboard() {
                 <div className="space-y-2.5 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold">
-                      ✓ Selesai & Dana Cair
+                      Selesai & Dana Cair
                     </span>
-                    <span className="text-xs text-amber-600 font-extrabold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      ⭐ {akad.rating || 5}.0
+                    <span className="text-xs text-amber-600 font-extrabold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {akad.rating || 5}.0
                     </span>
                     <span className="text-xs text-gray-400">
                       {akad.completedAt ? formatDate(akad.completedAt) : formatDate(akad.createdAt)}
@@ -429,7 +431,7 @@ export default function PelajarDashboard() {
         </section>
       )}
 
-      {/* Section: Katalog Jasa Saya */}
+      
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">

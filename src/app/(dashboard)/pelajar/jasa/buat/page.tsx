@@ -138,7 +138,7 @@ export default function BuatJasaPelajarPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-8">
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section 1: Informasi Utama */}
+          
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-2xs space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-[#FFF1EB] text-[#964825] flex items-center justify-center font-bold shrink-0">
@@ -229,7 +229,7 @@ export default function BuatJasaPelajarPage() {
                 />
               </div>
 
-              {/* Tags Section */}
+              
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Tag Keahlian / Tools
@@ -279,7 +279,7 @@ export default function BuatJasaPelajarPage() {
             </div>
           </div>
 
-          {/* Section 2: Paket Harga & Layanan */}
+          
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-2xs space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
@@ -292,7 +292,7 @@ export default function BuatJasaPelajarPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Paket Basic */}
+              
               <div className="border border-[#FFD9CA] rounded-2xl p-5 bg-[#FFF7F3] space-y-3 relative">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-[#964825] uppercase tracking-wider">Paket Basic</span>
@@ -314,7 +314,7 @@ export default function BuatJasaPelajarPage() {
                 </div>
               </div>
 
-              {/* Paket Standard */}
+              
               <div className="border border-gray-200 rounded-2xl p-5 bg-white space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Paket Standard</span>
@@ -346,7 +346,7 @@ export default function BuatJasaPelajarPage() {
                 </div>
               </div>
 
-              {/* Paket Premium */}
+              
               <div className="border border-gray-200 rounded-2xl p-5 bg-white space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Paket Premium</span>
@@ -380,7 +380,7 @@ export default function BuatJasaPelajarPage() {
             </div>
           </div>
 
-          {/* Section 3: Unggah Foto Cover */}
+          
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-2xs space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
@@ -436,7 +436,7 @@ export default function BuatJasaPelajarPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          
           <div className="flex items-center justify-end gap-3 pt-4">
             <Link
               href="/pelajar"
@@ -465,7 +465,7 @@ export default function BuatJasaPelajarPage() {
         </form>
       </main>
 
-      {/* Success Modal */}
+      
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#EAEAEA] text-center animate-in fade-in zoom-in-95 duration-200">

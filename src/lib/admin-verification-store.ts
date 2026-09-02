@@ -68,7 +68,7 @@ let cachedData: AdminVerificationData = INITIAL_DATA
 let lastRaw: string | null = '__init__'
 const listeners = new Set<() => void>()
 
-// Track recent mutations for 30 seconds to prevent stale DB data from overwriting
+
 const MUTATION_TTL_MS = 30_000
 const recentMutations = new Map<string, { status: string; timestamp: number }>()
 
@@ -125,7 +125,7 @@ function saveVerificationState(data: AdminVerificationData) {
   emitChange()
 }
 
-// Helper: retry a fetch PATCH up to 3 times
+
 async function patchWithRetry(url: string, body: Record<string, unknown>, retries = 3): Promise<boolean> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -139,7 +139,7 @@ async function patchWithRetry(url: string, body: Record<string, unknown>, retrie
     } catch (err) {
       console.warn(`PATCH ${url} attempt ${attempt + 1} network error:`, err)
     }
-    // Wait before retry (exponential backoff: 500ms, 1s, 2s)
+    
     if (attempt < retries - 1) {
       await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
     }
@@ -167,10 +167,10 @@ export async function syncAdminUsersFromDB(): Promise<void> {
           const actualWa = matchedUser?.nomorWa || p.profil?.kontakWa || p.nomorWa || p.noHp || ''
           const docPhoto = p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || undefined
 
-          // Check if this item was recently mutated by admin
+          
           const mutation = isRecentlyMutated(p.id) || (p.email ? isRecentlyMutated(p.email) : null)
           
-          // If recently mutated, use the mutation status; otherwise use DB truth
+          
           const dbStatus = (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING'
           const effectiveStatus = mutation
             ? (mutation.status as 'PENDING' | 'VERIFIED' | 'REJECTED')
@@ -258,7 +258,7 @@ export async function syncAdminUsersFromDB(): Promise<void> {
 }
 
 export async function adminVerifyPelajar(id: string): Promise<boolean> {
-  // Record mutation to protect optimistic update from stale sync
+  
   recordRecentMutation(id, 'VERIFIED')
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
@@ -266,7 +266,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     recordRecentMutation(targetPelajar.email, 'VERIFIED')
   }
 
-  // Optimistic local update
+  
   const updated = state.pelajarList.map((p) =>
     p.id === id || (targetPelajar && p.email === targetPelajar.email)
       ? { ...p, verificationStatus: 'VERIFIED' as const, catatanPenolakan: undefined }
@@ -274,7 +274,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
-  // Broadcast to other tabs/windows
+  
   broadcastVerificationChange({
     role: 'pelajar',
     id,
@@ -282,7 +282,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     status: 'VERIFIED'
   })
 
-  // Update local registry
+  
   if (typeof window !== 'undefined') {
     try {
       const allUsersRaw = localStorage.getItem('mitra_muda_all_registered_users_v1')
@@ -300,7 +300,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     }
   }
 
-  // Persist to database with retry
+  
   const success = await patchWithRetry(`/api/pelajar/${id}`, {
     verificationStatus: 'VERIFIED',
     catatanPenolakan: null
@@ -310,7 +310,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     console.error(`Failed to persist pelajar ${id} verification to DB after retries`)
   }
 
-  // Re-sync from DB to confirm persistence
+  
   await syncAdminUsersFromDB()
 
   return success

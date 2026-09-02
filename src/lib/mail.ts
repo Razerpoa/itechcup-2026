@@ -14,7 +14,7 @@ export interface SendResetMailParams {
 export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Muda', resetToken = 'dummy-token' }: SendResetMailParams) {
   const apiKey = process.env.RESEND_API_KEY
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mitramuda.biz.id'
-  const resetUrl = `${baseUrl}/auth/callback?type=recovery&email=${encodeURIComponent(to)}`
+  const resetUrl = `${baseUrl}/auth/callback?type=recovery&token=${encodeURIComponent(resetToken)}`
 
   if (!apiKey) {
     console.log(`[Resend Mail Simulation] Reset password email for ${to}: ${resetUrl}`)
@@ -50,7 +50,7 @@ export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Mu
       </div>
 
       <div style="text-align: center; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
-        © 2026 Mitra Muda — Platform Pemberdayaan Talenta Pelajar Indonesia.
+        2026 Mitra Muda - Platform Pemberdayaan Talenta Pelajar Indonesia.
       </div>
     </div>
   `
@@ -59,7 +59,7 @@ export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Mu
     const data = await resend.emails.send({
       from: customFrom,
       to: [to],
-      subject: '🔑 Instruksi Pemulihan Kata Sandi — Mitra Muda',
+      subject: 'Instruksi Pemulihan Kata Sandi - Mitra Muda',
       html: emailHtml,
     })
 
@@ -68,7 +68,7 @@ export async function sendResetPasswordEmail({ to, userNama = 'Pengguna Mitra Mu
       const fallbackData = await resend.emails.send({
         from: 'Mitra Muda <onboarding@resend.dev>',
         to: [to],
-        subject: '🔑 Instruksi Pemulihan Kata Sandi — Mitra Muda',
+        subject: 'Instruksi Pemulihan Kata Sandi - Mitra Muda',
         html: emailHtml,
       })
       if (fallbackData.error) {
@@ -116,7 +116,7 @@ export async function sendConfirmationEmail({ to, userNama = 'Pengguna Mitra Mud
               <td style="padding: 36px 36px 24px 36px;">
                 <div style="display: inline-block; background-color: #FFF1EB; border: 1px solid #FFD9CA; border-radius: 100px; padding: 6px 14px;">
                   <span style="font-size: 11px; font-weight: 800; color: #964825; letter-spacing: 0.8px; text-transform: uppercase;">
-                    Mitra Muda • ${role.toUpperCase()}
+                    Mitra Muda - ${role.toUpperCase()}
                   </span>
                 </div>
                 <h1 style="font-size: 22px; font-weight: 800; color: #2D2319; margin: 18px 0 8px 0; letter-spacing: -0.4px; line-height: 1.3;">
@@ -144,7 +144,7 @@ export async function sendConfirmationEmail({ to, userNama = 'Pengguna Mitra Mud
             <tr>
               <td style="background-color: #FAF8F5; border-top: 1px solid #EFEAE2; padding: 20px 36px; text-align: center; font-size: 11px; color: #9E8F80;">
                 Jika Anda tidak merasa mendaftar di Mitra Muda, silakan abaikan email ini.<br>
-                © 2026 Mitra Muda • <a href="https://mitramuda.biz.id" style="color: #8A7A6B;">mitramuda.biz.id</a>
+                2026 Mitra Muda - <a href="https://mitramuda.biz.id" style="color: #8A7A6B;">mitramuda.biz.id</a>
               </td>
             </tr>
           </table>
@@ -157,7 +157,7 @@ export async function sendConfirmationEmail({ to, userNama = 'Pengguna Mitra Mud
     const data = await resend.emails.send({
       from: customFrom,
       to: [to],
-      subject: '🎉 Konfirmasi Pendaftaran Akun — Mitra Muda',
+      subject: 'Konfirmasi Pendaftaran Akun - Mitra Muda',
       html: emailHtml,
     })
 
@@ -166,7 +166,7 @@ export async function sendConfirmationEmail({ to, userNama = 'Pengguna Mitra Mud
       const fallbackData = await resend.emails.send({
         from: 'Mitra Muda <onboarding@resend.dev>',
         to: [to],
-        subject: '🎉 Konfirmasi Pendaftaran Akun — Mitra Muda',
+        subject: 'Konfirmasi Pendaftaran Akun - Mitra Muda',
         html: emailHtml,
       })
       return { success: true, data: fallbackData }

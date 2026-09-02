@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Email tidak ditemukan di database — arahkan ke halaman registrasi
+    
     const rawNama = body.nama || trimmedEmail.split('@')[0]
     const formattedNama = rawNama.charAt(0).toUpperCase() + rawNama.slice(1)
 

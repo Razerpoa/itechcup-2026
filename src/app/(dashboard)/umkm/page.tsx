@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Check, Wallet, Users, MessageSquare, CheckCircle2, FileText, Sparkles, XCircle, ArrowRight, Send, X, Trash2, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { Plus, Check, Wallet, Users, MessageSquare, CheckCircle2, FileText, Sparkles, XCircle, ArrowRight, Send, X, Trash2, ShieldAlert, ShieldCheck, Star, Folder } from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatRelativeTime, formatDate } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
@@ -521,11 +521,11 @@ export default function UmkmDashboard() {
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-blue-50 text-blue-700 border-blue-200'
                         }`}>
-                          {isDone ? '✓ Selesai & Dana Cair' : '• Akad Berjalan'}
+                          {isDone ? 'Selesai & Dana Cair' : 'Akad Berjalan'}
                         </span>
                         {isDone && akad.rating && (
-                          <span className="text-xs font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                            ⭐ {akad.rating}.0
+                          <span className="text-xs font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {akad.rating}.0
                           </span>
                         )}
                         <span className="text-xs text-gray-400">
@@ -548,8 +548,9 @@ export default function UmkmDashboard() {
                       )}
 
                       {!isDone && akad.deliverables && akad.deliverables.length > 0 && (
-                        <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-xl w-fit">
-                          📁 {akad.deliverables.length} Deliverable karya siswa siap ditinjau di ruang akad
+                        <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-xl w-fit inline-flex items-center gap-1.5">
+                          <Folder className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{akad.deliverables.length} Deliverable karya siswa siap ditinjau di ruang akad</span>
                         </div>
                       )}
                     </div>
@@ -674,7 +675,7 @@ export default function UmkmDashboard() {
           </div>
         </div>
       )}
-      {/* 2FA Modal */}
+      
       <TwoFactorModal
         userId={user?.id || 'umkm-active'}
         userName={namaUsaha}

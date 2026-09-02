@@ -636,7 +636,7 @@ export default function MarketplacePage() {
         )}
       </div>
 
-      {/* Footer Marketplace */}
+      
       <footer className="mt-auto border-t border-gray-200 bg-white py-8 px-4 sm:px-8 text-xs text-gray-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
@@ -730,8 +730,8 @@ export default function MarketplacePage() {
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: 'Semua', val: 0 },
-                      { label: '⭐ 4.5+', val: 4.5 },
-                      { label: '⭐ 4.8+', val: 4.8 }
+                      { label: '4.5+ Bintang', val: 4.5 },
+                      { label: '4.8+ Bintang', val: 4.8 }
                     ].map((opt) => (
                       <button
                         key={opt.label}
@@ -801,7 +801,7 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* Modal Hubungi & Pesan Jasa Pelajar */}
+      
       <JasaOrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}

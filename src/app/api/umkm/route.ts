@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Sync ke Supabase Authentication (auth.users)
+    
     createSupabaseAuthUser({
       email: body.email.trim().toLowerCase(),
       password: body.password,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       role: 'umkm'
     }).catch(() => {})
 
-    // Kirim email verifikasi pendaftaran via Resend
+    
     const { sendConfirmationEmail } = await import('@/lib/mail')
     sendConfirmationEmail({
       to: body.email.trim().toLowerCase(),

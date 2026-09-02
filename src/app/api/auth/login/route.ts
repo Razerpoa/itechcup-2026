@@ -26,7 +26,7 @@ function createAuthResponse(user: any, status: number = 200) {
     secure: isProd,
     sameSite: 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60 // 7 days
+    maxAge: 7 * 24 * 60 * 60 
   })
 
   return response

@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     })
 
     if (!raw) {
-      // Fallback 1: Cek apakah ID yang dikirim merupakan ID Jasa
+      
       const jasaItem = await prisma.jasa.findUnique({
         where: { id },
         select: { pelajarId: true }
@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     if (!raw) {
-      // Fallback 2: Cek apakah ID yang dikirim berupa email atau NIS
+      
       raw = await prisma.pelajar.findFirst({
         where: {
           OR: [

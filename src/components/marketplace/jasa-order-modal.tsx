@@ -76,7 +76,7 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 flex flex-col">
-        {/* Modal Header */}
+        
         <div className="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#FFF1EB] text-[#964825] flex items-center justify-center font-bold">
@@ -96,9 +96,9 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
           </button>
         </div>
 
-        {/* Modal Body */}
+        
         <div className="p-5 sm:p-6 space-y-6">
-          {/* Info Pelajar */}
+          
           <div className="flex items-center gap-3.5 p-3.5 bg-[#FAF8F5] rounded-2xl border border-gray-100">
             <div className="w-12 h-12 rounded-full overflow-hidden relative border border-gray-200 bg-white shrink-0">
               {jasa.fotoProfil ? (
@@ -122,13 +122,13 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
             </div>
           </div>
 
-          {/* Pilihan Paket Layanan */}
+          
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
               Pilih Paket Layanan:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {/* Basic */}
+              
               <button
                 type="button"
                 onClick={() => setSelectedTier('basic')}
@@ -144,7 +144,7 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
                 </span>
               </button>
 
-              {/* Standard */}
+              
               {jasa.hargaStandard ? (
                 <button
                   type="button"
@@ -162,7 +162,7 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
                 </button>
               ) : null}
 
-              {/* Premium */}
+              
               {jasa.hargaPremium ? (
                 <button
                   type="button"
@@ -181,14 +181,14 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
               ) : null}
             </div>
 
-            {/* Rincian paket yang dipilih */}
+            
             <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 text-xs text-gray-700 space-y-1 mt-2">
               <span className="font-bold text-gray-900 block">Cakupan Paket {selectedTier.toUpperCase()}:</span>
               <p className="text-gray-600 leading-relaxed">{selectedDeskripsi}</p>
             </div>
           </div>
 
-          {/* Catatan / Kebutuhan Tambahan */}
+          
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
               Catatan Kebutuhan Proyek (Opsional):
@@ -202,7 +202,7 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
             />
           </div>
 
-          {/* Jaminan Keamanan Escrow */}
+          
           <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-[11px] text-emerald-800">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>
@@ -211,7 +211,7 @@ Apakah Anda sedang open order dan bersedia mendiskusikan kerja sama ini? Terima 
           </div>
         </div>
 
-        {/* Modal Footer */}
+        
         <div className="p-5 sm:p-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-end gap-2.5 bg-gray-50/50 rounded-b-3xl">
           <button
             type="button"

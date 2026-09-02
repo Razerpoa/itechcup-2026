@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [googleDraftEmail, setGoogleDraftEmail] = useState<string | null>(null)
 
-  // 2FA & Google Challenge State
+
   const [pendingUser, setPendingUser] = useState<any | null>(null)
   const [is2FAChallengeOpen, setIs2FAChallengeOpen] = useState(false)
   const [otpInput, setOtpInput] = useState('')
@@ -45,7 +45,7 @@ export default function LoginPage() {
       if (targetEmail) {
         setEmail(targetEmail)
         
-        // Check DB via API
+        
         try {
           const res = await fetch('/api/auth/google-check', {
             method: 'POST',
@@ -60,7 +60,7 @@ export default function LoginPage() {
             finalizeLogin(data.user)
             return
           }
-          // Email tidak ditemukan — arahkan ke pilih role
+          
           if (!data.exists) {
             sessionStorage.setItem('google_draft_email', data.email || targetEmail)
             sessionStorage.setItem('google_draft_nama', data.nama || '')
@@ -68,8 +68,7 @@ export default function LoginPage() {
             router.push('/?google_new=1')
             return
           }
-        } catch {
-          // ignore
+        } catch {
         }
       }
     }
@@ -147,7 +146,6 @@ export default function LoginPage() {
   }
 
   const [resetError, setResetError] = useState<string | null>(null)
-  const [resetDirectUrl, setResetDirectUrl] = useState<string | null>(null)
 
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -170,7 +168,6 @@ export default function LoginPage() {
         return
       }
 
-      setResetDirectUrl(data.resetUrl || `/auth/callback?type=recovery&email=${encodeURIComponent(resetEmail.trim())}`)
       setIsResetLoading(false)
       setIsResetSuccess(true)
     } catch {
@@ -238,7 +235,7 @@ export default function LoginPage() {
 
         finalizeLogin(foundUser)
       } else {
-        // Email tidak ditemukan — arahkan ke pilih role & daftar
+        
         sessionStorage.setItem('google_draft_email', data.email || emailToCheck.trim())
         sessionStorage.setItem('google_draft_nama', data.nama || emailToCheck.trim().split('@')[0])
         setIsGoogleModalOpen(false)
@@ -247,7 +244,7 @@ export default function LoginPage() {
       }
     } catch {
       setIsGoogleChecking(false)
-      // Jika error jaringan, arahkan ke register juga
+      
       sessionStorage.setItem('google_draft_email', emailToCheck.trim())
       setIsGoogleModalOpen(false)
       setIsRegisterModalOpen(false)
@@ -546,21 +543,11 @@ export default function LoginPage() {
                   </p>
                 </div>
                 <div className="space-y-2 pt-2">
-                  {resetDirectUrl ? (
-                    <a
-                      href={resetDirectUrl}
-                      className="w-full py-3 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>Atur Ulang Kata Sandi Sekarang</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
                       setIsForgotModalOpen(false)
                       setIsResetSuccess(false)
-                      setResetDirectUrl(null)
                     }}
                     className="w-full py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors cursor-pointer"
                   >
@@ -613,7 +600,7 @@ export default function LoginPage() {
           </div>
         </div>
       )}
-      {/* 2FA Challenge Modal */}
+      
       {is2FAChallengeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#EAEAEA] relative text-center">

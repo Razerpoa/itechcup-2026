@@ -58,11 +58,11 @@ export default function HiddenAdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EE] flex relative overflow-hidden">
-      {/* Soft organic shapes */}
+      
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#FF9B71]/[0.07] blur-[100px]" />
       <div className="absolute -bottom-60 -left-40 w-[600px] h-[600px] rounded-full bg-[#964825]/[0.04] blur-[120px]" />
 
-      {/* Left branding panel — hidden on mobile */}
+      
       <div className="hidden lg:flex w-[45%] flex-col justify-between p-12 relative">
         <div>
           <div className="flex items-center gap-3 mb-16">
@@ -84,7 +84,7 @@ export default function HiddenAdminLoginPage() {
           </div>
         </div>
 
-        {/* Bottom decorative info */}
+        
         <div className="flex items-center gap-4">
           <div className="flex -space-x-2">
             <div className="w-8 h-8 rounded-full bg-[#FF9B71]/20 border-2 border-[#F6F3EE] flex items-center justify-center text-[10px] font-bold text-[#964825]">R</div>
@@ -97,10 +97,10 @@ export default function HiddenAdminLoginPage() {
         </div>
       </div>
 
-      {/* Right login panel */}
+      
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-[420px]">
-          {/* Mobile logo */}
+          
           <div className="flex items-center gap-3 mb-10 lg:hidden">
             <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm">
               <Image src="/logo.png" alt="Mitra Muda" width={36} height={36} className="w-full h-full object-cover" />
@@ -108,9 +108,9 @@ export default function HiddenAdminLoginPage() {
             <span className="font-bold text-[#2D2319] tracking-tight">Mitra Muda</span>
           </div>
 
-          {/* Card */}
+          
           <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-[0_2px_40px_rgba(0,0,0,0.06)] border border-[#E8E2DA]/60">
-            {/* Header */}
+            
             <div className="mb-8">
               <div className="w-12 h-12 rounded-2xl bg-[#FF9B71]/10 flex items-center justify-center mb-5">
                 <KeyRound className="w-5 h-5 text-[#964825]" />
@@ -123,7 +123,7 @@ export default function HiddenAdminLoginPage() {
               </p>
             </div>
 
-            {/* Error */}
+            
             {errorMessage && (
               <div className={`mb-6 p-3.5 rounded-2xl text-[13px] font-medium flex items-start gap-2.5 ${isLocked
                 ? 'bg-[#FFF4EC] text-[#964825] border border-[#FFD9CA]'
@@ -134,7 +134,7 @@ export default function HiddenAdminLoginPage() {
               </div>
             )}
 
-            {/* Form */}
+            
             <form onSubmit={handleAdminLogin} className="space-y-5" autoComplete="off">
               <div>
                 <label className="text-[13px] font-semibold text-[#2D2319] block mb-2" htmlFor="admin-user">
@@ -206,7 +206,7 @@ export default function HiddenAdminLoginPage() {
               </div>
             </form>
 
-            {/* Footer */}
+            
             <div className="mt-8 pt-6 border-t border-[#F0EBE4] text-center">
               <Link href="/" className="text-[13px] text-[#8B7E74] hover:text-[#964825] transition-colors font-medium">
                 ← Kembali ke beranda
@@ -214,7 +214,7 @@ export default function HiddenAdminLoginPage() {
             </div>
           </div>
 
-          {/* Bottom note */}
+          
           <p className="text-center text-[11px] text-[#B5ADA4] mt-6">
             Dilindungi oleh rate limiter server-side · 5 percobaan / 10 menit
           </p>

@@ -101,8 +101,7 @@ function saveEscrowState(data: EscrowStoreData) {
       const serialized = JSON.stringify(data)
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
-    } catch {
-      // ignore
+    } catch {
     }
   }
   emitChange()
@@ -152,8 +151,7 @@ export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
         return newState
       }
     }
-  } catch {
-    // ignore
+  } catch {
   }
   return currentState
 }
@@ -203,8 +201,7 @@ export function submitUMKMDeposit(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'DEPOSIT', payload: newDeposit })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return newDeposit
@@ -244,8 +241,7 @@ export function adminApproveDeposit(depositId: string, catatanAdmin?: string): b
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'APPROVE', catatanAdmin })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return true
@@ -278,8 +274,7 @@ export function adminRejectDeposit(depositId: string, reason?: string): boolean 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return true
@@ -327,8 +322,7 @@ export function submitPelajarWithdrawal(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'WITHDRAWAL', payload: newWithdrawal })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return { success: true, withdrawal: newWithdrawal }
@@ -361,8 +355,7 @@ export function adminApproveWithdrawal(withdrawalId: string): boolean {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'APPROVE' })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return true
@@ -402,8 +395,7 @@ export function adminRejectWithdrawal(withdrawalId: string, reason?: string): bo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
     }).catch(() => {})
-  } catch {
-    // ignore
+  } catch {
   }
 
   return true

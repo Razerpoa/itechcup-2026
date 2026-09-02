@@ -8,7 +8,7 @@ import { ArrowLeft, Shield, Lock, EyeOff, FileText, CheckCircle2, UserCheck, Shi
 export default function KebijakanPrivasiPage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans text-gray-900">
-      {/* Navbar */}
+      
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EAEAEA] flex items-center justify-between px-4 sm:px-8 h-16 shadow-2xs">
         <div className="flex items-center gap-4">
           <Link
@@ -39,7 +39,7 @@ export default function KebijakanPrivasiPage() {
         </div>
       </header>
 
-      {/* Hero Header */}
+      
       <div className="bg-gradient-to-b from-[#FFF7F3] to-[#FAFAFA] border-b border-[#FFD9CA]/60 py-10 px-4 sm:px-8">
         <div className="max-w-4xl mx-auto text-center sm:text-left space-y-3">
           <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full text-xs font-bold text-[#964825] border border-[#FFD9CA] shadow-2xs">
@@ -55,9 +55,9 @@ export default function KebijakanPrivasiPage() {
         </div>
       </div>
 
-      {/* Content */}
+      
       <main className="max-w-4xl mx-auto px-4 sm:px-8 py-10 space-y-8 text-sm leading-relaxed text-gray-700">
-        {/* Banner Keamanan */}
+        
         <div className="bg-emerald-50 rounded-3xl p-6 sm:p-8 border border-emerald-200 shadow-xs flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
             <Lock className="w-6 h-6" />
@@ -72,7 +72,7 @@ export default function KebijakanPrivasiPage() {
           </div>
         </div>
 
-        {/* 1. Data yang Dikumpulkan */}
+        
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[#FFF1EB] text-[#964825] text-xs flex items-center justify-center font-black">1</span>
@@ -103,7 +103,7 @@ export default function KebijakanPrivasiPage() {
           </div>
         </section>
 
-        {/* 2. Tujuan Penggunaan Data */}
+        
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[#FFF1EB] text-[#964825] text-xs flex items-center justify-center font-black">2</span>
@@ -132,7 +132,7 @@ export default function KebijakanPrivasiPage() {
           </div>
         </section>
 
-        {/* 3. Hak Subjek Data */}
+        
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[#FFF1EB] text-[#964825] text-xs flex items-center justify-center font-black">3</span>
@@ -148,7 +148,7 @@ export default function KebijakanPrivasiPage() {
           </div>
         </section>
 
-        {/* 4. Keamanan Infrastruktur */}
+        
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[#FFF1EB] text-[#964825] text-xs flex items-center justify-center font-black">4</span>
@@ -160,7 +160,7 @@ export default function KebijakanPrivasiPage() {
         </section>
       </main>
 
-      {/* Footer */}
+      
       <footer className="mt-auto border-t border-gray-200 bg-white py-6 px-4 sm:px-8 text-center text-xs text-gray-500">
         <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi Undang-Undang.</p>
       </footer>

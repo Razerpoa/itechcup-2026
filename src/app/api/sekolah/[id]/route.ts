@@ -26,7 +26,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Sekolah tidak ditemukan' }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    
     const { password: _, ...data } = raw;
 
     return NextResponse.json({ data });
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: updateData,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    
     const { password: _, ...data } = raw;
 
     return NextResponse.json({ data });
@@ -115,7 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: updateData
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    
     const { password: _, ...data } = raw
 
     return NextResponse.json({ data })

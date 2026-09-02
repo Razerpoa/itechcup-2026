@@ -213,7 +213,7 @@ export function useRealtimeVerificationSync() {
                 verificationStatus: 'VERIFIED'
               })
             } else if (!isVerifiedNow && currentlyVerified) {
-              // DB says not verified but localStorage says verified - sync from DB
+              
               setCurrentUser({
                 ...user,
                 isVerified: false,
@@ -232,11 +232,11 @@ export function useRealtimeVerificationSync() {
       }
     }
 
-    // Always check on mount (page refresh / navigation)
+    
     checkStatus()
 
-    // If already verified, poll less frequently (every 10s) for status revocation
-    // If not verified, poll more frequently (every 1.5s) for verification updates
+    
+    
     const alreadyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
     const pollInterval = alreadyVerified ? 10000 : 1500
     const interval = setInterval(checkStatus, pollInterval)

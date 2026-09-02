@@ -437,7 +437,7 @@ export default function PanduanPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans">
-      {/* Top Navbar */}
+      
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EAEAEA] flex items-center justify-between px-4 sm:px-8 h-16 shadow-2xs">
         <div className="flex items-center gap-4">
           <Link
@@ -487,7 +487,7 @@ export default function PanduanPage() {
       </header>
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-10">
-        {/* Banner Hero Header */}
+        
         <div className="relative rounded-3xl bg-gradient-to-br from-[#FFF7F3] via-white to-[#FFF1EB] p-6 sm:p-10 border border-[#FFD9CA] shadow-sm overflow-hidden text-center sm:text-left">
           <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-[#FF9B71]/10 rounded-full blur-3xl pointer-events-none" />
           
@@ -505,7 +505,7 @@ export default function PanduanPage() {
               Panduan lengkap langkah demi langkah untuk Pelajar, UMKM, dan Sekolah. Pelajari sistem transaksi aman tanpa KTP/bank, alur escrow rekber, serta verifikasi identitas.
             </p>
 
-            {/* Live Search Bar */}
+            
             <div className="relative pt-2">
               <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
@@ -519,7 +519,7 @@ export default function PanduanPage() {
           </div>
         </div>
 
-        {/* Role Navigation Tabs */}
+        
         <div className="flex justify-center sm:justify-start gap-2 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-2xs overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveRoleTab('pelajar')}
@@ -570,7 +570,7 @@ export default function PanduanPage() {
           </button>
         </div>
 
-        {/* Section Step Cards */}
+        
         {activeRoleTab !== 'faq' ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
@@ -621,7 +621,7 @@ export default function PanduanPage() {
                       </div>
                     </button>
 
-                    {/* Step Expandable Detail Panel */}
+                    
                     {isOpen && (
                       <div className="px-5 sm:px-6 pb-6 pt-2 border-t border-gray-100 bg-[#FAFAFA] space-y-4 animate-in fade-in duration-200">
                         <div className="space-y-2">
@@ -681,7 +681,7 @@ export default function PanduanPage() {
             )}
           </div>
         ) : (
-          /* FAQ & Glosarium Tab */
+          
           <div className="space-y-4">
             <div className="px-1">
               <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
@@ -727,7 +727,7 @@ export default function PanduanPage() {
           </div>
         )}
 
-        {/* Support Help Center Card */}
+        
         <div className="bg-gradient-to-br from-white via-white to-[#FFF7F3] rounded-3xl p-6 sm:p-8 border border-[#FFD9CA] shadow-sm text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 max-w-lg">
             <span className="text-[10px] font-extrabold text-[#964825] bg-[#FFF1EB] border border-[#FFD9CA] px-3 py-1 rounded-full uppercase tracking-wider">
@@ -761,7 +761,7 @@ export default function PanduanPage() {
         </div>
       </main>
 
-      {/* Footer Panduan */}
+      
       <footer className="border-t border-gray-200 bg-white py-8 px-4 sm:px-8 text-xs text-gray-500 mt-10">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi.</p>

@@ -76,8 +76,7 @@ export async function syncProjectsWithDB(): Promise<ProyekItem[]> {
         return formatted
       }
     }
-  } catch {
-    // ignore
+  } catch {
   } finally {
     isFetching = false
   }
@@ -151,8 +150,7 @@ export async function removeProject(proyekId: string) {
       method: 'DELETE'
     })
     await syncProjectsWithDB()
-  } catch {
-    // ignore
+  } catch {
   }
 }
 

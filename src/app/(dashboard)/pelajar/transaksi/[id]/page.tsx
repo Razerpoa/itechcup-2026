@@ -377,7 +377,7 @@ export default function PelajarTransaksiRoomPage() {
         </div>
       )}
 
-      {/* Official Certificate / Surat Pengalaman Modal */}
+      
       <InvoiceModal
         isOpen={showCertificate}
         onClose={() => setShowCertificate(false)}

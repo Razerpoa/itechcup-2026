@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const registrationId = `MM-2026-${randomCode}`
     let finalNis = (body.nisn || body.nis || '').toString().trim() || registrationId
 
-    // Ensure finalNis is globally unique so registration is never aborted
+    
     if (finalNis) {
       const existingNis = await prisma.pelajar.findUnique({ where: { nis: finalNis } })
       if (existingNis) {

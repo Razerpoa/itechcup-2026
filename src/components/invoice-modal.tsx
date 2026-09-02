@@ -40,9 +40,9 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static">
-      {/* Container */}
+      
       <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-gray-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150 print:border-none print:shadow-none print:max-w-none print:w-full print:rounded-none">
-        {/* Modal Action Bar (Hidden on Print) */}
+        
         <div className="p-4 bg-[#FAF8F5] border-b border-gray-200 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
             {type === 'invoice' ? (
@@ -71,12 +71,12 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
           </div>
         </div>
 
-        {/* Printable Document Area */}
+        
         <div ref={printRef} className="p-6 sm:p-10 font-sans text-gray-900 bg-white">
           {type === 'invoice' ? (
-            /* INVOICE CONTENT */
+            
             <div className="space-y-6">
-              {/* Document Header */}
+              
               <div className="flex items-start justify-between border-b-2 border-[#FF9B71] pb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[#FF9B71]">
@@ -102,7 +102,7 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
                 </div>
               </div>
 
-              {/* Parties Information */}
+              
               <div className="grid grid-cols-2 gap-4 text-xs bg-[#FAF8F5] p-4 rounded-2xl border border-gray-100">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Diterbitkan Untuk (Klien):</span>
@@ -121,7 +121,7 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
                 </div>
               </div>
 
-              {/* Table of Services */}
+              
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FFF7F3] border-b border-gray-200 text-gray-700 font-bold">
@@ -170,7 +170,7 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
                 </table>
               </div>
 
-              {/* Guarantee & Verification Footer */}
+              
               <div className="flex items-center justify-between pt-4 border-t border-dashed border-gray-200">
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Validasi Digital</span>
@@ -196,7 +196,7 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
               </div>
             </div>
           ) : (
-            /* CERTIFICATE OF EXPERIENCE CONTENT */
+            
             <div className="border-4 border-double border-[#FF9B71] rounded-3xl p-6 sm:p-10 space-y-6 text-center bg-gradient-to-b from-[#FFFDFB] to-white relative">
               <div className="flex items-center justify-center gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[#FF9B71]">
@@ -240,8 +240,8 @@ export default function InvoiceModal({ isOpen, onClose, type, akad }: InvoiceMod
                   Klien Mitra: <strong className="text-[#964825]">{akad.namaUsaha}</strong>
                 </p>
                 {akad.rating && (
-                  <div className="flex items-center justify-center gap-1 mt-2 text-amber-500 font-bold text-xs">
-                    <span>★ {akad.rating}.0 / 5.0</span>
+                  <div className="flex items-center justify-center gap-1 mt-2 text-amber-600 font-bold text-xs">
+                    <span>Rating: {akad.rating}.0 / 5.0</span>
                     <span className="text-gray-400 font-normal">({akad.ulasan || 'Pekerjaan memuaskan'})</span>
                   </div>
                 )}

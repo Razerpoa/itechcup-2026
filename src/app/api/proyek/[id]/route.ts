@@ -48,8 +48,7 @@ export async function DELETE(
       await prisma.proyek.delete({
         where: { id }
       })
-    } catch {
-      // ignore
+    } catch {
     }
 
     return NextResponse.json({ success: true, message: 'Proyek berhasil dihapus' })

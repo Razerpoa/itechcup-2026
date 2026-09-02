@@ -33,7 +33,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="bg-[#FAFAFA] text-gray-900 min-h-screen flex flex-col justify-between py-8 px-4 sm:px-8">
-      {/* Top Header */}
+      
       <header className="max-w-5xl w-full mx-auto flex items-center justify-between pb-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <Image
@@ -50,7 +50,7 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main Choice Section (Upwork Style) */}
+      
       <main className="max-w-4xl w-full mx-auto my-auto py-10 flex flex-col items-center">
         <div className="text-center mb-10 max-w-xl">
           <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
@@ -61,9 +61,9 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        {/* Interactive Role Cards */}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mb-8">
-          {/* Card 1: Pelajar */}
+          
           <div
             onClick={() => setSelectedRole('pelajar')}
             className={`bg-white rounded-3xl p-6 sm:p-7 border-2 cursor-pointer transition-all duration-200 relative flex flex-col justify-between ${
@@ -94,7 +94,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Card 2: UMKM */}
+          
           <div
             onClick={() => setSelectedRole('umkm')}
             className={`bg-white rounded-3xl p-6 sm:p-7 border-2 cursor-pointer transition-all duration-200 relative flex flex-col justify-between ${
@@ -130,7 +130,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Card 3: Sekolah */}
+          
           <div
             onClick={() => setSelectedRole('sekolah')}
             className={`bg-white rounded-3xl p-6 sm:p-7 border-2 cursor-pointer transition-all duration-200 relative flex flex-col justify-between ${
@@ -162,7 +162,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Dynamic Action Button (Upwork Style) */}
+        
         <div className="flex flex-col items-center gap-3 w-full max-w-sm">
           <button
             onClick={handleContinue}
@@ -185,7 +185,7 @@ export default function OnboardingPage() {
         </div>
       </main>
 
-      {/* Footer */}
+      
       <footer className="max-w-5xl w-full mx-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
         <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi.</p>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">

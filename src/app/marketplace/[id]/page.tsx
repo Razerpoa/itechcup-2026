@@ -203,7 +203,7 @@ export default function DetailProyekPage() {
                 <ul className="space-y-2">
                   {mockProyek.ketentuan.map((k, i) => (
                     <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-orange-100 text-[#964825] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                      <span className="w-5 h-5 rounded-full bg-orange-100 text-[#964825] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5"></span>
                       <span>{k}</span>
                     </li>
                   ))}
@@ -293,7 +293,7 @@ export default function DetailProyekPage() {
                       <span className="text-[11px] text-emerald-700">
                         Status:{' '}
                         {existingLamaran?.status === 'ACCEPTED'
-                          ? '✓ Diterima (Akad Aktif)'
+                          ? ' Diterima (Akad Aktif)'
                           : existingLamaran?.status === 'REJECTED'
                           ? 'Ditolak'
                           : 'Menunggu Persetujuan UMKM'}

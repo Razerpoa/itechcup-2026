@@ -8,7 +8,7 @@ import { ArrowLeft, GraduationCap, HeartHandshake, ShieldCheck, Clock, Award, Ph
 export default function PerlindunganPelajarPage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans text-gray-900">
-      {/* Navbar */}
+      
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EAEAEA] flex items-center justify-between px-4 sm:px-8 h-16 shadow-2xs">
         <div className="flex items-center gap-4">
           <Link
@@ -39,7 +39,7 @@ export default function PerlindunganPelajarPage() {
         </div>
       </header>
 
-      {/* Hero Header */}
+      
       <div className="bg-gradient-to-b from-[#FFF7F3] to-[#FAFAFA] border-b border-[#FFD9CA]/60 py-10 px-4 sm:px-8">
         <div className="max-w-4xl mx-auto text-center sm:text-left space-y-3">
           <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full text-xs font-bold text-[#964825] border border-[#FFD9CA] shadow-2xs">
@@ -55,9 +55,9 @@ export default function PerlindunganPelajarPage() {
         </div>
       </div>
 
-      {/* Content */}
+      
       <main className="max-w-4xl mx-auto px-4 sm:px-8 py-10 space-y-8 text-sm leading-relaxed text-gray-700">
-        {/* 4 Pilar Perlindungan */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-3xl border border-[#FFD9CA] shadow-xs space-y-2">
             <div className="w-10 h-10 rounded-xl bg-[#FFF1EB] text-[#964825] flex items-center justify-center font-bold mb-3">
@@ -100,7 +100,7 @@ export default function PerlindunganPelajarPage() {
           </div>
         </div>
 
-        {/* Aturan Komunikasi */}
+        
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-lg font-bold text-gray-900">Etika Interaksi UMKM & Pelajar</h2>
           <div className="space-y-3 text-xs sm:text-sm text-gray-600">
@@ -116,7 +116,7 @@ export default function PerlindunganPelajarPage() {
           </div>
         </section>
 
-        {/* Hotline Pengaduan */}
+        
         <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1.5 text-center sm:text-left">
             <h3 className="font-bold text-rose-950 text-base flex items-center justify-center sm:justify-start gap-2">
@@ -136,7 +136,7 @@ export default function PerlindunganPelajarPage() {
         </div>
       </main>
 
-      {/* Footer */}
+      
       <footer className="mt-auto border-t border-gray-200 bg-white py-6 px-4 sm:px-8 text-center text-xs text-gray-500">
         <p>© 2026 Mitra Muda Indonesia. Hak Cipta Dilindungi Undang-Undang.</p>
       </footer>

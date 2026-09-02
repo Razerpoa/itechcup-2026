@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { RateLimiter } from '@/lib/rate-limiter'
 
-// Server-side rate limiter berbasis IP — tidak bisa di-bypass dengan refresh atau ganti tab
+
 const adminRateLimiter = new RateLimiter({ windowMs: 10 * 60_000, maxRequests: 5 })
 
 const VALID_CREDENTIALS = [
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     request.headers.get('x-real-ip') ||
     'unknown'
 
-  // Cek rate limit SEBELUM memproses apapun
+  
   if (!adminRateLimiter.isAllowed(ip)) {
     const retryAfter = Math.ceil(adminRateLimiter.getRetryAfterMs(ip) / 1000)
     return NextResponse.json(
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Login berhasil — reset rate limit untuk IP ini
-  // Terbitkan session token di HttpOnly cookie
+  
+  
   const sessionToken = Buffer.from(
     JSON.stringify({ role: 'admin', ts: Date.now(), ip })
   ).toString('base64')
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     secure: isProd,
     sameSite: 'lax',
     path: '/',
-    maxAge: 8 * 60 * 60 // 8 jam
+    maxAge: 8 * 60 * 60 
   })
 
   return response
