@@ -33,6 +33,7 @@ import {
   sendAkadChat,
   completeAkadAndPayout,
   requestRevisionWork,
+  updateAkadStatusDirectly,
   syncAkadWithDB,
   ChatAttachment
 } from '@/lib/akad-store'
@@ -260,30 +261,79 @@ export default function UmkmTransaksiRoomPage() {
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span className="font-bold text-gray-800">Status Akad Transaksi:</span>
-            {step === 4 ? (
-              <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-200 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                <span>Proyek Selesai & Dana Lunas ke Siswa</span>
-              </span>
-            ) : step === 3 ? (
-              <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-extrabold border border-blue-200 flex items-center gap-1">
-                <Clock className="w-3 h-3 text-blue-600 animate-pulse" />
-                <span>Karya Siswa Masuk & Siap Ditinjau</span>
-              </span>
-            ) : (
-              <span className="bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full font-extrabold border border-amber-200 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3 text-amber-600" />
-                <span>Dalam Pengerjaan / Menunggu Revisi Siswa</span>
-              </span>
-            )}
+        <div className="bg-white p-3 rounded-2xl border border-gray-100 flex flex-col gap-3 text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="font-bold text-gray-800">Status Akad:</span>
+              {step === 4 ? (
+                <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Proyek Selesai & Dana Lunas ke Siswa</span>
+                </span>
+              ) : step === 3 ? (
+                <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-extrabold border border-blue-200 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-blue-600 animate-pulse" />
+                  <span>Karya Siswa Masuk & Siap Ditinjau</span>
+                </span>
+              ) : (
+                <span className="bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full font-extrabold border border-amber-200 flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3 text-amber-600" />
+                  <span>Dalam Pengerjaan / Menunggu Revisi Siswa</span>
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-gray-500 font-semibold">
+              {activeAkad.deliverables.length} Berkas Karya Diterima
+            </span>
           </div>
-          <span className="text-[11px] text-gray-500 font-semibold">
-            {activeAkad.deliverables.length} Berkas Karya Diterima
-          </span>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
+            <span className="font-extrabold text-gray-700 text-[11px] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF9B71]" />
+              <span>Ubah Status Proyek Langsung:</span>
+            </span>
+            <div className="flex items-center flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => updateAkadStatusDirectly(activeAkad.id, 2, 'UMKM mengubah status ke Dalam Pengerjaan / Revisi')}
+                className={`px-3 py-1 rounded-full font-bold text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
+                  step === 2
+                    ? 'bg-[#FF9B71] text-white shadow-xs'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Pengerjaan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateAkadStatusDirectly(activeAkad.id, 3, 'UMKM sedang meninjau karya')}
+                className={`px-3 py-1 rounded-full font-bold text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
+                  step === 3
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <Clock className="w-3 h-3" />
+                <span>Review UMKM</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowRatingModal(true)}
+                className={`px-3 py-1 rounded-full font-bold text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
+                  step === 4
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50'
+                }`}
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Selesai & Cairkan</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -563,31 +613,36 @@ export default function UmkmTransaksiRoomPage() {
           </button>
         </form>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
           <button
+            type="button"
             onClick={() => setShowRevisionModal(true)}
-            className="w-full sm:w-1/2 py-3 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <Edit className="w-3.5 h-3.5 text-[#FF9B71]" />
-            <span>Minta Revisi Karya</span>
+            <span>Minta Revisi</span>
           </button>
 
           <button
-            onClick={() => {
-              if (activeAkad.step === 4) {
-                alert('Proyek ini sudah berstatus selesai dan dana sudah dicairkan ke dompet siswa.')
-              } else {
-                setShowRatingModal(true)
-              }
-            }}
-            className={`w-full sm:w-1/2 py-3 rounded-full font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
-              activeAkad.step === 4
-                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+            type="button"
+            onClick={() => updateAkadStatusDirectly(activeAkad.id, 3, 'UMKM sedang meninjau karya siswa')}
+            className={`w-full py-2.5 rounded-full font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+              step === 3
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
             }`}
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{activeAkad.step === 4 ? 'Proyek Telah Selesai (Lunas)' : 'Setujui Karya & Selesaikan Proyek'}</span>
+            <Clock className="w-3.5 h-3.5" />
+            <span>Tandai Review UMKM</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowRatingModal(true)}
+            className="w-full py-2.5 rounded-full font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Setujui & Selesaikan</span>
           </button>
         </div>
       </footer>

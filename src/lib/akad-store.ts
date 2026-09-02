@@ -780,6 +780,73 @@ export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: s
   return true
 }
 
+export function updateAkadStatusDirectly(
+  akadId: string,
+  newStep: 1 | 2 | 3 | 4,
+  catatan?: string
+): boolean {
+  const state = getAkadState()
+  const targetAkad = state.akadList.find(
+    (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
+  )
+  if (!targetAkad) return false
+
+  if (newStep === 4) {
+    releaseProjectCompletionToPelajar({
+      proyekId: targetAkad.proyekId,
+      pelajarId: targetAkad.pelajarId,
+      namaPelajar: targetAkad.namaPelajar,
+      nominalTotal: targetAkad.nominalTotal,
+      nominalDP: targetAkad.nominalDP,
+      umkmId: targetAkad.umkmId,
+      namaUsaha: targetAkad.namaUsaha,
+      judulProyek: targetAkad.judulProyek
+    })
+  }
+
+  const updated = state.akadList.map((a) => {
+    if (a.id === targetAkad.id) {
+      return {
+        ...a,
+        step: newStep,
+        ulasan: catatan || a.ulasan,
+        completedAt: newStep === 4 ? new Date().toISOString() : a.completedAt
+      }
+    }
+    return a
+  })
+
+  saveAkadState({
+    ...state,
+    akadList: updated
+  })
+
+  const serverStatus =
+    newStep === 4 ? 'SELESAI' : newStep === 3 ? 'SUBMITTED' : newStep === 2 ? 'PENGERJAAN' : 'MENUNGGU_PEMBAYARAN'
+
+  try {
+    fetch('/api/transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: targetAkad.id.replace('akad-', ''),
+        proyekId: targetAkad.proyekId,
+        lamaranId: targetAkad.id.replace('akad-', ''),
+        totalAmount: targetAkad.nominalTotal,
+        dpAmount: targetAkad.nominalDP,
+        dpPaid: true,
+        fullPaid: newStep === 4,
+        status: serverStatus,
+        catatanUMKM: catatan || (newStep === 4 ? 'Proyek disetujui & diselesaikan oleh UMKM' : undefined),
+        deliverablesJson: JSON.stringify(targetAkad.deliverables)
+      })
+    }).catch(() => {})
+  } catch {
+  }
+
+  return true
+}
+
 function subscribe(callback: () => void) {
   listeners.add(callback)
   const handleStorage = (e: StorageEvent) => {
