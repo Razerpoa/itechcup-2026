@@ -78,50 +78,25 @@ export default function DompetPage() {
       name: 'GoPay' as const,
       color: '#00AED6',
       sub: 'Gojek Financial',
-      icon: (
-        <svg viewBox="0 0 48 48" className="w-10 h-10 drop-shadow-xs">
-          <rect width="48" height="48" rx="14" fill="#00AED6" />
-          <circle cx="24" cy="24" r="13" fill="white" />
-          <circle cx="24" cy="24" r="8" fill="#00AED6" />
-          <circle cx="28" cy="20" r="3.5" fill="white" />
-        </svg>
-      )
+      image: '/images/wallets/gopay.png'
     },
     {
       name: 'DANA' as const,
       color: '#118EEA',
       sub: 'Dompet Digital',
-      icon: (
-        <svg viewBox="0 0 48 48" className="w-10 h-10 drop-shadow-xs">
-          <rect width="48" height="48" rx="14" fill="#118EEA" />
-          <path d="M14 16h11c5.52 0 10 4.48 10 10s-4.48 10-10 10H14V16z" fill="none" stroke="white" strokeWidth="4.5" strokeLinejoin="round" />
-          <path d="M21 21v6c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3h-3z" fill="white" />
-        </svg>
-      )
+      image: '/images/wallets/dana.png'
     },
     {
       name: 'OVO' as const,
       color: '#4C3494',
       sub: 'OVO Payment',
-      icon: (
-        <svg viewBox="0 0 48 48" className="w-10 h-10 drop-shadow-xs">
-          <rect width="48" height="48" rx="14" fill="#4C3494" />
-          <circle cx="24" cy="24" r="11" fill="none" stroke="white" strokeWidth="4" />
-          <circle cx="24" cy="24" r="5" fill="#4C3494" stroke="white" strokeWidth="2.5" />
-        </svg>
-      )
+      image: '/images/wallets/ovo.png'
     },
     {
       name: 'ShopeePay' as const,
       color: '#EE4D2D',
       sub: 'Sea Group',
-      icon: (
-        <svg viewBox="0 0 48 48" className="w-10 h-10 drop-shadow-xs">
-          <rect width="48" height="48" rx="14" fill="#EE4D2D" />
-          <path d="M16 19v-2a8 8 0 0 1 16 0v2h2a2 2 0 0 1 2 2v14a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V21a2 2 0 0 1 2-2h2zm4 0h8v-2a4 4 0 0 0-8 0v2z" fill="white" />
-          <path d="M25 24c-2 0-3 .8-3 1.8 0 2.2 4.5 1.5 4.5 4.2 0 1.8-1.5 2.5-3.5 2.5-1.8 0-3-.6-3.8-1.3l.8-1.3c.7.6 1.8 1 2.8 1 1.2 0 1.8-.4 1.8-1 0-2.2-4.5-1.5-4.5-4.2 0-1.8 1.6-2.5 3.3-2.5 1.5 0 2.6.4 3.4 1l-.8 1.3c-.6-.5-1.4-.8-2-0.8z" fill="#EE4D2D" />
-        </svg>
-      )
+      image: '/images/wallets/shopeepay.png'
     }
   ]
 
@@ -241,16 +216,23 @@ export default function DompetPage() {
                     key={w.name}
                     type="button"
                     onClick={() => setSelectedWallet(w.name)}
-                    className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                    className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       selectedWallet === w.name
                         ? 'border-[#FF9B71] bg-[#FFF1EB] shadow-xs'
                         : 'border-[#EAEAEA] bg-white hover:bg-gray-50'
                     }`}
                   >
-                    {w.icon}
+                    <div className="w-full h-10 bg-white rounded-xl border border-gray-100 p-1 flex items-center justify-center overflow-hidden shadow-2xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={w.image}
+                        alt={w.name}
+                        className="h-full w-auto max-w-full object-contain"
+                      />
+                    </div>
                     <div className="text-center">
                       <span className="font-extrabold text-xs text-gray-900 block">{w.name}</span>
-                      <span className="text-[10px] text-gray-400">{w.sub}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{w.sub}</span>
                     </div>
                   </button>
                 ))}
