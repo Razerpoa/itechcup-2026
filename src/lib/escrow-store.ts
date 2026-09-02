@@ -111,7 +111,16 @@ function saveEscrowState(data: EscrowStoreData) {
 export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
   const currentState = getEscrowState()
   try {
-    const res = await fetch('/api/deposit', { cache: 'no-store' })
+    const res = await fetch('/api/deposit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'SYNC',
+        deposits: currentState.deposits,
+        withdrawals: currentState.withdrawals
+      }),
+      cache: 'no-store'
+    })
     if (res.ok) {
       const json = await res.json()
       if (json.data) {
@@ -120,15 +129,31 @@ export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
         const apiUmkmBalances: Record<string, number> = json.data.umkmBalances || {}
         const apiPelajarBalances: Record<string, number> = json.data.pelajarBalances || {}
 
-        const mergedDeposits = [
-          ...apiDeposits,
-          ...currentState.deposits.filter((d) => !apiDeposits.some((a) => a.id === d.id))
-        ]
+        const mergedDeposits = apiDeposits.map((ad) => {
+          const local = currentState.deposits.find((ld) => ld.id === ad.id)
+          if (local && local.status !== 'PENDING' && ad.status === 'PENDING') {
+            return local
+          }
+          return ad
+        })
+        for (const ld of currentState.deposits) {
+          if (!mergedDeposits.some((d) => d.id === ld.id)) {
+            mergedDeposits.push(ld)
+          }
+        }
 
-        const mergedWithdrawals = [
-          ...apiWithdrawals,
-          ...currentState.withdrawals.filter((w) => !apiWithdrawals.some((a) => a.id === w.id))
-        ]
+        const mergedWithdrawals = apiWithdrawals.map((aw) => {
+          const local = currentState.withdrawals.find((lw) => lw.id === aw.id)
+          if (local && local.status !== 'PENDING' && aw.status === 'PENDING') {
+            return local
+          }
+          return aw
+        })
+        for (const lw of currentState.withdrawals) {
+          if (!mergedWithdrawals.some((w) => w.id === lw.id)) {
+            mergedWithdrawals.push(lw)
+          }
+        }
 
         const mergedUmkmBalances = {
           ...currentState.umkmBalances,
@@ -336,7 +361,11 @@ export function submitPelajarWithdrawal(payload: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'WITHDRAWAL', payload: newWithdrawal })
-    }).catch(() => {})
+    })
+      .then(() => {
+        syncEscrowWithDB()
+      })
+      .catch(() => {})
   } catch {
   }
 

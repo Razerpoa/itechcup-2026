@@ -73,6 +73,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (type === 'SYNC') {
+      const clientDeposits: ApiDepositItem[] = body.deposits || []
+      const clientWithdrawals: ApiWithdrawalItem[] = body.withdrawals || []
+
+      for (const cd of clientDeposits) {
+        const existingIdx = global.__global_mitra_muda_escrow__.deposits.findIndex((d) => d.id === cd.id)
+        if (existingIdx >= 0) {
+          const s = global.__global_mitra_muda_escrow__.deposits[existingIdx]
+          if (s.status === 'PENDING' && cd.status !== 'PENDING') {
+            global.__global_mitra_muda_escrow__.deposits[existingIdx] = cd
+          }
+        } else {
+          global.__global_mitra_muda_escrow__.deposits.unshift(cd)
+        }
+      }
+
+      for (const cw of clientWithdrawals) {
+        const existingIdx = global.__global_mitra_muda_escrow__.withdrawals.findIndex((w) => w.id === cw.id)
+        if (existingIdx >= 0) {
+          const s = global.__global_mitra_muda_escrow__.withdrawals[existingIdx]
+          if (s.status === 'PENDING' && cw.status !== 'PENDING') {
+            global.__global_mitra_muda_escrow__.withdrawals[existingIdx] = cw
+          }
+        } else {
+          global.__global_mitra_muda_escrow__.withdrawals.unshift(cw)
+        }
+      }
+
+      return NextResponse.json({ success: true, data: global.__global_mitra_muda_escrow__ })
+    }
+
     if (type === 'RELEASE_TO_PELAJAR' || action === 'RELEASE_TO_PELAJAR') {
       const targetPelajarId = (payload?.pelajarId || body.pelajarId || 'pelajar-active') as string
       const nominal = Number(payload?.nominalTotal || body.nominalTotal) || 500000
@@ -132,7 +163,15 @@ export async function POST(request: NextRequest) {
         createdAt: payload.createdAt || new Date().toISOString()
       }
 
-      global.__global_mitra_muda_escrow__.withdrawals.unshift(newWithdrawal)
+      const existingIdx = global.__global_mitra_muda_escrow__.withdrawals.findIndex(
+        (w) => w.id === newWithdrawal.id
+      )
+      if (existingIdx >= 0) {
+        global.__global_mitra_muda_escrow__.withdrawals[existingIdx] = newWithdrawal
+      } else {
+        global.__global_mitra_muda_escrow__.withdrawals.unshift(newWithdrawal)
+      }
+
       return NextResponse.json({ success: true, data: newWithdrawal }, { status: 201 })
     }
 
