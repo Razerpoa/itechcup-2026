@@ -662,9 +662,10 @@ export default function PelajarTransaksiRoomPage() {
             <form onSubmit={handleUploadDeliverable} className="space-y-4">
               {uploadType === 'file' ? (
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
-                    Pilih File atau Foto Hasil Karya:
+                  <label className="text-xs font-bold text-gray-700 block mb-2">
+                    Pilih Berkas atau Foto Langsung dari Perangkat:
                   </label>
+
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -672,17 +673,53 @@ export default function PelajarTransaksiRoomPage() {
                     accept="image/*,.pdf,.zip,.rar,.psd,.ai,.docx,.fig"
                     className="hidden"
                   />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (fileInputRef.current) {
+                          fileInputRef.current.accept = 'image/*'
+                          fileInputRef.current.click()
+                        }
+                      }}
+                      className="p-3 rounded-2xl border-2 border-[#FFD9CA] bg-[#FFF1EB] hover:bg-[#FFE5DA] text-[#964825] font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Camera className="w-4 h-4 text-[#FF9B71]" />
+                      <span>Foto dari Galeri / Kamera</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (fileInputRef.current) {
+                          fileInputRef.current.accept = '*/*'
+                          fileInputRef.current.click()
+                        }
+                      }}
+                      className="p-3 rounded-2xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-800 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Paperclip className="w-4 h-4 text-gray-600" />
+                      <span>Berkas dari Folder (ZIP/PDF)</span>
+                    </button>
+                  </div>
+
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF1EB]/40 hover:bg-[#FFF1EB]/80 rounded-2xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'image/*,.pdf,.zip,.rar,.psd,.ai,.docx,.fig'
+                        fileInputRef.current.click()
+                      }
+                    }}
+                    className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF1EB]/40 hover:bg-[#FFF1EB]/80 rounded-2xl p-5 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2"
                   >
-                    <UploadCloud className="w-8 h-8 text-[#FF9B71]" />
+                    <UploadCloud className="w-7 h-7 text-[#FF9B71]" />
                     <div>
                       <p className="text-xs font-bold text-gray-900">
-                        {fileNameInput ? fileNameInput : 'Klik untuk memilih foto atau file karya'}
+                        {fileNameInput ? fileNameInput : 'Atau klik area ini untuk memilih berkas karya'}
                       </p>
                       <p className="text-[10px] text-gray-500 mt-0.5">
-                        Mendukung JPG, PNG, SVG, PDF, ZIP, PSD, AI (Ukuran bebas)
+                        Mendukung Gambar, PDF, ZIP, PSD, Figma (Ukuran Bebas)
                       </p>
                     </div>
                   </div>
@@ -696,6 +733,26 @@ export default function PelajarTransaksiRoomPage() {
                         <p className="font-extrabold text-xs text-gray-900 truncate">{fileNameInput}</p>
                         <p className="text-[10px] text-gray-500">{fileSizeStr}</p>
                       </div>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Terpilih
+                      </span>
+                    </div>
+                  )}
+
+                  {!filePreview && fileNameInput && (
+                    <div className="mt-3 p-2.5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#FFF1EB] text-[#964825] flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-xs text-gray-900 truncate">{fileNameInput}</p>
+                          <p className="text-[10px] text-gray-500">{fileSizeStr}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
+                        Terpilih
+                      </span>
                     </div>
                   )}
                 </div>

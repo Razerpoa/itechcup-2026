@@ -32,11 +32,18 @@ import {
   adminVerifyUMKM,
   adminRevokeUMKM
 } from '@/lib/admin-verification-store'
+import {
+  useAkadStore,
+  syncAkadWithDB,
+  updateAkadStatusDirectly,
+  AkadTransaksiItem
+} from '@/lib/akad-store'
 
 export default function MasterAdminEscrowPage() {
   const router = useRouter()
   const escrowState = useEscrowStore()
   const adminVerifs = useAdminVerifications()
+  const akadState = useAkadStore()
 
   const [activeTab, setActiveTab] = useState<'overview' | 'pelajar' | 'sekolah' | 'umkm' | 'deposits' | 'withdrawals' | 'escrows'>('overview')
   const [selectedProofImg, setSelectedProofImg] = useState<{ url: string; title: string } | null>(null)
@@ -313,10 +320,12 @@ export default function MasterAdminEscrowPage() {
     }
     syncAdminUsersFromDB()
     syncEscrowWithDB()
+    syncAkadWithDB()
 
     const interval = setInterval(() => {
       syncAdminUsersFromDB()
       syncEscrowWithDB()
+      syncAkadWithDB()
     }, 2000)
 
     return () => clearInterval(interval)
@@ -365,6 +374,18 @@ export default function MasterAdminEscrowPage() {
     setTimeout(() => setActionSuccess(null), 4000)
   }
 
+  const handleAdminCompleteProject = (akadId: string, namaPelajar: string, nominalTotal: number) => {
+    updateAkadStatusDirectly(akadId, 4, 'Proyek disetujui & diselesaikan resmi oleh Master Admin (Selesai/Done)')
+    setActionSuccess(`Proyek berhasil diselesaikan (Done)! Saldo ${formatRupiah(nominalTotal)} langsung masuk ke dompet ${namaPelajar}.`)
+    setTimeout(() => setActionSuccess(null), 5000)
+  }
+
+  const handleAdminRequestRevision = (akadId: string, namaPelajar: string) => {
+    updateAkadStatusDirectly(akadId, 2, 'Admin meminta siswa melakukan revisi karya')
+    setActionSuccess(`Status proyek dikembalikan ke tahap Revisi Pengerjaan untuk ${namaPelajar}.`)
+    setTimeout(() => setActionSuccess(null), 4000)
+  }
+
   const filteredPelajar = adminVerifs.pelajarList.filter((p) =>
     p.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -400,6 +421,12 @@ export default function MasterAdminEscrowPage() {
     e.judulProyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredAkads = akadState.akadList.filter((a) =>
+    a.judulProyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   type NavItem = {
@@ -1149,14 +1176,17 @@ export default function MasterAdminEscrowPage() {
           )}
 
           {activeTab === 'escrows' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Rekening Bersama (Escrow)</h3>
-                  <p className="text-xs text-[#8B7E74] mt-0.5">Pemantauan dana jaminan DP dan sisa pelunasan per proyek aktif</p>
+                  <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Akad Transaksi Proyek & Escrow</h3>
+                  <p className="text-xs text-[#8B7E74] mt-0.5">Kontrol status pengerjaan karya siswa, permintaan revisi, serta persetujuan penyelesaian (Done) & pencairan saldo siswa.</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredEscrows.length} Escrow</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">
+                  {filteredAkads.length} Transaksi Proyek
+                </span>
               </div>
+
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
@@ -1164,45 +1194,115 @@ export default function MasterAdminEscrowPage() {
                       <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA]">
                         <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Proyek & UMKM</th>
                         <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Pelajar</th>
-                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Total & DP</th>
-                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status</th>
-                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Aksi</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Nominal Proyek</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Status Karya</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider whitespace-nowrap">Berkas Deliverable</th>
+                        <th className="px-5 py-3.5 text-xs font-bold text-[#8B7E74] uppercase tracking-wider text-right whitespace-nowrap">Kontrol Admin</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F0EBE4]">
-                      {filteredEscrows.length > 0 ? filteredEscrows.map(e => (
-                        <tr key={e.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
-                          <td className="px-5 py-4 align-top">
-                            <div className="font-bold text-[#2D2319]">{e.judulProyek}</div>
-                            <div className="text-xs text-[#8B7E74]">{e.namaUsaha}</div>
-                          </td>
-                          <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{e.namaPelajar}</td>
-                          <td className="px-5 py-4 align-top">
-                            <div className="text-[#2D2319] font-bold tabular-nums">DP: {formatRupiah(e.nominalDP)}</div>
-                            <div className="text-xs text-[#8B7E74] tabular-nums">Total: {formatRupiah(e.nominalTotal)}</div>
-                          </td>
-                          <td className="px-5 py-4 align-top">
-                            {e.dpStatus === 'RELEASED_TO_PELAJAR' ? (
-                              <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Dicairkan</span>
-                            ) : (
-                              <span className="inline-flex bg-[#F6F3EE] text-[#6B6058] border border-[#E0DAD2] px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">Terkunci di Vault</span>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
-                            {e.dpStatus === 'HELD_IN_ESCROW' ? (
-                              <button onClick={() => handleReleaseEscrow(e.id, e.namaPelajar, e.nominalDP)} className="border border-[#E0DAD2] text-[#2D2319] bg-white hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs">Paksa Rilis</button>
-                            ) : (
-                              <span className="text-xs text-[#B5ADA4]">Selesai</span>
-                            )}
-                          </td>
-                        </tr>
-                      )) : (
+                      {filteredAkads.length > 0 ? filteredAkads.map((akad) => {
+                        const isDone = akad.step === 4
+                        const isReview = akad.step === 3
+                        const isPengerjaan = akad.step === 2
+
+                        return (
+                          <tr key={akad.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                            <td className="px-5 py-4 align-top">
+                              <div className="font-bold text-[#2D2319]">{akad.judulProyek}</div>
+                              <div className="text-xs text-[#8B7E74]">{akad.namaUsaha}</div>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[#2D2319] font-bold">{akad.namaPelajar}</div>
+                              <div className="text-xs text-[#8B7E74]">{akad.sekolahNama || 'Siswa Terverifikasi'}</div>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[#2D2319] font-bold tabular-nums">{formatRupiah(akad.nominalTotal)}</div>
+                              <div className="text-xs text-emerald-700 font-medium">DP Escrow: {formatRupiah(akad.nominalDP)}</div>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              {isDone && (
+                                <span className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  Selesai & Lunas
+                                </span>
+                              )}
+                              {isReview && (
+                                <span className="inline-flex bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  Review UMKM / Ditinjau
+                                </span>
+                              )}
+                              {isPengerjaan && (
+                                <span className="inline-flex bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  Pengerjaan / Revisi
+                                </span>
+                              )}
+                              {akad.step === 1 && (
+                                <span className="inline-flex bg-gray-50 text-gray-700 border border-gray-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                                  Tahap Awal Akad
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              {akad.deliverables && akad.deliverables.length > 0 ? (
+                                <div className="space-y-1">
+                                  <span className="inline-flex bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                                    {akad.deliverables.length} Berkas Karya
+                                  </span>
+                                  <div className="text-[11px] text-[#8B7E74] truncate max-w-[150px]">
+                                    {akad.deliverables[akad.deliverables.length - 1]?.fileName}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">Belum ada berkas</span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 align-top text-right space-x-2 whitespace-nowrap">
+                              {!isDone ? (
+                                <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
+                                  <button
+                                    onClick={() => handleAdminRequestRevision(akad.id, akad.namaPelajar)}
+                                    className="border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                                    title="Minta Siswa Melakukan Revisi"
+                                  >
+                                    Minta Revisi
+                                  </button>
+                                  <button
+                                    onClick={() => handleAdminCompleteProject(akad.id, akad.namaPelajar, akad.nominalTotal)}
+                                    className="border border-emerald-400 text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                                    title="Selesaikan Proyek dan Cairkan Saldo ke Siswa"
+                                  >
+                                    Done & Cairkan
+                                  </button>
+                                  <Link
+                                    href={`/umkm/transaksi/${akad.id}`}
+                                    className="border border-[#E0DAD2] text-[#2D2319] bg-white hover:bg-[#F6F3EE] px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                                  >
+                                    Buka Chat
+                                  </Link>
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                                    Saldo Sudah Masuk Siswa
+                                  </span>
+                                  <Link
+                                    href={`/umkm/transaksi/${akad.id}`}
+                                    className="text-xs text-gray-500 hover:text-gray-900 underline font-medium"
+                                  >
+                                    Lihat
+                                  </Link>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      }) : (
                         <tr>
-                          <td colSpan={5} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
+                          <td colSpan={6} className="px-5 py-12 text-center text-sm text-[#8B7E74]">
                             <div className="w-12 h-12 rounded-2xl bg-[#F6F3EE] flex items-center justify-center mx-auto mb-3">
                               <ShieldAlert className="w-6 h-6 text-[#B5ADA4]" />
                             </div>
-                            Tidak ada data transaksi escrow ditemukan
+                            Tidak ada data transaksi proyek aktif ditemukan
                           </td>
                         </tr>
                       )}
