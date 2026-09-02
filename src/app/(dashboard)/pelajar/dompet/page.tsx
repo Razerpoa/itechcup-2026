@@ -1,27 +1,68 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Lock, ShieldCheck, AlertCircle, Clock, CheckCircle2, X } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Lock, ShieldCheck, AlertCircle, Clock, CheckCircle2, X, Sparkles, Check, ArrowRight } from 'lucide-react'
 import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
-import { useEscrowStore, submitPelajarWithdrawal } from '@/lib/escrow-store'
+import { useEscrowStore, submitPelajarWithdrawal, syncEscrowWithDB } from '@/lib/escrow-store'
+import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
 
 export default function DompetPage() {
   const user = useAuthUser()
   const escrowState = useEscrowStore()
+  const akadState = useAkadStore()
 
+  useEffect(() => {
+    syncEscrowWithDB()
+    syncAkadWithDB()
+  }, [])
+
+  const isDemoPelajar = user?.id === 'pelajar-active' || user?.email === 'pelajar.google@gmail.com' || !user?.id
   const pelajarId = user?.id || 'pelajar-default'
   const namaPelajar = user?.nama || 'Pelajar Mitra Muda'
 
-  const walletBalanceFromEscrow = escrowState.pelajarBalances[pelajarId]
-  const saldoSiapCair = typeof walletBalanceFromEscrow === 'number' ? walletBalanceFromEscrow : (user?.totalPendapatan || 0)
+  const myAkadList = useMemo(() => {
+    return akadState.akadList.filter((a) => {
+      if (isDemoPelajar) return true
+      if (!user?.id && !user?.nama) return false
+      const matchId = user?.id && a.pelajarId === user.id
+      const matchNama =
+        user?.nama &&
+        a.namaPelajar &&
+        a.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
+      return Boolean(matchId || matchNama)
+    })
+  }, [akadState.akadList, isDemoPelajar, user?.id, user?.nama])
 
-  const myWithdrawals = escrowState.withdrawals.filter((w) => w.pelajarId === pelajarId)
-  const myEscrows = escrowState.escrows.filter((e) => e.pelajarId === pelajarId)
+  const completedAkad = useMemo(() => myAkadList.filter((a) => a.step === 4), [myAkadList])
+  const ongoingAkad = useMemo(() => myAkadList.filter((a) => a.step < 4), [myAkadList])
 
-  const danaEscrow = myEscrows
-    .filter((e) => e.dpStatus === 'HELD_IN_ESCROW')
-    .reduce((acc, curr) => acc + curr.nominalDP, 0)
+  const completedEarnings = completedAkad.reduce((acc, curr) => acc + (curr.nominalTotal || 500000), 0)
+
+  const myWithdrawals = useMemo(() => {
+    return escrowState.withdrawals.filter(
+      (w) => w.pelajarId === pelajarId || (isDemoPelajar && w.pelajarId === 'pelajar-active')
+    )
+  }, [escrowState.withdrawals, pelajarId, isDemoPelajar])
+
+  const totalWithdrawn = myWithdrawals
+    .filter((w) => w.status !== 'REJECTED')
+    .reduce((acc, curr) => acc + curr.nominal, 0)
+
+  const directBalance = escrowState.pelajarBalances[pelajarId] || 0
+  const activeBalance = isDemoPelajar ? (escrowState.pelajarBalances['pelajar-active'] || 0) : 0
+
+  const saldoSiapCair = Math.max(
+    directBalance,
+    activeBalance,
+    Math.max(0, completedEarnings - totalWithdrawn)
+  )
+
+  const myEscrows = escrowState.escrows.filter(
+    (e) => e.pelajarId === pelajarId || (isDemoPelajar && e.pelajarId === 'pelajar-active')
+  )
+
+  const danaEscrow = ongoingAkad.reduce((acc, curr) => acc + (curr.nominalTotal || 500000), 0)
 
   const [selectedWallet, setSelectedWallet] = useState<'GoPay' | 'DANA' | 'OVO' | 'ShopeePay'>('GoPay')
   const [phoneNumber, setPhoneNumber] = useState('0812-3456-7890')
@@ -82,7 +123,7 @@ export default function DompetPage() {
     }
   ]
 
-    const handleWithdraw = (e: React.FormEvent) => {
+  const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
     const num = parseThousand(amount)
@@ -100,7 +141,7 @@ export default function DompetPage() {
     setIsProcessing(true)
 
     const result = submitPelajarWithdrawal({
-      pelajarId,
+      pelajarId: isDemoPelajar ? 'pelajar-active' : pelajarId,
       namaPelajar,
       nominal: num,
       eWalletType: selectedWallet,
@@ -118,64 +159,71 @@ export default function DompetPage() {
       } else {
         setErrorMessage(result.error || 'Gagal mengajukan penarikan')
       }
-    }, 800)
+    }, 500)
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto pb-16">
-      <section className="w-full lg:w-5/12 flex flex-col gap-6">
-        <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Penarikan Dana Pelajar</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Pencairan aman tanpa syarat KTP atau rekening bank langsung ke e-wallet pilihanmu.
-          </p>
+    <div className="space-y-8 pb-12">
+      <div>
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-1 text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 w-fit">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <span>Sistem Pembayaran Terlindungi Escrow</span>
         </div>
-        
-        <div className="bg-gradient-to-br from-[#FFF1EB] to-[#ffe3d6] rounded-3xl p-6 sm:p-8 border border-[#FFD9CA] shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <p className="font-bold text-[#964825] uppercase tracking-wider text-xs">Total Saldo Siap Cair</p>
-            <span className="bg-white/80 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border border-green-200 shrink-0">
-              Bebas Tarik Kapan Saja
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+          Dompet & Pencairan Dana
+        </h2>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          Tarik penghasilan proyek langsung ke akun e-wallet pribadimu tanpa perlu rekening bank atau KTP.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gradient-to-br from-[#FFF1EB] to-[#ffe5d9] rounded-3xl p-6 sm:p-8 border border-[#FFD9CA] shadow-xs relative overflow-hidden">
+          <div className="relative z-10">
+            <span className="text-xs font-extrabold text-[#964825] uppercase tracking-wider block">
+              Saldo Siap Cair
             </span>
-          </div>
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-[#964825] mb-6 break-all min-w-0 leading-tight">
-            {formatRupiah(saldoSiapCair)}
-          </h3>
-          
-          <div className="flex items-center gap-3 bg-white/70 backdrop-blur-xs rounded-2xl p-4 border border-white/60">
-            <div className="w-10 h-10 rounded-xl bg-[#FFD9CA] text-[#964825] flex items-center justify-center shrink-0 font-bold">
-              <Lock className="w-5 h-5" />
+            <div className="text-3xl sm:text-4xl font-black text-[#964825] mt-2 mb-1">
+              {formatRupiah(saldoSiapCair)}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">Dana Escrow Tertahan (Proyek Berjalan)</p>
-              <p className="text-sm font-extrabold text-gray-900 break-all">{formatRupiah(danaEscrow)}</p>
-            </div>
+            <p className="text-xs text-[#964825]/80 mt-1">
+              Dana dari proyek yang telah diselesaikan dan diapprove oleh klien UMKM.
+            </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-green-50 text-green-700 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-4 h-4" />
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+                Dana Terkunci di Escrow
+              </span>
+              <Lock className="w-4 h-4 text-amber-500" />
             </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-gray-900">Verifikasi Admin Master</h4>
-              <p className="text-[11px] text-gray-500">Pencairan diproses dan diawasi oleh admin resmi Mitra Muda</p>
+            <div className="text-3xl sm:text-4xl font-black text-gray-900 mt-2 mb-1">
+              {formatRupiah(danaEscrow)}
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              DP & Pelunasan aman yang dipegang sistem selama proyek berlangsung.
+            </p>
           </div>
-          <p className="text-xs text-gray-600 leading-relaxed bg-[#FAFAFA] p-3 rounded-2xl border border-gray-100">
-            Setiap permohonan penarikan akan langsung diteruskan ke antrean Otoritas Admin untuk divalidasi ke nomor e-wallet tujuan tanpa biaya admin tambahan (0% Fee).
+          <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>{ongoingAkad.length} Proyek Sedang Berjalan</span>
+            <span className="font-bold text-emerald-600">Terproteksi 100%</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-xs">
+          <h3 className="font-extrabold text-lg text-gray-900 mb-2">Formulir Tarik Saldo ke E-Wallet</h3>
+          <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+            Pencairan saldo diproses secara instan ke nomor e-wallet yang Anda daftarkan di bawah ini.
           </p>
-        </div>
-      </section>
-
-      <section className="w-full lg:w-7/12 flex flex-col gap-6">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-xs">
-          <h3 className="text-lg font-extrabold text-gray-900 mb-6">Formulir Tarik Saldo E-Wallet</h3>
 
           {errorMessage && (
-            <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -254,90 +302,100 @@ export default function DompetPage() {
 
             <button
               type="submit"
-              disabled={isProcessing}
-              className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs sm:text-sm rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+              disabled={isProcessing || saldoSiapCair < 20000}
+              className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs sm:text-sm rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isProcessing ? 'Mengajukan ke Admin...' : 'Ajukan Penarikan Saldo Sekarang'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs">
-          <h3 className="font-extrabold text-base text-gray-900 mb-4">
-            Riwayat Permintaan Penarikan Saya
-          </h3>
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAEAEA] shadow-xs">
+            <h4 className="font-extrabold text-base text-gray-900 mb-4">Riwayat Penghasilan & Penarikan</h4>
 
-          {myWithdrawals.length > 0 ? (
-            <div className="space-y-3">
-              {myWithdrawals.map((wd) => (
-                <div
-                  key={wd.id}
-                  className="p-4 rounded-2xl border border-gray-100 bg-[#FAFAFA] flex items-center justify-between gap-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-extrabold text-sm text-gray-900">
-                        {formatRupiah(wd.nominal)}
-                      </span>
-                      <span className="text-xs font-bold text-slate-500">
-                        ke {wd.eWalletType} ({wd.eWalletNomor})
+            {completedAkad.length === 0 && myWithdrawals.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-xs">
+                Belum ada transaksi pencairan atau proyek selesai.
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[380px] overflow-y-auto divide-y divide-gray-50">
+                {completedAkad.map((akad) => (
+                  <div key={akad.id} className="pt-3 first:pt-0 flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <p className="font-extrabold text-xs text-gray-900 truncate max-w-[180px]">
+                          {akad.judulProyek}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-gray-500">Klien: {akad.namaUsaha}</p>
+                      <span className="text-[10px] text-gray-400">
+                        {akad.completedAt ? formatDate(akad.completedAt) : formatDate(akad.createdAt)}
                       </span>
                     </div>
-                    <p className="text-[10px] text-gray-400">{formatDate(wd.createdAt)}</p>
+                    <div className="text-right shrink-0">
+                      <span className="font-extrabold text-xs text-emerald-600 block">
+                        +{formatRupiah(akad.nominalTotal)}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Lunas
+                      </span>
+                    </div>
                   </div>
+                ))}
 
-                  <span
-                    className={`text-[10px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1 shrink-0 ${
-                      wd.status === 'APPROVED'
-                        ? 'bg-green-100 text-green-700'
-                        : wd.status === 'REJECTED'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {wd.status === 'APPROVED' ? (
-                      <>
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>Berhasil Dicairkan</span>
-                      </>
-                    ) : wd.status === 'REJECTED' ? (
-                      <>
-                        <X className="w-3 h-3" />
-                        <span>Ditolak</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="w-3 h-3" />
-                        <span>Menunggu Admin</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center text-gray-400 text-xs">
-              Belum ada riwayat penarikan saldo.
-            </div>
-          )}
+                {myWithdrawals.map((w) => (
+                  <div key={w.id} className="pt-3 flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <p className="font-extrabold text-xs text-gray-900">
+                          Tarik ke {w.eWalletType}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-gray-500">Nomor: {w.eWalletNomor}</p>
+                      <span className="text-[10px] text-gray-400">{formatDate(w.createdAt)}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-extrabold text-xs text-gray-900 block">
+                        -{formatRupiah(w.nominal)}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          w.status === 'APPROVED'
+                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            : w.status === 'REJECTED'
+                            ? 'text-red-700 bg-red-50 border-red-200'
+                            : 'text-amber-800 bg-amber-50 border-amber-200'
+                        }`}
+                      >
+                        {w.status === 'APPROVED' ? 'Berhasil' : w.status === 'REJECTED' ? 'Ditolak' : 'Diproses'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </section>
+      </div>
 
-      {successModal?.open && (
+      {successModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#EAEAEA] text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8" />
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-extrabold text-gray-900 mb-2">Pengajuan Penarikan Terkirim!</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-2">Penarikan Saldo Diajukan!</h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-6">
-              Permintaan pencairan sebesar <span className="font-bold text-gray-900">{formatRupiah(successModal.amount)}</span> ke <span className="font-bold text-gray-900">{successModal.wallet}</span> telah masuk ke antrean Admin Master untuk dicairkan.
+              Pengajuan penarikan sebesar <strong className="text-gray-900 font-black">{formatRupiah(successModal.amount)}</strong> ke akun <strong className="text-[#964825]">{successModal.wallet}</strong> sedang diproses.
             </p>
             <button
               onClick={() => setSuccessModal(null)}
               className="w-full py-3 bg-[#FF9B71] text-white rounded-full font-bold text-xs hover:bg-[#F5865A] transition-colors cursor-pointer shadow-xs"
             >
-              Tutup
+              Kembali ke Dompet
             </button>
           </div>
         </div>

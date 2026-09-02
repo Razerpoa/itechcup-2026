@@ -514,7 +514,16 @@ export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: s
   const targetAkad = state.akadList.find((a) => a.id === akadId)
   if (!targetAkad) return false
 
-  releaseProjectCompletionToPelajar(targetAkad.proyekId)
+  releaseProjectCompletionToPelajar({
+    proyekId: targetAkad.proyekId,
+    pelajarId: targetAkad.pelajarId,
+    namaPelajar: targetAkad.namaPelajar,
+    nominalTotal: targetAkad.nominalTotal,
+    nominalDP: targetAkad.nominalDP,
+    umkmId: targetAkad.umkmId,
+    namaUsaha: targetAkad.namaUsaha,
+    judulProyek: targetAkad.judulProyek
+  })
 
   const updated = state.akadList.map((a) => {
     if (a.id === akadId) {
@@ -533,6 +542,25 @@ export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: s
     ...state,
     akadList: updated
   })
+
+  try {
+    fetch('/api/transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: targetAkad.id.replace('akad-', ''),
+        proyekId: targetAkad.proyekId,
+        lamaranId: targetAkad.id.replace('akad-', ''),
+        totalAmount: targetAkad.nominalTotal,
+        dpAmount: targetAkad.nominalDP,
+        dpPaid: true,
+        fullPaid: true,
+        status: 'SELESAI',
+        catatanUMKM: ulasan || 'Pekerjaan diselesaikan dengan sangat baik.'
+      })
+    }).catch(() => {})
+  } catch {
+  }
 
   return true
 }

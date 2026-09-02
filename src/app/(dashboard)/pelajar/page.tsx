@@ -134,8 +134,17 @@ export default function PelajarDashboard() {
 
   const pendingLamaran = myLamaranList.filter((l) => l.status === 'PENDING')
 
-  const totalPendapatan = escrowState.pelajarBalances[pelajarId] || 0
-  const activeEscrowAmount = ongoingAkad.reduce((acc, a) => acc + a.nominalTotal, 0)
+  const completedEarnings = completedAkad.reduce((acc, a) => acc + (a.nominalTotal || 500000), 0)
+  const myWithdrawals = escrowState.withdrawals.filter(
+    (w) => w.pelajarId === pelajarId || (isDemoPelajar && w.pelajarId === 'pelajar-active')
+  )
+  const totalWithdrawn = myWithdrawals
+    .filter((w) => w.status !== 'REJECTED')
+    .reduce((acc, curr) => acc + curr.nominal, 0)
+  const directBal = escrowState.pelajarBalances[pelajarId] || 0
+  const activeBal = isDemoPelajar ? (escrowState.pelajarBalances['pelajar-active'] || 0) : 0
+  const totalPendapatan = Math.max(directBal, activeBal, Math.max(0, completedEarnings - totalWithdrawn))
+  const activeEscrowAmount = ongoingAkad.reduce((acc, a) => acc + (a.nominalTotal || 500000), 0)
 
   const avgRating =
     completedAkad.length > 0

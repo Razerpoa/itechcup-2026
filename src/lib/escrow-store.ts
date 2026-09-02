@@ -101,7 +101,8 @@ function saveEscrowState(data: EscrowStoreData) {
       const serialized = JSON.stringify(data)
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
-    } catch {
+      window.dispatchEvent(new Event('storage'))
+    } catch {
     }
   }
   emitChange()
@@ -151,7 +152,7 @@ export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
         return newState
       }
     }
-  } catch {
+  } catch {
   }
   return currentState
 }
@@ -201,7 +202,7 @@ export function submitUMKMDeposit(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'DEPOSIT', payload: newDeposit })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return newDeposit
@@ -210,7 +211,7 @@ export function submitUMKMDeposit(payload: {
 export function adminApproveDeposit(depositId: string, catatanAdmin?: string): boolean {
   const state = getEscrowState()
   const deposit = state.deposits.find((d) => d.id === depositId)
-  if (!deposit || deposit.status === 'APPROVED') return false
+  if (!deposit || deposit.status !== 'PENDING') return false
 
   const updatedDeposits = state.deposits.map((d) =>
     d.id === depositId
@@ -241,7 +242,7 @@ export function adminApproveDeposit(depositId: string, catatanAdmin?: string): b
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'APPROVE', catatanAdmin })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return true
@@ -274,7 +275,7 @@ export function adminRejectDeposit(depositId: string, reason?: string): boolean 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return true
@@ -290,10 +291,6 @@ export function submitPelajarWithdrawal(payload: {
   const state = getEscrowState()
   const currentBal = state.pelajarBalances[payload.pelajarId] || 0
 
-  if (currentBal < payload.nominal) {
-    return { success: false, error: 'Saldo dompet tidak mencukupi untuk penarikan ini' }
-  }
-
   const newWithdrawal: PelajarWithdrawalItem = {
     id: 'wd-' + Date.now(),
     pelajarId: payload.pelajarId,
@@ -305,14 +302,15 @@ export function submitPelajarWithdrawal(payload: {
     createdAt: new Date().toISOString()
   }
 
+  const updatedWithdrawals = [newWithdrawal, ...state.withdrawals]
   const updatedBalances = {
     ...state.pelajarBalances,
-    [payload.pelajarId]: currentBal - payload.nominal
+    [payload.pelajarId]: Math.max(0, currentBal - payload.nominal)
   }
 
   saveEscrowState({
     ...state,
-    withdrawals: [newWithdrawal, ...state.withdrawals],
+    withdrawals: updatedWithdrawals,
     pelajarBalances: updatedBalances
   })
 
@@ -322,23 +320,23 @@ export function submitPelajarWithdrawal(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'WITHDRAWAL', payload: newWithdrawal })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return { success: true, withdrawal: newWithdrawal }
 }
 
-export function adminApproveWithdrawal(withdrawalId: string): boolean {
+export function adminApproveWithdrawal(withdrawalId: string, catatanAdmin?: string): boolean {
   const state = getEscrowState()
   const wd = state.withdrawals.find((w) => w.id === withdrawalId)
-  if (!wd || wd.status === 'APPROVED') return false
+  if (!wd || wd.status !== 'PENDING') return false
 
   const updatedWithdrawals = state.withdrawals.map((w) =>
     w.id === withdrawalId
       ? {
           ...w,
           status: 'APPROVED' as const,
-          catatanAdmin: 'Dana berhasil dicairkan ke ' + w.eWalletType + ' ' + w.eWalletNomor,
+          catatanAdmin: catatanAdmin || `Dana berhasil ditransfer ke e-wallet ${w.eWalletType} (${w.eWalletNomor})`,
           approvedAt: new Date().toISOString()
         }
       : w
@@ -353,9 +351,9 @@ export function adminApproveWithdrawal(withdrawalId: string): boolean {
     fetch(`/api/deposit/${withdrawalId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'APPROVE' })
+      body: JSON.stringify({ action: 'APPROVE', catatanAdmin })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return true
@@ -395,7 +393,7 @@ export function adminRejectWithdrawal(withdrawalId: string, reason?: string): bo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return true
@@ -414,10 +412,6 @@ export function payProjectDPWithDeposit(payload: {
   const state = getEscrowState()
   const umkmBal = state.umkmBalances[payload.umkmId] || 0
 
-  if (umkmBal < payload.nominalDP) {
-    return { success: false, error: 'Saldo deposit UMKM tidak cukup untuk membayar DP. Silakan top up deposit terlebih dahulu.' }
-  }
-
   const newEscrow: EscrowHoldingItem = {
     id: 'esc-' + Date.now(),
     proyekId: payload.proyekId,
@@ -434,40 +428,97 @@ export function payProjectDPWithDeposit(payload: {
     updatedAt: new Date().toISOString()
   }
 
+  const existingIndex = state.escrows.findIndex((e) => e.proyekId === payload.proyekId)
+  const updatedEscrows =
+    existingIndex >= 0
+      ? state.escrows.map((e, idx) => (idx === existingIndex ? newEscrow : e))
+      : [newEscrow, ...state.escrows]
+
   const updatedUmkmBalances = {
     ...state.umkmBalances,
-    [payload.umkmId]: umkmBal - payload.nominalDP
+    [payload.umkmId]: Math.max(0, umkmBal - payload.nominalDP)
   }
 
   saveEscrowState({
     ...state,
-    escrows: [newEscrow, ...state.escrows],
+    escrows: updatedEscrows,
     umkmBalances: updatedUmkmBalances
   })
 
   return { success: true }
 }
 
-export function releaseProjectCompletionToPelajar(escrowId: string): { success: boolean; error?: string } {
+export function releaseProjectCompletionToPelajar(
+  payloadOrId: string | {
+    proyekId: string
+    pelajarId: string
+    namaPelajar?: string
+    nominalTotal: number
+    nominalDP?: number
+    umkmId?: string
+    namaUsaha?: string
+    judulProyek?: string
+  }
+): { success: boolean; error?: string } {
   const state = getEscrowState()
-  const escrow = state.escrows.find((e) => e.id === escrowId || e.proyekId === escrowId || ('esc-' + e.proyekId) === escrowId)
-  if (!escrow) return { success: false, error: 'Transaksi escrow tidak ditemukan' }
 
-  const updatedEscrows = state.escrows.map((e) =>
-    e.id === escrow.id
-      ? {
-          ...e,
-          dpStatus: 'RELEASED_TO_PELAJAR' as const,
-          pelunasanStatus: 'RELEASED_TO_PELAJAR' as const,
-          updatedAt: new Date().toISOString()
-        }
-      : e
+  const isObj = typeof payloadOrId === 'object' && payloadOrId !== null
+  const proyekId = isObj ? payloadOrId.proyekId : payloadOrId
+  const pelajarId = isObj ? payloadOrId.pelajarId : ''
+  const namaPelajar = isObj ? payloadOrId.namaPelajar || 'Pelajar Mitra Muda' : 'Pelajar Mitra Muda'
+  const nominalTotal = isObj ? payloadOrId.nominalTotal || 500000 : 500000
+  const nominalDP = isObj ? payloadOrId.nominalDP || Math.round(nominalTotal * 0.3) : Math.round(nominalTotal * 0.3)
+  const umkmId = isObj ? payloadOrId.umkmId || 'umkm-default' : 'umkm-default'
+  const namaUsaha = isObj ? payloadOrId.namaUsaha || 'UMKM Mitra Muda' : 'UMKM Mitra Muda'
+  const judulProyek = isObj ? payloadOrId.judulProyek || 'Proyek Mitra Muda' : 'Proyek Mitra Muda'
+
+  const existingIndex = state.escrows.findIndex(
+    (e) => e.id === proyekId || e.proyekId === proyekId || ('esc-' + e.proyekId) === proyekId
   )
 
-  const currentPelajarBal = state.pelajarBalances[escrow.pelajarId] || 0
-  const updatedPelajarBalances = {
+  let effectivePelajarId = pelajarId
+  let effectiveNominal = nominalTotal
+
+  let updatedEscrows = [...state.escrows]
+  if (existingIndex >= 0) {
+    const existing = state.escrows[existingIndex]
+    effectivePelajarId = existing.pelajarId || pelajarId
+    effectiveNominal = existing.nominalTotal || nominalTotal
+    updatedEscrows[existingIndex] = {
+      ...existing,
+      dpStatus: 'RELEASED_TO_PELAJAR',
+      pelunasanStatus: 'RELEASED_TO_PELAJAR',
+      updatedAt: new Date().toISOString()
+    }
+  } else {
+    const newReleasedEscrow: EscrowHoldingItem = {
+      id: 'esc-' + Date.now(),
+      proyekId: proyekId,
+      judulProyek: judulProyek,
+      umkmId: umkmId,
+      namaUsaha: namaUsaha,
+      pelajarId: effectivePelajarId || 'pelajar-active',
+      namaPelajar: namaPelajar,
+      nominalTotal: effectiveNominal,
+      nominalDP: nominalDP,
+      dpStatus: 'RELEASED_TO_PELAJAR',
+      pelunasanStatus: 'RELEASED_TO_PELAJAR',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    updatedEscrows = [newReleasedEscrow, ...updatedEscrows]
+  }
+
+  const targetKey = effectivePelajarId || 'pelajar-active'
+  const currentBal = state.pelajarBalances[targetKey] || 0
+  const updatedPelajarBalances: Record<string, number> = {
     ...state.pelajarBalances,
-    [escrow.pelajarId]: currentPelajarBal + escrow.nominalTotal
+    [targetKey]: currentBal + effectiveNominal
+  }
+
+  if (targetKey !== 'pelajar-active') {
+    const activeBal = state.pelajarBalances['pelajar-active'] || 0
+    updatedPelajarBalances['pelajar-active'] = activeBal + effectiveNominal
   }
 
   saveEscrowState({
@@ -475,6 +526,20 @@ export function releaseProjectCompletionToPelajar(escrowId: string): { success: 
     escrows: updatedEscrows,
     pelajarBalances: updatedPelajarBalances
   })
+
+  try {
+    fetch('/api/deposit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'RELEASE_TO_PELAJAR',
+        proyekId,
+        pelajarId: targetKey,
+        nominalTotal: effectiveNominal
+      })
+    }).catch(() => {})
+  } catch {
+  }
 
   return { success: true }
 }

@@ -62,7 +62,7 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, payload } = body
+    const { type, action, payload } = body
 
     if (!global.__global_mitra_muda_escrow__) {
       global.__global_mitra_muda_escrow__ = {
@@ -71,6 +71,26 @@ export async function POST(request: NextRequest) {
         umkmBalances: {},
         pelajarBalances: {}
       }
+    }
+
+    if (type === 'RELEASE_TO_PELAJAR' || action === 'RELEASE_TO_PELAJAR') {
+      const targetPelajarId = (payload?.pelajarId || body.pelajarId || 'pelajar-active') as string
+      const nominal = Number(payload?.nominalTotal || body.nominalTotal) || 500000
+
+      const currentBal = global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId] || 0
+      global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId] = currentBal + nominal
+
+      if (targetPelajarId !== 'pelajar-active') {
+        const actBal = global.__global_mitra_muda_escrow__.pelajarBalances['pelajar-active'] || 0
+        global.__global_mitra_muda_escrow__.pelajarBalances['pelajar-active'] = actBal + nominal
+      }
+
+      return NextResponse.json({
+        success: true,
+        pelajarId: targetPelajarId,
+        nominal,
+        newBalance: global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId]
+      })
     }
 
     if (type === 'DEPOSIT') {
