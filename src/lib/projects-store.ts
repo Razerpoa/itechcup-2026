@@ -15,6 +15,7 @@ export interface ProyekItem {
   jumlahPelamar: number
   fotoUsaha?: string
   umkmId?: string
+  durasi?: string
 }
 
 let cachedList: ProyekItem[] = []

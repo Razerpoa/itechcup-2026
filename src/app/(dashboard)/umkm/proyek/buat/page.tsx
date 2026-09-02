@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   UploadCloud,
-  Calendar,
+  Clock,
   DollarSign,
   FileText,
   CheckCircle,
@@ -39,7 +39,7 @@ export default function BuatProyekPage() {
   const [deskripsiLengkap, setDeskripsiLengkap] = useState('')
   const [budget, setBudget] = useState('1000000')
   const [dpType, setDpType] = useState('30')
-  const [deadline, setDeadline] = useState('2026-08-30')
+  const [durasi, setDurasi] = useState('7 Hari')
   const [selectedTags, setSelectedTags] = useState<string[]>(['Desain Grafis', 'Branding'])
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; size: string }>>([])
@@ -110,7 +110,8 @@ export default function BuatProyekPage() {
       dpPersen: Number(dpType) || 30,
       tags: selectedTags,
       fotoUsaha: bannerPreview || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(namaUsaha)}`,
-      umkmId: user?.id
+      umkmId: user?.id,
+      durasi: durasi || '7 Hari'
     })
 
     setTimeout(() => {
@@ -442,19 +443,37 @@ export default function BuatProyekPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="font-bold text-xs text-gray-700 uppercase tracking-wider">
-                Batas Waktu Pengerjaan (Deadline) <span className="text-red-500">*</span>
+                Durasi Pengerjaan <span className="text-red-500">*</span>
               </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-1">
+                {['3 Hari', '7 Hari', '14 Hari', '30 Hari'].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDurasi(d)}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer text-center",
+                      durasi === d
+                        ? "bg-[#FFF1EB] text-[#964825] border-[#FF9B71] shadow-2xs"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
               <div className="relative">
                 <input
-                  type="date"
+                  type="text"
                   required
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
+                  placeholder="Contoh: 7 Hari atau 2 Minggu"
+                  value={durasi}
+                  onChange={(e) => setDurasi(e.target.value)}
                   className="w-full bg-[#F5F5F5] border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:bg-white focus:border-[#FF9B71] focus:ring-2 focus:ring-[#FFD9CA] outline-none transition-all"
                 />
-                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </section>

@@ -57,10 +57,11 @@ export default function DetailProyekPage() {
     budgetMin: foundProyek?.budgetMin || 500000,
     budgetMax: foundProyek?.budgetMax || 1500000,
     dpPersen: foundProyek?.dpPersen || 30,
-    deadline: '2026-08-30',
+    durasi: foundProyek?.durasi || '7 Hari',
+    deadline: foundProyek?.durasi || '7 Hari',
     deskripsi: foundProyek?.keteranganSingkat || 'Kami membutuhkan talenta pelajar bertalenta untuk membantu pengerjaan proyek digital dan kreatif sesuai dengan spesifikasi yang ditentukan.',
     ketentuan: [
-      'Pengerjaan sesuai deadline yang disepakati',
+      'Pengerjaan sesuai durasi yang disepakati',
       'Revisi maksimal 3 kali per item',
       'Source file & deliverable final diserahkan saat penyelesaian'
     ],
@@ -183,7 +184,7 @@ export default function DetailProyekPage() {
                   <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {mockProyek.lokasi}</span>
                     <span>•</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Deadline: {mockProyek.deadline}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Durasi: {mockProyek.durasi || '7 Hari'}</span>
                   </p>
                 </div>
               </div>
