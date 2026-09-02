@@ -67,10 +67,23 @@ const INITIAL_DATA: AdminVerificationData = {
 let cachedData: AdminVerificationData = INITIAL_DATA
 let lastRaw: string | null = '__init__'
 const listeners = new Set<() => void>()
+
+// Track recent mutations for 30 seconds to prevent stale DB data from overwriting
+const MUTATION_TTL_MS = 30_000
 const recentMutations = new Map<string, { status: string; timestamp: number }>()
 
 export function recordRecentMutation(id: string, status: string) {
   recentMutations.set(id, { status, timestamp: Date.now() })
+}
+
+function isRecentlyMutated(id: string): { status: string } | null {
+  const entry = recentMutations.get(id)
+  if (!entry) return null
+  if (Date.now() - entry.timestamp > MUTATION_TTL_MS) {
+    recentMutations.delete(id)
+    return null
+  }
+  return { status: entry.status }
 }
 
 function emitChange() {
@@ -112,6 +125,28 @@ function saveVerificationState(data: AdminVerificationData) {
   emitChange()
 }
 
+// Helper: retry a fetch PATCH up to 3 times
+async function patchWithRetry(url: string, body: Record<string, unknown>, retries = 3): Promise<boolean> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      if (res.ok) return true
+      console.warn(`PATCH ${url} attempt ${attempt + 1} failed with status ${res.status}`)
+    } catch (err) {
+      console.warn(`PATCH ${url} attempt ${attempt + 1} network error:`, err)
+    }
+    // Wait before retry (exponential backoff: 500ms, 1s, 2s)
+    if (attempt < retries - 1) {
+      await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
+    }
+  }
+  return false
+}
+
 export async function syncAdminUsersFromDB(): Promise<void> {
   try {
     const [resPelajar, resSekolah, resUmkm] = await Promise.all([
@@ -121,7 +156,6 @@ export async function syncAdminUsersFromDB(): Promise<void> {
     ])
 
     const currentState = getVerificationState()
-    const now = Date.now()
 
     const localRegistry: any[] = typeof window !== 'undefined'
       ? JSON.parse(localStorage.getItem('mitra_muda_all_registered_users_v1') || '[]')
@@ -132,11 +166,17 @@ export async function syncAdminUsersFromDB(): Promise<void> {
           const matchedUser = localRegistry.find((u: any) => u.email === p.email || u.id === p.id)
           const actualWa = matchedUser?.nomorWa || p.profil?.kontakWa || p.nomorWa || p.noHp || ''
           const docPhoto = p.fotoKartuPelajar || matchedUser?.fotoKartuPelajar || undefined
-          const mutation = recentMutations.get(p.id) || (p.email ? recentMutations.get(p.email) : undefined)
-          const effectiveStatus = (mutation && now - mutation.timestamp < 10000)
+
+          // Check if this item was recently mutated by admin
+          const mutation = isRecentlyMutated(p.id) || (p.email ? isRecentlyMutated(p.email) : null)
+          
+          // If recently mutated, use the mutation status; otherwise use DB truth
+          const dbStatus = (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING'
+          const effectiveStatus = mutation
             ? (mutation.status as 'PENDING' | 'VERIFIED' | 'REJECTED')
-            : (p.verificationStatus as 'PENDING' | 'VERIFIED' | 'REJECTED') || 'PENDING'
-          const effectiveCatatan = (mutation && now - mutation.timestamp < 10000 && mutation.status === 'VERIFIED')
+            : dbStatus
+
+          const effectiveCatatan = (mutation && mutation.status === 'VERIFIED')
             ? undefined
             : (p.catatanPenolakan || matchedUser?.catatanPenolakan || undefined)
 
@@ -161,10 +201,9 @@ export async function syncAdminUsersFromDB(): Promise<void> {
 
     const sekolahFromDB: AdminSekolahItem[] = Array.isArray(resSekolah.data)
       ? resSekolah.data.map((s: any) => {
-          const mutation = recentMutations.get(s.id) || (s.emailResmi ? recentMutations.get(s.emailResmi) : undefined)
-          const effectiveStatus = (mutation && now - mutation.timestamp < 10000)
-            ? (mutation.status as any)
-            : (s.verificationStatus as any) || 'PENDING_REVIEW'
+          const mutation = isRecentlyMutated(s.id) || (s.emailResmi ? isRecentlyMutated(s.emailResmi) : null)
+          const dbStatus = (s.verificationStatus as any) || 'PENDING_REVIEW'
+          const effectiveStatus = mutation ? (mutation.status as any) : dbStatus
 
           return {
             id: s.id,
@@ -187,8 +226,8 @@ export async function syncAdminUsersFromDB(): Promise<void> {
       ? resUmkm.data.map((u: any) => {
           const matchedUser = localRegistry.find((m: any) => m.email === u.email || m.id === u.id)
           const legalDoc = u.buktiLegalitas || matchedUser?.buktiLegalitas || undefined
-          const mutation = recentMutations.get(u.id) || (u.email ? recentMutations.get(u.email) : undefined)
-          const effectiveIsVerified = (mutation && now - mutation.timestamp < 10000)
+          const mutation = isRecentlyMutated(u.id) || (u.email ? isRecentlyMutated(u.email) : null)
+          const effectiveIsVerified = mutation
             ? mutation.status === 'VERIFIED'
             : Boolean(u.isVerified)
 
@@ -219,6 +258,7 @@ export async function syncAdminUsersFromDB(): Promise<void> {
 }
 
 export async function adminVerifyPelajar(id: string): Promise<boolean> {
+  // Record mutation to protect optimistic update from stale sync
   recordRecentMutation(id, 'VERIFIED')
   const state = getVerificationState()
   const targetPelajar = state.pelajarList.find((p) => p.id === id)
@@ -226,6 +266,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     recordRecentMutation(targetPelajar.email, 'VERIFIED')
   }
 
+  // Optimistic local update
   const updated = state.pelajarList.map((p) =>
     p.id === id || (targetPelajar && p.email === targetPelajar.email)
       ? { ...p, verificationStatus: 'VERIFIED' as const, catatanPenolakan: undefined }
@@ -233,6 +274,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
   )
   saveVerificationState({ ...state, pelajarList: updated })
 
+  // Broadcast to other tabs/windows
   broadcastVerificationChange({
     role: 'pelajar',
     id,
@@ -240,6 +282,7 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     status: 'VERIFIED'
   })
 
+  // Update local registry
   if (typeof window !== 'undefined') {
     try {
       const allUsersRaw = localStorage.getItem('mitra_muda_all_registered_users_v1')
@@ -257,17 +300,20 @@ export async function adminVerifyPelajar(id: string): Promise<boolean> {
     }
   }
 
-  try {
-    await fetch(`/api/pelajar/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'VERIFIED', catatanPenolakan: null })
-    })
-  } catch (err) {
-    console.error('Error verifying pelajar in DB:', err)
+  // Persist to database with retry
+  const success = await patchWithRetry(`/api/pelajar/${id}`, {
+    verificationStatus: 'VERIFIED',
+    catatanPenolakan: null
+  })
+
+  if (!success) {
+    console.error(`Failed to persist pelajar ${id} verification to DB after retries`)
   }
 
-  return true
+  // Re-sync from DB to confirm persistence
+  await syncAdminUsersFromDB()
+
+  return success
 }
 
 export async function adminRejectPelajar(id: string, reason?: string): Promise<boolean> {
@@ -309,17 +355,17 @@ export async function adminRejectPelajar(id: string, reason?: string): Promise<b
     }
   }
 
-  try {
-    await fetch(`/api/pelajar/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'REJECTED', catatanPenolakan: cleanReason })
-    })
-  } catch (err) {
-    console.error('Error rejecting pelajar in DB:', err)
+  const success = await patchWithRetry(`/api/pelajar/${id}`, {
+    verificationStatus: 'REJECTED',
+    catatanPenolakan: cleanReason
+  })
+
+  if (!success) {
+    console.error(`Failed to persist pelajar ${id} rejection to DB after retries`)
   }
 
-  return true
+  await syncAdminUsersFromDB()
+  return success
 }
 
 export async function adminVerifySekolah(id: string): Promise<boolean> {
@@ -341,17 +387,16 @@ export async function adminVerifySekolah(id: string): Promise<boolean> {
     status: 'VERIFIED'
   })
 
-  try {
-    await fetch(`/api/sekolah/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'VERIFIED' })
-    })
-  } catch (err) {
-    console.error('Error verifying sekolah in DB:', err)
+  const success = await patchWithRetry(`/api/sekolah/${id}`, {
+    verificationStatus: 'VERIFIED'
+  })
+
+  if (!success) {
+    console.error(`Failed to persist sekolah ${id} verification to DB after retries`)
   }
 
-  return true
+  await syncAdminUsersFromDB()
+  return success
 }
 
 export async function adminRejectSekolah(id: string): Promise<boolean> {
@@ -373,17 +418,16 @@ export async function adminRejectSekolah(id: string): Promise<boolean> {
     status: 'REJECTED'
   })
 
-  try {
-    await fetch(`/api/sekolah/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'REJECTED' })
-    })
-  } catch (err) {
-    console.error('Error rejecting sekolah in DB:', err)
+  const success = await patchWithRetry(`/api/sekolah/${id}`, {
+    verificationStatus: 'REJECTED'
+  })
+
+  if (!success) {
+    console.error(`Failed to persist sekolah ${id} rejection to DB after retries`)
   }
 
-  return true
+  await syncAdminUsersFromDB()
+  return success
 }
 
 export async function adminVerifyUMKM(id: string): Promise<boolean> {
@@ -405,17 +449,16 @@ export async function adminVerifyUMKM(id: string): Promise<boolean> {
     status: 'VERIFIED'
   })
 
-  try {
-    await fetch(`/api/umkm/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isVerified: true })
-    })
-  } catch (err) {
-    console.error('Error verifying UMKM in DB:', err)
+  const success = await patchWithRetry(`/api/umkm/${id}`, {
+    isVerified: true
+  })
+
+  if (!success) {
+    console.error(`Failed to persist UMKM ${id} verification to DB after retries`)
   }
 
-  return true
+  await syncAdminUsersFromDB()
+  return success
 }
 
 export async function adminRevokeUMKM(id: string): Promise<boolean> {
@@ -437,17 +480,16 @@ export async function adminRevokeUMKM(id: string): Promise<boolean> {
     status: 'REJECTED'
   })
 
-  try {
-    await fetch(`/api/umkm/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isVerified: false })
-    })
-  } catch (err) {
-    console.error('Error revoking UMKM in DB:', err)
+  const success = await patchWithRetry(`/api/umkm/${id}`, {
+    isVerified: false
+  })
+
+  if (!success) {
+    console.error(`Failed to persist UMKM ${id} revocation to DB after retries`)
   }
 
-  return true
+  await syncAdminUsersFromDB()
+  return success
 }
 
 function subscribe(callback: () => void) {

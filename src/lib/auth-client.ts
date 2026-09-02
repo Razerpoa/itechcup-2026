@@ -182,8 +182,6 @@ export function useRealtimeVerificationSync() {
 
   useEffect(() => {
     if (!user?.id) return
-    const alreadyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
-    if (alreadyVerified) return
 
     let isMounted = true
 
@@ -206,11 +204,20 @@ export function useRealtimeVerificationSync() {
               data.isVerified === true ||
               data.verificationStatus === 'VERIFIED'
 
-            if (isVerifiedNow && (!user.isVerified || user.verificationStatus !== 'VERIFIED')) {
+            const currentlyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
+
+            if (isVerifiedNow && !currentlyVerified) {
               setCurrentUser({
                 ...user,
                 isVerified: true,
                 verificationStatus: 'VERIFIED'
+              })
+            } else if (!isVerifiedNow && currentlyVerified) {
+              // DB says not verified but localStorage says verified - sync from DB
+              setCurrentUser({
+                ...user,
+                isVerified: false,
+                verificationStatus: (data.verificationStatus as any) || 'PENDING'
               })
             } else if (data.verificationStatus === 'REJECTED' && user.verificationStatus !== 'REJECTED') {
               setCurrentUser({
@@ -225,8 +232,14 @@ export function useRealtimeVerificationSync() {
       }
     }
 
+    // Always check on mount (page refresh / navigation)
     checkStatus()
-    const interval = setInterval(checkStatus, 1500)
+
+    // If already verified, poll less frequently (every 10s) for status revocation
+    // If not verified, poll more frequently (every 1.5s) for verification updates
+    const alreadyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
+    const pollInterval = alreadyVerified ? 10000 : 1500
+    const interval = setInterval(checkStatus, pollInterval)
 
     const handleFocus = () => {
       checkStatus()
