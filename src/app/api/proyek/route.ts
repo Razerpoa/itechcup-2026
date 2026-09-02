@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,12 +74,13 @@ export async function POST(request: NextRequest) {
       const fallbackEmail = email || `umkm-${Date.now()}@mitramuda.id`
       const fallbackWa = nomorWa || `08${Math.floor(1000000000 + Math.random() * 9000000000)}`
       
+      const fallbackHashed = await bcrypt.hash('umkm-default-password', 10)
       const newUmkm = await prisma.uMKM.create({
         data: {
           namaPemilik: namaPemilik || 'Pemilik UMKM',
           namaUsaha: namaUsaha || 'UMKM Mitra Muda',
           email: fallbackEmail,
-          password: 'umkm-default-password',
+          password: fallbackHashed,
           nomorWa: fallbackWa,
           fotoUsaha: fotoBanner || fotoProfil || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(namaUsaha || 'umkm')}`
         }

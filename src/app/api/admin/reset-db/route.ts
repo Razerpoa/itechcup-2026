@@ -1,11 +1,34 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const adminCookie = request.cookies.get('mitra_muda_admin_session')?.value
+    if (!adminCookie) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Akses khusus admin / pengelola sistem.' },
+        { status: 401 }
+      )
+    }
+
+    try {
+      const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+      if (decoded.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Forbidden: Akses ditolak.' },
+          { status: 403 }
+        )
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Unauthorized: Sesi admin tidak valid.' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json().catch(() => ({}))
 
     if (body?.confirmation !== 'RESET') {

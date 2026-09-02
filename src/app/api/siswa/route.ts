@@ -8,9 +8,29 @@ export async function GET(request: NextRequest) {
     const sekolahId = request.nextUrl.searchParams.get('sekolahId')
     const status = request.nextUrl.searchParams.get('status') as VerificationStatus | null
 
+    let school: { id: string; namaSekolah: string; npsn: string } | null = null
+    if (sekolahId && sekolahId !== 'sekolah-active') {
+      school = await prisma.sekolah.findUnique({
+        where: { id: sekolahId },
+        select: { id: true, namaSekolah: true, npsn: true }
+      })
+    }
+
     const where: Record<string, unknown> = {}
-    if (sekolahId) where.sekolahId = sekolahId
-    if (status && Object.values(VerificationStatus).includes(status)) where.verificationStatus = status
+    if (status && Object.values(VerificationStatus).includes(status)) {
+      where.verificationStatus = status
+    }
+
+    if (school) {
+      where.OR = [
+        { sekolahId: school.id },
+        { kelas: { contains: school.namaSekolah, mode: 'insensitive' } },
+        { kelas: { contains: school.npsn, mode: 'insensitive' } },
+        { nis: { contains: school.npsn } }
+      ]
+    } else if (sekolahId) {
+      where.sekolahId = sekolahId
+    }
 
     const data = await prisma.pelajar.findMany({
       where,
@@ -26,10 +46,23 @@ export async function GET(request: NextRequest) {
         updatedAt: true,
         sekolah: { select: { id: true, namaSekolah: true, npsn: true } },
       },
+      orderBy: { createdAt: 'desc' }
     })
 
+    // If school was found, auto-link unlinked students found by name
+    if (school && data.length > 0) {
+      const unlinkedIds = data.filter((d) => !d.sekolahId).map((d) => d.id)
+      if (unlinkedIds.length > 0) {
+        prisma.pelajar.updateMany({
+          where: { id: { in: unlinkedIds } },
+          data: { sekolahId: school.id }
+        }).catch(() => {})
+      }
+    }
+
     return NextResponse.json({ data })
-  } catch {
+  } catch (error) {
+    console.error('Error fetching siswa list:', error)
     return NextResponse.json({ error: 'Gagal mengambil data siswa' }, { status: 500 })
   }
 }

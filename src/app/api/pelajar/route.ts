@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
         where: {
           OR: [
             { namaSekolah: { equals: body.sekolah.trim(), mode: 'insensitive' } },
-            { namaSekolah: { contains: body.sekolah.trim(), mode: 'insensitive' } }
+            { namaSekolah: { contains: body.sekolah.trim(), mode: 'insensitive' } },
+            { npsn: { equals: body.sekolah.trim() } }
           ]
         }
       })
@@ -97,7 +98,15 @@ export async function POST(request: NextRequest) {
 
     const randomCode = Math.floor(10000 + Math.random() * 90000).toString()
     const registrationId = `MM-2026-${randomCode}`
-    const finalNis = (body.nisn || body.nis || '').toString().trim() || registrationId
+    let finalNis = (body.nisn || body.nis || '').toString().trim() || registrationId
+
+    // Ensure finalNis is globally unique so registration is never aborted
+    if (finalNis) {
+      const existingNis = await prisma.pelajar.findUnique({ where: { nis: finalNis } })
+      if (existingNis) {
+        finalNis = `${finalNis}-${Math.floor(100 + Math.random() * 900)}`
+      }
+    }
 
     const validGender = body.jenisKelamin === 'PEREMPUAN' ? 'PEREMPUAN' : 'LAKI_LAKI'
 
@@ -125,9 +134,10 @@ export async function POST(request: NextRequest) {
         fotoKartuPelajar: body.fotoKartuPelajar || null,
         profil: {
           create: {
+            displayName: body.namaLengkap.trim(),
             kontakWa: body.nomorWa?.trim() || '',
-            bidangKeahlian: body.bidangKeahlian ?? [],
-            skills: [],
+            bidangKeahlian: Array.isArray(body.bidangKeahlian) && body.bidangKeahlian.length > 0 ? body.bidangKeahlian : ['Web Dev', 'UI/UX'],
+            skills: Array.isArray(body.bidangKeahlian) && body.bidangKeahlian.length > 0 ? body.bidangKeahlian : ['Web Dev', 'UI/UX'],
           },
         },
       },
