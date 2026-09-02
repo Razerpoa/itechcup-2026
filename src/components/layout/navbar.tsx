@@ -21,9 +21,13 @@ import {
   CheckCheck,
   Clock,
   ArrowRight,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react'
 import { useAuthUser, logoutUser, useRealtimeVerificationSync } from '@/lib/auth-client'
+import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
+import { useProjects } from '@/lib/projects-store'
+import { formatRelativeTime } from '@/lib/utils'
 
 interface NavbarProps {
   onMenuClick: () => void
@@ -37,97 +41,168 @@ interface NotificationItem {
   time: string
   isRead: boolean
   link?: string
-  iconType: 'success' | 'info' | 'project' | 'wallet'
+  iconType: 'success' | 'info' | 'project' | 'wallet' | 'chat'
 }
 
 export default function Navbar({ onMenuClick, title }: NavbarProps) {
   const router = useRouter()
   const user = useAuthUser()
   useRealtimeVerificationSync()
+  const akadState = useAkadStore()
+  const allProjects = useProjects()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const [readIds, setReadIds] = useState<string[]>([])
+
+  useEffect(() => {
+    syncAkadWithDB()
+    const timer = setInterval(() => {
+      syncAkadWithDB()
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [])
 
   const role = user?.role || 'pelajar'
+  const userId = user?.id || ''
+  const userNamaUsaha = user?.namaUsaha || ''
 
-  const getInitialNotifs = (userRole: 'pelajar' | 'umkm' | 'sekolah'): NotificationItem[] => {
-    if (userRole === 'umkm') {
-      return [
-        {
-          id: 'u1',
-          title: 'Lowongan Proyek Siap Dipublikasikan',
-          message: 'Buat proyek baru dan tentukan nominal DP escrow untuk mulai merekrut siswa.',
-          time: 'Baru saja',
-          isRead: false,
-          link: '/umkm/proyek/buat',
-          iconType: 'project'
-        },
-        {
-          id: 'u2',
-          title: 'Akun UMKM Terverifikasi',
-          message: 'Profil bisnis Anda telah aktif di ekosistem Mitra Muda.',
-          time: '1 jam lalu',
+  const dynamicNotifs = useMemo((): NotificationItem[] => {
+    const list: NotificationItem[] = []
+
+    if (role === 'umkm') {
+      const myProjects = allProjects.filter(
+        (p) =>
+          (userId && p.umkmId === userId) ||
+          (userNamaUsaha && p.namaUsaha && p.namaUsaha.toLowerCase().trim() === userNamaUsaha.toLowerCase().trim())
+      )
+      const myProjectIds = new Set(myProjects.map((p) => p.id))
+
+      const relevantChats = akadState.chatMessages.filter((m) => {
+        if (m.senderRole === 'pelajar') {
+          if (myProjectIds.has(m.proyekId)) return true
+          if (userId && (m.recipientId === userId || m.recipientId === 'umkm-default')) return true
+          if (userNamaUsaha && m.namaUsaha && m.namaUsaha.toLowerCase().trim() === userNamaUsaha.toLowerCase().trim()) return true
+          if (userNamaUsaha && m.recipientName && m.recipientName.toLowerCase().trim() === userNamaUsaha.toLowerCase().trim()) return true
+        }
+        return false
+      })
+
+      relevantChats.slice(-5).reverse().forEach((c) => {
+        list.push({
+          id: 'chat-' + c.id,
+          title: `Pesan dari ${c.senderName}`,
+          message: `"${c.text.length > 50 ? c.text.substring(0, 50) + '...' : c.text}" pada lowongan ${c.judulProyek || 'proyek'}`,
+          time: formatRelativeTime(c.createdAt),
           isRead: false,
           link: '/umkm',
-          iconType: 'success'
-        }
-      ]
-    }
+          iconType: 'chat'
+        })
+      })
 
-    if (userRole === 'sekolah') {
-      return [
+      const myLamaran = akadState.lamaranList.filter(
+        (l) =>
+          (userId && l.umkmId === userId) ||
+          (userNamaUsaha && l.namaUsaha && l.namaUsaha.toLowerCase().trim() === userNamaUsaha.toLowerCase().trim()) ||
+          myProjectIds.has(l.proyekId)
+      )
+
+      myLamaran.filter((l) => l.status === 'PENDING').slice(-3).reverse().forEach((l) => {
+        list.push({
+          id: 'lam-' + l.id,
+          title: `Lamaran Baru: ${l.namaPelajar}`,
+          message: `Mengajukan proposal untuk ${l.judulProyek} (${l.sekolahNama || 'Siswa Terdaftar'})`,
+          time: formatRelativeTime(l.createdAt),
+          isRead: false,
+          link: '/umkm',
+          iconType: 'project'
+        })
+      })
+
+      list.push({
+        id: 'u-welcome',
+        title: 'Akun UMKM Aktif',
+        message: 'Kelola lowongan proyek dan diskusikan kebutuhan bersama siswa talenta.',
+        time: 'Sistem',
+        isRead: false,
+        link: '/umkm',
+        iconType: 'success'
+      })
+    } else if (role === 'pelajar') {
+      const studentChats = akadState.chatMessages.filter(
+        (m) =>
+          m.senderRole === 'umkm' &&
+          (m.recipientId === userId || m.recipientId === 'pelajar' || m.recipientId === 'pelajar-active')
+      )
+
+      studentChats.slice(-5).reverse().forEach((c) => {
+        list.push({
+          id: 'chat-' + c.id,
+          title: `Balasan dari ${c.senderName}`,
+          message: `"${c.text.length > 50 ? c.text.substring(0, 50) + '...' : c.text}"`,
+          time: formatRelativeTime(c.createdAt),
+          isRead: false,
+          link: `/marketplace/${c.proyekId}`,
+          iconType: 'chat'
+        })
+      })
+
+      const myApplied = akadState.lamaranList.filter(
+        (l) => (userId && l.pelajarId === userId) || l.pelajarId === 'pelajar-active'
+      )
+
+      myApplied.filter((l) => l.status === 'ACCEPTED').slice(-3).reverse().forEach((l) => {
+        list.push({
+          id: 'acc-' + l.id,
+          title: 'Lamaran Anda Diterima!',
+          message: `${l.namaUsaha} menyetujui proposal ${l.judulProyek}. DP Escrow telah terkunci.`,
+          time: formatRelativeTime(l.createdAt),
+          isRead: false,
+          link: `/pelajar/transaksi/akad-${l.id}`,
+          iconType: 'success'
+        })
+      })
+
+      list.push({
+        id: 'p-welcome',
+        title: 'Dompet Pelajar Siap Digunakan',
+        message: 'Penarikan hasil kerja aman ke GoPay, DANA, OVO, atau ShopeePay tanpa syarat rekening bank.',
+        time: 'Sistem',
+        isRead: false,
+        link: '/pelajar/dompet',
+        iconType: 'wallet'
+      })
+    } else {
+      list.push(
         {
-          id: 's1',
+          id: 's-portal',
           title: 'Portal NPSN Resmi Terhubung',
           message: 'Sistem siap memverifikasi data siswa aktif yang mendaftar.',
-          time: 'Baru saja',
+          time: 'Sistem',
           isRead: false,
           link: '/sekolah',
           iconType: 'info'
         },
         {
-          id: 's2',
-          title: 'Laporan Kinerja Siap Digunakan',
-          message: 'Pantau akumulasi karya dan prestasi siswa secara terpusat.',
-          time: '2 jam lalu',
+          id: 's-report',
+          title: 'Laporan Kinerja Portofolio Siswa',
+          message: 'Pantau akumulasi prestasi dan proyek siswa secara terpusat.',
+          time: 'Sistem',
           isRead: false,
           link: '/sekolah/laporan',
           iconType: 'success'
         }
-      ]
+      )
     }
 
-    return [
-      {
-        id: 'p1',
-        title: 'Akun Pelajar Aktif',
-        message: 'Jelajahi lowongan proyek UMKM dan mulai berkarya tanpa syarat KTP/Bank.',
-        time: 'Baru saja',
-        isRead: false,
-        link: '/marketplace',
-        iconType: 'success'
-      },
-      {
-        id: 'p2',
-        title: 'Dompet Digital Siap',
-        message: 'Penarikan hasil proyek dapat dilakukan langsung ke e-wallet resmi (GoPay, DANA, OVO, ShopeePay).',
-        time: '3 jam lalu',
-        isRead: false,
-        link: '/pelajar/dompet',
-        iconType: 'wallet'
-      }
-    ]
-  }
-
-  const [readIds, setReadIds] = useState<string[]>([])
-
-  const rawNotifs = useMemo(() => getInitialNotifs(role), [role])
+    return list
+  }, [role, userId, userNamaUsaha, allProjects, akadState.chatMessages, akadState.lamaranList])
 
   const notifications = useMemo(() => {
-    return rawNotifs.map((n) => ({
+    return dynamicNotifs.map((n) => ({
       ...n,
       isRead: readIds.includes(n.id)
     }))
-  }, [rawNotifs, readIds])
+  }, [dynamicNotifs, readIds])
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -154,14 +229,14 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
   const markAllAsRead = () => {
-    setReadIds(rawNotifs.map((n) => n.id))
+    setReadIds(dynamicNotifs.map((n) => n.id))
   }
 
   const markItemAsRead = (id: string) => {
     setReadIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
   }
 
-  const displayName = 
+  const displayName =
     (role === 'sekolah' ? (user?.namaSekolah || user?.nama) : null) ||
     (role === 'umkm' ? (user?.namaUsaha || user?.nama) : null) ||
     user?.nama ||
@@ -170,11 +245,12 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
     (user?.email ? user.email.split('@')[0] : null) ||
     'Akun Terdaftar'
 
-  const subtext = role === 'umkm' 
-    ? (user?.namaUsaha || user?.nama || 'Pemilik Usaha UMKM') 
-    : role === 'sekolah' 
-    ? (user?.namaSekolah || user?.nama || 'Pengelola Sekolah') 
-    : (user?.sekolah || user?.nama || 'Pelajar Terdaftar')
+  const subtext =
+    role === 'umkm'
+      ? user?.namaUsaha || user?.nama || 'Pemilik Usaha UMKM'
+      : role === 'sekolah'
+      ? user?.namaSekolah || user?.nama || 'Pengelola Sekolah'
+      : user?.sekolah || user?.nama || 'Pelajar Terdaftar'
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-[#EAEAEA] flex items-center justify-between px-4 md:px-6 shadow-2xs">
@@ -214,7 +290,7 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
             <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-xl border border-[#EAEAEA] py-3 z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-sm text-gray-900">Notifikasi Akun</h3>
+                  <h3 className="font-extrabold text-sm text-gray-900">Notifikasi & Aktivitas</h3>
                   {unreadCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FFF1EB] text-[#964825]">
                       {unreadCount} Baru
@@ -247,6 +323,8 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                           <Wallet className="w-4 h-4 text-[#FF9B71]" />
                         ) : notif.iconType === 'project' ? (
                           <Briefcase className="w-4 h-4 text-[#FF9B71]" />
+                        ) : notif.iconType === 'chat' ? (
+                          <MessageSquare className="w-4 h-4 text-[#FF9B71]" />
                         ) : notif.iconType === 'info' ? (
                           <Sparkles className="w-4 h-4 text-[#FF9B71]" />
                         ) : (
@@ -269,7 +347,7 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                             onClick={() => setIsNotifOpen(false)}
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-[#964825] hover:text-[#FF9B71] transition-colors"
                           >
-                            <span>Lihat Selengkapnya</span>
+                            <span>Buka Sekarang</span>
                             <ArrowRight className="w-3 h-3" />
                           </Link>
                         )}
@@ -318,15 +396,8 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                     {role}
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-500 truncate">{subtext}</p>
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] w-fit font-bold px-2 py-0.5 rounded-full border"
-                  style={user?.isVerified || user?.verificationStatus === 'VERIFIED'
-                    ? {color: '#15803d', background: '#f0fdf4', borderColor: '#bbf7d0'}
-                    : {color: '#92400e', background: '#fffbeb', borderColor: '#fde68a'}
-                  }>
-                  <Sparkles className="w-3 h-3" />
-                  <span>{user?.isVerified || user?.verificationStatus === 'VERIFIED' ? 'Akun Terverifikasi' : 'Menunggu Verifikasi'}</span>
-                </div>
+                <p className="text-[11px] text-gray-500 truncate">{user?.email || 'email@mitramuda.id'}</p>
+                <p className="text-[10px] text-gray-400 mt-1 truncate">{subtext}</p>
               </div>
 
               <div className="py-1">
@@ -335,37 +406,26 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                     <Link
                       href="/pelajar"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-[#FF9B71]" />
+                      <LayoutDashboard className="w-4 h-4 text-gray-400" />
                       <span>Dashboard Pelajar</span>
                     </Link>
-
+                    <Link
+                      href={`/profil/${user?.id || 'demo'}`}
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
+                    >
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span>Profil & Portofolio Saya</span>
+                    </Link>
                     <Link
                       href="/pelajar/dompet"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <Wallet className="w-4 h-4 text-[#FF9B71]" />
+                      <Wallet className="w-4 h-4 text-gray-400" />
                       <span>Dompet & Tarik Saldo</span>
-                    </Link>
-
-                    <Link
-                      href={`/profil/${user?.id || '1'}`}
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
-                    >
-                      <User className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Profil Portofolio</span>
-                    </Link>
-
-                    <Link
-                      href="/marketplace"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
-                    >
-                      <Store className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Cari Proyek UMKM</span>
                     </Link>
                   </>
                 )}
@@ -375,46 +435,26 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                     <Link
                       href="/umkm"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-[#FF9B71]" />
+                      <LayoutDashboard className="w-4 h-4 text-gray-400" />
                       <span>Dashboard UMKM</span>
                     </Link>
-
                     <Link
                       href="/umkm/deposit"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <Wallet className="w-4 h-4 text-[#FF9B71]" />
+                      <Wallet className="w-4 h-4 text-gray-400" />
                       <span>Deposit Saldo Rekber</span>
                     </Link>
-
                     <Link
                       href="/umkm/proyek/buat"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <Briefcase className="w-4 h-4 text-[#FF9B71]" />
+                      <Briefcase className="w-4 h-4 text-gray-400" />
                       <span>Buat Lowongan Proyek</span>
-                    </Link>
-
-                    <Link
-                      href="/umkm/transaksi/1"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
-                    >
-                      <FileText className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Ruang Akad Proyek</span>
-                    </Link>
-
-                    <Link
-                      href="/marketplace"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
-                    >
-                      <Store className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Marketplace Talenta</span>
                     </Link>
                   </>
                 )}
@@ -424,37 +464,36 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
                     <Link
                       href="/sekolah"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <Building2 className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Dashboard & Verifikasi</span>
+                      <LayoutDashboard className="w-4 h-4 text-gray-400" />
+                      <span>Verifikasi Siswa</span>
                     </Link>
-
                     <Link
                       href="/sekolah/laporan"
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
                     >
-                      <TrendingUp className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Laporan & Analitik</span>
-                    </Link>
-
-                    <Link
-                      href="/marketplace"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#FFF7F3] hover:text-[#964825] transition-colors"
-                    >
-                      <Store className="w-4 h-4 text-[#FF9B71]" />
-                      <span>Marketplace Siswa</span>
+                      <TrendingUp className="w-4 h-4 text-gray-400" />
+                      <span>Laporan & Analitik Kinerja</span>
                     </Link>
                   </>
                 )}
+
+                <Link
+                  href="/marketplace"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#FFF1EB] hover:text-[#964825] transition-colors"
+                >
+                  <Store className="w-4 h-4 text-gray-400" />
+                  <span>Jelajahi Marketplace</span>
+                </Link>
               </div>
 
-              <div className="border-t border-gray-100 pt-1">
+              <div className="border-t border-gray-100 pt-1 mt-1">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Keluar Akun</span>

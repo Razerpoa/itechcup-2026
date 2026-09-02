@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -17,13 +17,23 @@ import {
   Info,
   Copy,
   Share2,
-  Star
+  Star,
+  Send,
+  X,
+  MessageCircle
 } from 'lucide-react'
-import { formatRupiah, formatDate } from '@/lib/utils'
+import { formatRupiah, formatDate, formatRelativeTime } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
 import { useEscrowStore } from '@/lib/escrow-store'
-import { useAkadStore, syncAkadWithDB } from '@/lib/akad-store'
+import { useAkadStore, syncAkadWithDB, sendAkadChat } from '@/lib/akad-store'
 import { useJasaStore } from '@/lib/jasa-store'
+
+interface StudentChatThread {
+  proyekId: string
+  judulProyek: string
+  umkmId: string
+  namaUsaha: string
+}
 
 export default function PelajarDashboard() {
   const user = useAuthUser()
@@ -32,6 +42,9 @@ export default function PelajarDashboard() {
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
   const jasaList = useJasaStore()
+
+  const [activeChatThread, setActiveChatThread] = useState<StudentChatThread | null>(null)
+  const [chatMessage, setChatMessage] = useState('')
 
   useEffect(() => {
     async function fetchPelajarProfile() {
@@ -43,7 +56,9 @@ export default function PelajarDashboard() {
         const json = await res.json()
         if (json.data && Array.isArray(json.data)) {
           const match = json.data.find(
-            (p: any) => (user.id && p.id === user.id) || (user.email && p.email.toLowerCase() === user.email.toLowerCase())
+            (p: any) =>
+              (user.id && p.id === user.id) ||
+              (user.email && p.email.toLowerCase() === user.email.toLowerCase())
           )
           if (match) {
             setCurrentUser({
@@ -71,13 +86,15 @@ export default function PelajarDashboard() {
   const myJasaList = jasaList.filter((j) => {
     if (!user?.id && !user?.nama) return false
     const matchId = user?.id && j.pelajarId === user.id
-    const matchNama = user?.nama && j.namaPelajar && j.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
+    const matchNama =
+      user?.nama &&
+      j.namaPelajar &&
+      j.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
     return Boolean(matchId || matchNama)
   })
 
   const isVerifiedAccount = Boolean(
-    user?.isVerified ||
-    user?.verificationStatus === 'VERIFIED'
+    user?.isVerified || user?.verificationStatus === 'VERIFIED'
   )
 
   useEffect(() => {
@@ -94,7 +111,10 @@ export default function PelajarDashboard() {
     if (isDemoPelajar) return true
     if (!user?.id && !user?.nama) return false
     const matchId = user?.id && a.pelajarId === user.id
-    const matchNama = user?.nama && a.namaPelajar && a.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
+    const matchNama =
+      user?.nama &&
+      a.namaPelajar &&
+      a.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
     return Boolean(matchId || matchNama)
   })
 
@@ -105,18 +125,62 @@ export default function PelajarDashboard() {
     if (isDemoPelajar) return true
     if (!user?.id && !user?.nama) return false
     const matchId = user?.id && l.pelajarId === user.id
-    const matchNama = user?.nama && l.namaPelajar && l.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
+    const matchNama =
+      user?.nama &&
+      l.namaPelajar &&
+      l.namaPelajar.toLowerCase().trim() === user.nama.toLowerCase().trim()
     return Boolean(matchId || matchNama)
   })
 
   const pendingLamaran = myLamaranList.filter((l) => l.status === 'PENDING')
 
-  const walletBalance = escrowState.pelajarBalances[pelajarId]
-  const totalPendapatan = typeof walletBalance === 'number' ? walletBalance : (user?.totalPendapatan || 0)
-  const proyekBerjalan = ongoingAkad.length
-  const avgRating = completedAkad.length > 0
-    ? (completedAkad.reduce((acc, a) => acc + (a.rating || 5), 0) / completedAkad.length).toFixed(1)
-    : '0.0'
+  const totalPendapatan = escrowState.pelajarBalances[pelajarId] || 0
+  const activeEscrowAmount = ongoingAkad.reduce((acc, a) => acc + a.nominalTotal, 0)
+
+  const avgRating =
+    completedAkad.length > 0
+      ? (
+          completedAkad.reduce((acc, curr) => acc + (curr.rating || 5), 0) /
+          completedAkad.length
+        ).toFixed(1)
+      : '5.0'
+
+  const handleCopyRegId = () => {
+    const textToCopy = user?.registrationId || user?.nisn || 'NIS-REG-2026'
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy)
+      setCopiedRegId(true)
+      setTimeout(() => setCopiedRegId(false), 2000)
+    }
+  }
+
+  const handleSendChat = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!chatMessage.trim() || !activeChatThread) return
+
+    sendAkadChat({
+      proyekId: activeChatThread.proyekId,
+      judulProyek: activeChatThread.judulProyek,
+      senderId: user?.id || 'pelajar-active',
+      senderName: user?.nama || 'Pelajar Siswa',
+      senderRole: 'pelajar',
+      recipientId: activeChatThread.umkmId || 'umkm-default',
+      recipientName: activeChatThread.namaUsaha,
+      namaUsaha: activeChatThread.namaUsaha,
+      text: chatMessage.trim()
+    })
+    setChatMessage('')
+  }
+
+  const activeChatMessages = useMemo(() => {
+    if (!activeChatThread) return []
+    return akadState.chatMessages.filter(
+      (m) =>
+        m.proyekId === activeChatThread.proyekId ||
+        (m.senderRole === 'umkm' && m.recipientId === (user?.id || 'pelajar-active')) ||
+        (m.senderRole === 'pelajar' && m.senderId === (user?.id || 'pelajar-active') && m.proyekId === activeChatThread.proyekId)
+    )
+  }, [activeChatThread, akadState.chatMessages, user?.id])
 
   return (
     <div className="space-y-8 pb-12">
@@ -126,107 +190,66 @@ export default function PelajarDashboard() {
             {isVerifiedAccount ? (
               <span className="flex items-center gap-1.5 text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
                 <ShieldCheck className="w-4 h-4 text-teal-600" />
-                <span>Akun Talenta Pelajar Terverifikasi</span>
+                <span>Pelajar Terverifikasi Sekolah ({user?.sekolah || 'SMK Terdaftar'})</span>
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-                <ShieldCheck className="w-4 h-4 text-amber-600 animate-pulse" />
-                <span>Menunggu Verifikasi Sekolah ({user?.sekolah || 'Sekolah Terdaftar'})</span>
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>Menunggu Konfirmasi Operator Sekolah</span>
               </span>
             )}
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Selamat Datang, {namaSiswa}!
+            Semangat Pagi, {namaSiswa}!
           </h2>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
-            Mulai eksplorasi peluang proyek UMKM, kembangkan portofolio, dan hasilkan karya nyata.
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Pantau tawaran proyek, ruang akad DP Escrow, dan kelola dompet hasil karyamu di sini.
           </p>
         </div>
-        <Link
-          href="/marketplace"
-          className="bg-[#FF9B71] hover:bg-[#F5865A] active:bg-[#E8754D] text-white px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors w-fit shadow-xs"
-        >
-          <Store className="w-4 h-4" />
-          <span>Cari Proyek Baru</span>
-        </Link>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyRegId}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-gray-200 hover:border-[#FFD9CA] hover:bg-[#FFF1EB] text-gray-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            title="Salin ID Registrasi untuk Sekolah"
+          >
+            {copiedRegId ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span className="text-green-700 font-bold">Tersalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-gray-400" />
+                <span>ID: {user?.registrationId || user?.nisn || 'NIS-REG-2026'}</span>
+              </>
+            )}
+          </button>
+          <Link
+            href={`/profil/${user?.id || 'demo'}`}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#FF9B71] text-white text-xs font-bold hover:bg-[#F5865A] transition-colors shadow-xs"
+          >
+            <Share2 className="w-4 h-4" />
+            <span>Lihat Profil Publik</span>
+          </Link>
+        </div>
       </div>
 
-      {!isVerifiedAccount && user && (
-        <div className="border border-amber-200 bg-amber-50/70 rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-xs">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-extrabold uppercase tracking-wider">
-                Menunggu Persetujuan Sekolah
-              </span>
-            </div>
-            <h3 className="font-extrabold text-base sm:text-lg text-gray-900 tracking-tight">
-              Kirim ID Registrasi Anda ke Guru / Admin Sekolah
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-600 max-w-2xl leading-relaxed">
-              Agar profil Anda terverifikasi resmi dan dapat menerima pembayaran proyek, berikan ID Registrasi berikut kepada pihak sekolah:
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <div className="px-4 py-2 bg-white border-2 border-dashed border-[#FF9B71] rounded-2xl font-mono text-sm sm:text-base font-black text-gray-900 tracking-wider">
-                {user?.registrationId || user?.nisn || 'MM-2026-PENDING'}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(user?.registrationId || user?.nisn || '')
-                  setCopiedRegId(true)
-                  setTimeout(() => setCopiedRegId(false), 2500)
-                }}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-              >
-                {copiedRegId ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Tersalin!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-[#FF9B71]" />
-                    <span>Salin ID</span>
-                  </>
-                )}
-              </button>
-            </div>
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-[#FFF1EB] to-[#ffe5d9] rounded-2xl p-5 sm:p-6 border border-[#FFD9CA] shadow-xs">
+          <div className="text-2xl sm:text-3xl font-black text-[#964825] mb-1">
+            {formatRupiah(totalPendapatan)}
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto shrink-0">
-            <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `Halo Bapak/Ibu Guru, saya ${namaSiswa} telah mendaftar di Mitra Muda. Ini ID Registrasi saya: ${
-                  user?.registrationId || user?.nisn || ''
-                }. Mohon disetujui melalui portal sekolah. Terima kasih!`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>Kirim via WA ke Guru</span>
-            </a>
-            <Link
-              href="/panduan"
-              className="px-4 py-2.5 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs text-center transition-colors"
-            >
-              Panduan Verifikasi
-            </Link>
+          <div className="text-xs text-[#964825] font-extrabold uppercase tracking-wider flex items-center justify-between">
+            <span>Saldo Dompet Cair</span>
+            <Wallet className="w-4 h-4 text-[#FF9B71]" />
           </div>
         </div>
-      )}
-
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link href="/pelajar/dompet" className="bg-gradient-to-br from-[#FFF1EB] to-[#ffe5d9] rounded-2xl p-5 sm:p-6 border border-[#FFD9CA] shadow-xs hover:border-[#FF9B71] transition-all group">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#964825]">{formatRupiah(totalPendapatan)}</div>
-            <Wallet className="w-4 h-4 text-[#FF9B71] group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-xs text-[#964825] font-bold uppercase tracking-wider">Saldo Dompet Siswa</div>
-        </Link>
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#EAEAEA] shadow-xs hover:border-[#FF9B71] transition-colors">
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#964825] mb-1">{proyekBerjalan}</div>
-          <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Proyek Berjalan</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 mb-1">
+            {formatRupiah(activeEscrowAmount)}
+          </div>
+          <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Dana Terkunci di Escrow</div>
         </div>
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#EAEAEA] shadow-xs hover:border-[#FF9B71] transition-colors">
           <div className="text-2xl sm:text-3xl font-extrabold text-blue-700 mb-1">{myLamaranList.length}</div>
@@ -294,13 +317,20 @@ export default function PelajarDashboard() {
                 </div>
 
                 <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-gray-100 shrink-0">
-                  <Link
-                    href={`/marketplace/${lamaran.proyekId}`}
-                    className="px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5"
+                  <button
+                    onClick={() =>
+                      setActiveChatThread({
+                        proyekId: lamaran.proyekId,
+                        judulProyek: lamaran.judulProyek,
+                        umkmId: lamaran.umkmId,
+                        namaUsaha: lamaran.namaUsaha
+                      })
+                    }
+                    className="px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
+                    <MessageSquare className="w-3.5 h-3.5 text-[#FF9B71]" />
                     <span>Chat UMKM</span>
-                  </Link>
+                  </button>
                   <Link
                     href={`/marketplace/${lamaran.proyekId}`}
                     className="px-4 py-2 rounded-full bg-[#FFF1EB] text-[#964825] font-bold text-xs hover:bg-[#FFD9CA] transition-colors"
@@ -358,13 +388,29 @@ export default function PelajarDashboard() {
                   <h4 className="font-extrabold text-lg text-gray-900">{akad.judulProyek}</h4>
                   <p className="text-xs text-gray-500">Nilai Kontrak: <strong className="text-[#964825]">{formatRupiah(akad.nominalTotal)}</strong></p>
                 </div>
-                <Link
-                  href={`/pelajar/transaksi/${akad.id}`}
-                  className="px-5 py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-xs"
-                >
-                  <Briefcase className="w-4 h-4" />
-                  <span>Buka Ruang Akad & Kirim Karya</span>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setActiveChatThread({
+                        proyekId: akad.proyekId,
+                        judulProyek: akad.judulProyek,
+                        umkmId: akad.umkmId,
+                        namaUsaha: akad.namaUsaha
+                      })
+                    }
+                    className="px-4 py-2.5 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4 text-[#FF9B71]" />
+                    <span>Chat Klien</span>
+                  </button>
+                  <Link
+                    href={`/pelajar/transaksi/${akad.id}`}
+                    className="px-5 py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span>Buka Ruang Akad & Kirim Karya</span>
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -415,14 +461,15 @@ export default function PelajarDashboard() {
 
                 <div className="flex flex-col sm:items-end justify-between gap-3 border-t sm:border-t-0 pt-4 sm:pt-0 border-gray-100 shrink-0">
                   <div className="sm:text-right">
-                    <span className="text-[11px] text-gray-400 font-semibold block">Pendapatan Diterima</span>
-                    <span className="text-lg font-extrabold text-emerald-600">+{formatRupiah(akad.nominalTotal)}</span>
+                    <span className="text-[11px] text-gray-400 font-semibold block">Total Diterima Siswa</span>
+                    <span className="text-lg font-extrabold text-emerald-600">{formatRupiah(akad.nominalTotal)}</span>
                   </div>
+
                   <Link
                     href={`/pelajar/transaksi/${akad.id}`}
                     className="px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5"
                   >
-                    <span>Lihat Bukti Akad</span>
+                    <span>Lihat Sertifikat & Riwayat</span>
                   </Link>
                 </div>
               </div>
@@ -431,7 +478,6 @@ export default function PelajarDashboard() {
         </section>
       )}
 
-      
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
@@ -486,6 +532,86 @@ export default function PelajarDashboard() {
           </div>
         )}
       </section>
+
+      {activeChatThread && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#EAEAEA] relative overflow-hidden flex flex-col h-[520px] animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 sm:p-5 bg-white border-b border-[#EAEAEA] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF1EB] border border-[#FFD9CA] flex items-center justify-center text-[#964825] font-bold text-sm">
+                  {activeChatThread.namaUsaha.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-gray-900">{activeChatThread.namaUsaha}</h3>
+                  <p className="text-[11px] text-[#964825] font-bold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{activeChatThread.judulProyek}</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveChatThread(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#FAFAFA]">
+              {activeChatMessages.length > 0 ? (
+                activeChatMessages.map((msg) => {
+                  const isMe = msg.senderRole === 'pelajar'
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                    >
+                      <span className="text-[10px] font-bold text-gray-500 mb-0.5 px-1">{msg.senderName}</span>
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed ${
+                          isMe
+                            ? 'bg-[#FF9B71] text-white rounded-tr-xs shadow-xs'
+                            : 'bg-white text-gray-800 border border-gray-200 rounded-tl-xs shadow-2xs'
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                      <span className="text-[10px] text-gray-400 mt-1 px-1">
+                        {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="p-6 text-center text-gray-400 text-xs flex flex-col items-center justify-center">
+                  <MessageSquare className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="font-bold text-gray-600">Mulai Obrolan dengan Klien UMKM</p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Diskusikan ide karya atau tanyakan detail proyek langsung kepada pemilik usaha.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSendChat} className="p-3 bg-white border-t border-[#EAEAEA] flex items-center gap-2">
+              <input
+                type="text"
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                placeholder="Tulis pesan untuk UMKM..."
+                className="flex-1 h-11 bg-[#F5F5F5] rounded-full px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+              />
+              <button
+                type="submit"
+                className="w-11 h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

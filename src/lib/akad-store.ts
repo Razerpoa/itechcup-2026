@@ -22,12 +22,16 @@ export interface LamaranItem {
 export interface ChatMsgItem {
   id: string
   proyekId: string
+  judulProyek?: string
   senderId: string
   senderName: string
-  senderRole: 'pelajar' | 'umkm'
+  senderRole: 'pelajar' | 'umkm' | 'sekolah'
   recipientId: string
+  recipientName?: string
+  namaUsaha?: string
   text: string
   createdAt: string
+  isRead?: boolean
 }
 
 export interface DeliverableItem {
@@ -65,6 +69,7 @@ export interface AkadStoreData {
 }
 
 const STORAGE_KEY = 'mitra_muda_akad_store_v1'
+const CHAT_CHANNEL_NAME = 'mitra_muda_chat_sync'
 
 const INITIAL_DATA: AkadStoreData = {
   lamaranList: [],
@@ -75,6 +80,26 @@ const INITIAL_DATA: AkadStoreData = {
 let cachedData: AkadStoreData = INITIAL_DATA
 let lastRaw: string | null = '__init__'
 const listeners = new Set<() => void>()
+
+let chatBroadcastChannel: BroadcastChannel | null = null
+if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+  try {
+    chatBroadcastChannel = new BroadcastChannel(CHAT_CHANNEL_NAME)
+    chatBroadcastChannel.onmessage = (event) => {
+      if (event.data?.type === 'NEW_CHAT' && event.data.chat) {
+        const state = getAkadState()
+        const incoming: ChatMsgItem = event.data.chat
+        if (!state.chatMessages.some((c) => c.id === incoming.id)) {
+          saveAkadState({
+            ...state,
+            chatMessages: [...state.chatMessages, incoming]
+          })
+        }
+      }
+    }
+  } catch {
+  }
+}
 
 function emitChange() {
   lastRaw = '__dirty__'
@@ -109,13 +134,13 @@ function saveAkadState(data: AkadStoreData) {
       const serialized = JSON.stringify(data)
       lastRaw = serialized
       localStorage.setItem(STORAGE_KEY, serialized)
-    } catch {
+    } catch {
     }
   }
   emitChange()
 }
 
-interface ApiLamaranResponse {
+export interface ApiLamaranResponse {
   id: string
   proyekId: string
   judulProyek?: string
@@ -152,10 +177,18 @@ interface ApiLamaranResponse {
 
 export async function syncAkadWithDB(): Promise<AkadStoreData> {
   const currentState = getAkadState()
+  let mergedLamaran = currentState.lamaranList
+  let mergedAkadList = currentState.akadList
+  let mergedChatMessages = currentState.chatMessages
+
   try {
-    const res = await fetch('/api/lamaran', { cache: 'no-store' })
-    if (res.ok) {
-      const json = await res.json()
+    const [lamaranRes, chatRes] = await Promise.allSettled([
+      fetch('/api/lamaran', { cache: 'no-store' }),
+      fetch('/api/chat', { cache: 'no-store' })
+    ])
+
+    if (lamaranRes.status === 'fulfilled' && lamaranRes.value.ok) {
+      const json = await lamaranRes.value.json()
       if (Array.isArray(json.data) && json.data.length > 0) {
         const dbItems: LamaranItem[] = json.data.map((item: ApiLamaranResponse) => ({
           id: item.id,
@@ -173,7 +206,7 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
           createdAt: item.createdAt
         }))
 
-        const mergedLamaran = [
+        mergedLamaran = [
           ...dbItems,
           ...currentState.lamaranList.filter((local) => !dbItems.some((db) => db.id === local.id))
         ]
@@ -202,39 +235,34 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
             }
           })
 
-        const mergedAkadList = [
+        mergedAkadList = [
           ...generatedAkads,
           ...currentState.akadList.filter((a) => !generatedAkads.some((g) => g.id === a.id))
         ]
-
-        let mergedChatMessages = currentState.chatMessages
-        try {
-          const chatRes = await fetch('/api/chat', { cache: 'no-store' })
-          if (chatRes.ok) {
-            const chatJson = await chatRes.json()
-            if (Array.isArray(chatJson.data)) {
-              const apiChats: ChatMsgItem[] = chatJson.data
-              mergedChatMessages = [
-                ...apiChats,
-                ...currentState.chatMessages.filter((c) => !apiChats.some((a) => a.id === c.id))
-              ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-            }
-          }
-        } catch {
-        }
-
-        const newState: AkadStoreData = {
-          ...currentState,
-          lamaranList: mergedLamaran,
-          akadList: mergedAkadList,
-          chatMessages: mergedChatMessages
-        }
-        saveAkadState(newState)
-        return newState
       }
     }
-  } catch {
+
+    if (chatRes.status === 'fulfilled' && chatRes.value.ok) {
+      const chatJson = await chatRes.value.json()
+      if (Array.isArray(chatJson.data)) {
+        const apiChats: ChatMsgItem[] = chatJson.data
+        mergedChatMessages = [
+          ...apiChats,
+          ...currentState.chatMessages.filter((c) => !apiChats.some((a) => a.id === c.id))
+        ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      }
+    }
+
+    const newState: AkadStoreData = {
+      lamaranList: mergedLamaran,
+      akadList: mergedAkadList,
+      chatMessages: mergedChatMessages
+    }
+    saveAkadState(newState)
+    return newState
+  } catch {
   }
+
   return currentState
 }
 
@@ -300,7 +328,7 @@ export function submitLamaran(payload: {
         createdAt: newItem.createdAt
       })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return newItem
@@ -308,22 +336,29 @@ export function submitLamaran(payload: {
 
 export function sendAkadChat(payload: {
   proyekId: string
+  judulProyek?: string
   senderId: string
   senderName: string
-  senderRole: 'pelajar' | 'umkm'
+  senderRole: 'pelajar' | 'umkm' | 'sekolah'
   recipientId: string
+  recipientName?: string
+  namaUsaha?: string
   text: string
 }): ChatMsgItem {
   const state = getAkadState()
   const newChat: ChatMsgItem = {
-    id: 'msg-' + Date.now(),
+    id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     proyekId: payload.proyekId,
+    judulProyek: payload.judulProyek || 'Proyek Marketplace',
     senderId: payload.senderId,
     senderName: payload.senderName,
     senderRole: payload.senderRole,
     recipientId: payload.recipientId,
+    recipientName: payload.recipientName || '',
+    namaUsaha: payload.namaUsaha || '',
     text: payload.text,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    isRead: false
   }
 
   saveAkadState({
@@ -331,13 +366,27 @@ export function sendAkadChat(payload: {
     chatMessages: [...state.chatMessages, newChat]
   })
 
+  if (typeof window !== 'undefined') {
+    try {
+      if (chatBroadcastChannel) {
+        chatBroadcastChannel.postMessage({
+          type: 'NEW_CHAT',
+          chat: newChat
+        })
+      }
+      window.dispatchEvent(new CustomEvent('mitramuda_new_chat', { detail: newChat }))
+      window.dispatchEvent(new Event('storage'))
+    } catch {
+    }
+  }
+
   try {
     fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newChat)
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return newChat
@@ -363,7 +412,7 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
   })
 
   const newAkad: AkadTransaksiItem = {
-    id: 'akad-' + Date.now(),
+    id: 'akad-' + lamaran.id,
     proyekId: lamaran.proyekId,
     judulProyek: lamaran.judulProyek,
     umkmId: lamaran.umkmId,
@@ -382,10 +431,16 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
     l.id === lamaranId ? { ...l, status: 'ACCEPTED' as const } : l
   )
 
+  const existingAkadIndex = state.akadList.findIndex((a) => a.id === newAkad.id || a.proyekId === newAkad.proyekId)
+  const updatedAkad =
+    existingAkadIndex >= 0
+      ? state.akadList.map((a, i) => (i === existingAkadIndex ? newAkad : a))
+      : [newAkad, ...state.akadList]
+
   saveAkadState({
     ...state,
     lamaranList: updatedLamaran,
-    akadList: [newAkad, ...state.akadList.filter((a) => a.proyekId !== lamaran.proyekId)]
+    akadList: updatedAkad
   })
 
   try {
@@ -394,7 +449,7 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ACCEPTED' })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return { success: true, akad: newAkad }
@@ -402,13 +457,12 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
 
 export function rejectLamaran(lamaranId: string): boolean {
   const state = getAkadState()
-  const updatedLamaran = state.lamaranList.map((l) =>
+  const updated = state.lamaranList.map((l) =>
     l.id === lamaranId ? { ...l, status: 'REJECTED' as const } : l
   )
-
   saveAkadState({
     ...state,
-    lamaranList: updatedLamaran
+    lamaranList: updated
   })
 
   try {
@@ -417,68 +471,67 @@ export function rejectLamaran(lamaranId: string): boolean {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'REJECTED' })
     }).catch(() => {})
-  } catch {
+  } catch {
   }
 
   return true
 }
 
-export function submitPelajarDeliverable(akadId: string, deliverable: { fileName: string; fileSize: string; catatan?: string }): boolean {
+export function uploadDeliverableWork(akadId: string, item: Omit<DeliverableItem, 'id' | 'uploadedAt'>): boolean {
   const state = getAkadState()
-  const akad = state.akadList.find((a) => a.id === akadId)
-  if (!akad) return false
+  const targetAkad = state.akadList.find((a) => a.id === akadId)
+  if (!targetAkad) return false
 
   const newDeliverable: DeliverableItem = {
-    id: 'del-' + Date.now(),
-    fileName: deliverable.fileName,
-    fileSize: deliverable.fileSize,
-    catatan: deliverable.catatan,
+    id: 'deliv-' + Date.now(),
+    ...item,
     uploadedAt: new Date().toISOString()
   }
 
-  const updatedAkadList = state.akadList.map((a) =>
-    a.id === akadId
-      ? {
-          ...a,
-          step: 3 as const,
-          deliverables: [newDeliverable, ...a.deliverables]
-        }
-      : a
-  )
+  const updated = state.akadList.map((a) => {
+    if (a.id === akadId) {
+      return {
+        ...a,
+        step: (a.step === 2 ? 3 : a.step) as 1 | 2 | 3 | 4,
+        deliverables: [...a.deliverables, newDeliverable]
+      }
+    }
+    return a
+  })
 
   saveAkadState({
     ...state,
-    akadList: updatedAkadList
+    akadList: updated
   })
 
   return true
 }
 
-export function completeAkadAndPayout(akadId: string, rating?: number, ulasan?: string): boolean {
+export const submitPelajarDeliverable = uploadDeliverableWork
+
+export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: string): boolean {
   const state = getAkadState()
-  const akad = state.akadList.find((a) => a.id === akadId)
-  if (!akad) return false
+  const targetAkad = state.akadList.find((a) => a.id === akadId)
+  if (!targetAkad) return false
 
-  releaseProjectCompletionToPelajar('esc-' + akad.proyekId)
+  releaseProjectCompletionToPelajar(targetAkad.proyekId)
 
-  const finalRating = rating && rating >= 1 && rating <= 5 ? rating : 5
-  const finalUlasan = ulasan && ulasan.trim() ? ulasan.trim() : 'Pekerjaan diselesaikan dengan sangat baik sesuai spesifikasi.'
-
-  const updatedAkadList = state.akadList.map((a) =>
-    a.id === akadId
-      ? {
-          ...a,
-          step: 4 as const,
-          rating: finalRating,
-          ulasan: finalUlasan,
-          completedAt: new Date().toISOString()
-        }
-      : a
-  )
+  const updated = state.akadList.map((a) => {
+    if (a.id === akadId) {
+      return {
+        ...a,
+        step: 4 as const,
+        rating,
+        ulasan: ulasan || 'Pekerjaan diselesaikan dengan sangat baik sesuai spesifikasi.',
+        completedAt: new Date().toISOString()
+      }
+    }
+    return a
+  })
 
   saveAkadState({
     ...state,
-    akadList: updatedAkadList
+    akadList: updated
   })
 
   return true

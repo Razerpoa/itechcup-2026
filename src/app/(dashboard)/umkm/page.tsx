@@ -1,15 +1,52 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Check, Wallet, Users, MessageSquare, CheckCircle2, FileText, Sparkles, XCircle, ArrowRight, Send, X, Trash2, ShieldAlert, ShieldCheck, Star, Folder } from 'lucide-react'
+import {
+  Plus,
+  Check,
+  Wallet,
+  Users,
+  MessageSquare,
+  CheckCircle2,
+  FileText,
+  Sparkles,
+  XCircle,
+  ArrowRight,
+  Send,
+  X,
+  Trash2,
+  ShieldAlert,
+  ShieldCheck,
+  Star,
+  Folder,
+  MessageCircle,
+  Clock
+} from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatRelativeTime, formatDate } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
 import { useProjects, syncProjectsWithDB, removeProject } from '@/lib/projects-store'
 import { useEscrowStore } from '@/lib/escrow-store'
-import { useAkadStore, acceptLamaranAndCreateAkad, rejectLamaran, syncAkadWithDB, sendAkadChat, LamaranItem } from '@/lib/akad-store'
+import {
+  useAkadStore,
+  acceptLamaranAndCreateAkad,
+  rejectLamaran,
+  syncAkadWithDB,
+  sendAkadChat,
+  LamaranItem,
+  ChatMsgItem
+} from '@/lib/akad-store'
+
+interface ActiveChatThread {
+  proyekId: string
+  judulProyek: string
+  pelajarId: string
+  namaPelajar: string
+  sekolahNama?: string
+  initialNote?: string
+}
 
 export default function UmkmDashboard() {
   const router = useRouter()
@@ -18,8 +55,8 @@ export default function UmkmDashboard() {
   const allProjects = useProjects()
   const escrowState = useEscrowStore()
   const akadState = useAkadStore()
-  const [activeTab, setActiveTab] = useState<'pelamar' | 'berjalan' | 'riwayat'>('berjalan')
-  const [chatLamaran, setChatLamaran] = useState<LamaranItem | null>(null)
+  const [activeTab, setActiveTab] = useState<'berjalan' | 'pelamar' | 'pesan' | 'riwayat'>('berjalan')
+  const [activeThread, setActiveThread] = useState<ActiveChatThread | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
 
@@ -33,7 +70,9 @@ export default function UmkmDashboard() {
         const json = await res.json()
         if (json.data && Array.isArray(json.data)) {
           const match = json.data.find(
-            (u: any) => (user.id && u.id === user.id) || (user.email && u.email.toLowerCase() === user.email.toLowerCase())
+            (u: any) =>
+              (user.id && u.id === user.id) ||
+              (user.email && u.email.toLowerCase() === user.email.toLowerCase())
           )
           if (match) {
             setCurrentUser({
@@ -68,14 +107,17 @@ export default function UmkmDashboard() {
   const namaUsaha = user?.namaUsaha || 'Usaha UMKM Anda'
   const saldoAktif = escrowState.umkmBalances[umkmId] || 0
 
-  const isDemoUmkm = user?.id === 'umkm-active' || user?.email === 'umkm@mitramuda.id'
-
   const myProjects = allProjects.filter((p) => {
     if (!user?.id && !user?.namaUsaha) return false
     const matchId = user?.id && p.umkmId === user.id
-    const matchNama = user?.namaUsaha && p.namaUsaha && p.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
+    const matchNama =
+      user?.namaUsaha &&
+      p.namaUsaha &&
+      p.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
     return Boolean(matchId || matchNama)
   })
+
+  const myProjectIds = useMemo(() => new Set(myProjects.map((p) => p.id)), [myProjects])
 
   const completedProyekIds = new Set(
     akadState.akadList.filter((a) => a.step === 4).map((a) => a.proyekId)
@@ -87,7 +129,10 @@ export default function UmkmDashboard() {
   const incomingLamaran = akadState.lamaranList.filter((l) => {
     if (!user?.id && !user?.namaUsaha) return false
     const matchId = user?.id && l.umkmId === user.id
-    const matchNama = user?.namaUsaha && l.namaUsaha && l.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
+    const matchNama =
+      user?.namaUsaha &&
+      l.namaUsaha &&
+      l.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
     const matchProject = myProjects.some((p) => p.id === l.proyekId)
     return Boolean(matchId || matchNama || matchProject)
   })
@@ -97,10 +142,78 @@ export default function UmkmDashboard() {
   const myAkadList = akadState.akadList.filter((a) => {
     if (!user?.id && !user?.namaUsaha) return false
     const matchId = user?.id && a.umkmId === user.id
-    const matchNama = user?.namaUsaha && a.namaUsaha && a.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
+    const matchNama =
+      user?.namaUsaha &&
+      a.namaUsaha &&
+      a.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
     const matchProject = myProjects.some((p) => p.id === a.proyekId)
     return Boolean(matchId || matchNama || matchProject)
   })
+
+  const relevantChats = useMemo(() => {
+    return akadState.chatMessages.filter((m) => {
+      if (myProjectIds.has(m.proyekId)) return true
+      if (user?.id && (m.recipientId === user.id || m.recipientId === 'umkm-default')) return true
+      if (
+        user?.namaUsaha &&
+        m.namaUsaha &&
+        m.namaUsaha.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
+      )
+        return true
+      if (
+        user?.namaUsaha &&
+        m.recipientName &&
+        m.recipientName.toLowerCase().trim() === user.namaUsaha.toLowerCase().trim()
+      )
+        return true
+      return false
+    })
+  }, [akadState.chatMessages, myProjectIds, user?.id, user?.namaUsaha])
+
+  const chatThreads = useMemo(() => {
+    const threadMap = new Map<string, {
+      threadKey: string
+      proyekId: string
+      judulProyek: string
+      pelajarId: string
+      namaPelajar: string
+      sekolahNama?: string
+      lastMessage: string
+      lastTime: string
+      messageCount: number
+    }>()
+
+    for (const msg of relevantChats) {
+      const isStudentSender = msg.senderRole === 'pelajar'
+      const studentId = isStudentSender ? msg.senderId : msg.recipientId
+      const studentName = isStudentSender ? msg.senderName : msg.recipientName || 'Pelajar Siswa'
+      const key = `${msg.proyekId}-${studentId}`
+
+      const current = threadMap.get(key)
+      if (!current) {
+        const foundProj = myProjects.find((p) => p.id === msg.proyekId)
+        threadMap.set(key, {
+          threadKey: key,
+          proyekId: msg.proyekId,
+          judulProyek: msg.judulProyek || foundProj?.judul || 'Lowongan Proyek',
+          pelajarId: studentId,
+          namaPelajar: studentName,
+          sekolahNama: 'Siswa Mitra Muda',
+          lastMessage: msg.text,
+          lastTime: msg.createdAt,
+          messageCount: 1
+        })
+      } else {
+        current.lastMessage = msg.text
+        current.lastTime = msg.createdAt
+        current.messageCount += 1
+      }
+    }
+
+    return Array.from(threadMap.values()).sort(
+      (a, b) => new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime()
+    )
+  }, [relevantChats, myProjects])
 
   const handleAcceptProposal = (lamaranId: string) => {
     const res = acceptLamaranAndCreateAkad(lamaranId)
@@ -125,28 +238,30 @@ export default function UmkmDashboard() {
 
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!chatMessage.trim() || !chatLamaran) return
+    if (!chatMessage.trim() || !activeThread) return
 
     sendAkadChat({
-      proyekId: chatLamaran.proyekId,
+      proyekId: activeThread.proyekId,
+      judulProyek: activeThread.judulProyek,
       senderId: user?.id || 'umkm-default',
       senderName: user?.namaUsaha || user?.nama || 'Pemilik Usaha',
       senderRole: 'umkm',
-      recipientId: chatLamaran.pelajarId,
+      recipientId: activeThread.pelajarId,
+      recipientName: activeThread.namaPelajar,
+      namaUsaha: user?.namaUsaha || '',
       text: chatMessage.trim()
     })
     setChatMessage('')
   }
 
-  const activeChatMessages = chatLamaran
-    ? akadState.chatMessages.filter(
-        (m) =>
-          m.proyekId === chatLamaran.proyekId ||
-          m.proyekId === chatLamaran.id ||
-          m.recipientId === chatLamaran.pelajarId ||
-          m.senderId === chatLamaran.pelajarId
-      )
-    : []
+  const activeChatMessages = useMemo(() => {
+    if (!activeThread) return []
+    return akadState.chatMessages.filter(
+      (m) =>
+        m.proyekId === activeThread.proyekId &&
+        (m.senderId === activeThread.pelajarId || m.recipientId === activeThread.pelajarId)
+    )
+  }, [activeThread, akadState.chatMessages])
 
   const isVerified = user?.isVerified === true
 
@@ -274,10 +389,10 @@ export default function UmkmDashboard() {
 
         <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs">
           <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Riwayat & Akad</span>
-            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Pesan Diskusi</span>
+            <MessageSquare className="w-4 h-4 text-[#FF9B71]" />
           </div>
-          <div className="text-2xl font-black text-gray-900 mt-2">{myAkadList.length}</div>
+          <div className="text-2xl font-black text-[#964825] mt-2">{chatThreads.length}</div>
         </div>
       </div>
 
@@ -330,6 +445,21 @@ export default function UmkmDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('pesan')}
+            className={`pb-2 text-xs sm:text-sm font-extrabold transition-all relative flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'pesan' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <span>Pesan & Diskusi Siswa</span>
+            {chatThreads.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-[#FFF1EB] text-[#964825] text-[10px] font-extrabold border border-[#FFD9CA]">
+                {chatThreads.length}
+              </span>
+            )}
+            {activeTab === 'pesan' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF9B71] rounded-full" />}
+          </button>
+
+          <button
             onClick={() => setActiveTab('riwayat')}
             className={`pb-2 text-xs sm:text-sm font-extrabold transition-all relative flex items-center gap-1.5 shrink-0 ${
               activeTab === 'riwayat' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
@@ -352,6 +482,7 @@ export default function UmkmDashboard() {
                 const projectApplicants = pendingLamaran.filter(
                   (l) => l.proyekId === p.id || l.judulProyek.toLowerCase().trim() === p.judul.toLowerCase().trim()
                 )
+                const projectChats = chatThreads.filter((t) => t.proyekId === p.id)
                 return (
                   <div
                     key={p.id}
@@ -367,7 +498,7 @@ export default function UmkmDashboard() {
                       <h4 className="font-extrabold text-base text-gray-900">{p.judul}</h4>
                       <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{p.keteranganSingkat}</p>
                       
-                      <div className="flex items-center gap-3 pt-2">
+                      <div className="flex flex-wrap items-center gap-2 pt-2">
                         <button
                           onClick={() => setActiveTab('pelamar')}
                           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF1EB] text-[#964825] text-xs font-bold hover:bg-[#FFD9CA] transition-colors cursor-pointer"
@@ -375,6 +506,15 @@ export default function UmkmDashboard() {
                           <Users className="w-3.5 h-3.5" />
                           <span>{projectApplicants.length} Pelamar Menunggu</span>
                         </button>
+                        {projectChats.length > 0 && (
+                          <button
+                            onClick={() => setActiveTab('pesan')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>{projectChats.length} Diskusi Chat Masuk</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -447,56 +587,122 @@ export default function UmkmDashboard() {
                     </div>
 
                     <div className="bg-[#FAFAFA] p-3.5 rounded-2xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
-                      <span className="font-bold text-gray-900 block mb-0.5">Pesan Motivasi Pelajar:</span>
+                      <span className="font-bold text-gray-900 block mb-0.5">Pesan Proposal Awal Siswa:</span>
                       &ldquo;{lamaran.pesanMotivasi}&rdquo;
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
+                      <span>Proyek: <strong className="text-gray-900">{lamaran.judulProyek}</strong></span>
+                      <span>Tawaran Biaya: <strong className="text-[#964825] font-bold">{formatRupiah(lamaran.hargaTawar)}</strong></span>
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:items-end justify-between gap-3 border-t sm:border-t-0 pt-4 sm:pt-0 border-gray-100 shrink-0">
-                    <div className="sm:text-right">
-                      <span className="text-[11px] text-gray-400 font-semibold block">Tawaran Harga Siswa</span>
-                      <span className="text-lg font-extrabold text-[#964825]">{formatRupiah(lamaran.hargaTawar)}</span>
-                    </div>
-
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setChatLamaran(lamaran)}
-                        className="px-3.5 py-2 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                        onClick={() =>
+                          setActiveThread({
+                            proyekId: lamaran.proyekId,
+                            judulProyek: lamaran.judulProyek,
+                            pelajarId: lamaran.pelajarId,
+                            namaPelajar: lamaran.namaPelajar,
+                            sekolahNama: lamaran.sekolahNama,
+                            initialNote: lamaran.pesanMotivasi
+                          })
+                        }
+                        className="px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Chat</span>
+                        <MessageSquare className="w-3.5 h-3.5 text-[#FF9B71]" />
+                        <span>Chat & Diskusi</span>
                       </button>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleRejectProposal(lamaran.id)}
-                          className="px-3.5 py-2 rounded-full border border-red-200 hover:bg-red-50 text-red-600 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Tolak Lamaran"
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Tolak</span>
-                        </button>
-                        <button
-                          onClick={() => handleAcceptProposal(lamaran.id)}
-                          className="px-4 py-2 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Terima & Buka Akad</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRejectProposal(lamaran.id)}
+                        className="px-3 py-2 rounded-full border border-red-200 hover:bg-red-50 text-red-600 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        Tolak
+                      </button>
                     </div>
+
+                    <button
+                      onClick={() => handleAcceptProposal(lamaran.id)}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Terima & Buka Akad DP</span>
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="bg-white rounded-3xl border border-[#EAEAEA] p-12 text-center shadow-xs">
-              <div className="w-16 h-16 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-4 font-bold">
+              <div className="w-16 h-16 rounded-full bg-[#FFF1EB] text-[#964825] flex items-center justify-center mx-auto mb-4 font-bold">
                 <Users className="w-8 h-8" />
               </div>
-              <h4 className="text-lg font-extrabold text-gray-900 mb-1">Belum Ada Pelamar</h4>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto mb-6 leading-relaxed">
-                Saat siswa mengajukan proposal lamaran untuk lowongan proyek toko Anda, daftarnya akan langsung muncul di sini.
+              <h4 className="text-lg font-extrabold text-gray-900 mb-1">Belum Ada Pelamar Baru</h4>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+                Saat siswa mengajukan proposal ke lowongan proyek tokomu, data pelamar akan muncul di sini untuk kamu review.
+              </p>
+            </div>
+          )
+        )}
+
+        {activeTab === 'pesan' && (
+          chatThreads.length > 0 ? (
+            <div className="space-y-4">
+              {chatThreads.map((thread) => (
+                <div
+                  key={thread.threadKey}
+                  className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#FF9B71]/40 transition-all"
+                >
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-extrabold flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3 text-blue-600" />
+                        <span>Diskusi Siswa Marketplace</span>
+                      </span>
+                      <span className="text-xs text-gray-400">{formatRelativeTime(thread.lastTime)}</span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-base text-gray-900">{thread.namaPelajar}</h4>
+                      <p className="text-xs text-[#964825] font-semibold">Proyek: {thread.judulProyek}</p>
+                    </div>
+
+                    <div className="bg-[#FAFAFA] p-3 rounded-2xl border border-gray-100 text-xs text-gray-700 line-clamp-2">
+                      <span className="font-bold text-gray-900">Pesan Terakhir: </span>
+                      &ldquo;{thread.lastMessage}&rdquo;
+                    </div>
+                  </div>
+
+                  <div className="flex items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 shrink-0">
+                    <button
+                      onClick={() =>
+                        setActiveThread({
+                          proyekId: thread.proyekId,
+                          judulProyek: thread.judulProyek,
+                          pelajarId: thread.pelajarId,
+                          namaPelajar: thread.namaPelajar,
+                          sekolahNama: thread.sekolahNama
+                        })
+                      }
+                      className="px-5 py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Buka Chat & Balas Pesan</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-[#EAEAEA] p-12 text-center shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-[#FFF1EB] text-[#964825] flex items-center justify-center mx-auto mb-4 font-bold">
+                <MessageSquare className="w-8 h-8 text-[#FF9B71]" />
+              </div>
+              <h4 className="text-lg font-extrabold text-gray-900 mb-1">Belum Ada Pesan Masuk</h4>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+                Saat siswa bertanya atau mengirim pesan seputar lowongan proyek dari marketplace, seluruh diskusi akan terkumpul rapi di sini dan Anda dapat langsung membalasnya.
               </p>
             </div>
           )
@@ -510,9 +716,7 @@ export default function UmkmDashboard() {
                 return (
                   <div
                     key={akad.id}
-                    className={`bg-white rounded-3xl p-6 border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-all ${
-                      isDone ? 'border-emerald-200 bg-emerald-50/10' : 'border-[#EAEAEA] hover:border-[#FF9B71]/40'
-                    }`}
+                    className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-[#FF9B71]/40 transition-all"
                   >
                     <div className="space-y-2.5 flex-1">
                       <div className="flex items-center gap-2">
@@ -591,25 +795,25 @@ export default function UmkmDashboard() {
         )}
       </section>
 
-      {chatLamaran && (
+      {activeThread && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#EAEAEA] relative overflow-hidden flex flex-col h-[520px] animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#EAEAEA] relative overflow-hidden flex flex-col h-[540px] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 sm:p-5 bg-white border-b border-[#EAEAEA] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#FFF1EB] border border-[#FFD9CA] flex items-center justify-center text-[#964825] font-bold text-sm">
-                  {chatLamaran.namaPelajar.charAt(0)}
+                  {activeThread.namaPelajar.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-gray-900">{chatLamaran.namaPelajar}</h3>
+                  <h3 className="font-extrabold text-sm text-gray-900">{activeThread.namaPelajar}</h3>
                   <p className="text-[11px] text-green-700 font-bold flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span>{chatLamaran.sekolahNama || 'Siswa Pelajar'}</span>
+                    <span>{activeThread.judulProyek}</span>
                   </p>
                 </div>
               </div>
 
               <button
-                onClick={() => setChatLamaran(null)}
+                onClick={() => setActiveThread(null)}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -617,10 +821,12 @@ export default function UmkmDashboard() {
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#FAFAFA]">
-              <div className="p-3 rounded-2xl bg-[#FFF1EB] border border-[#FFD9CA] text-xs text-[#964825]">
-                <span className="font-bold block">Pesan Proposal Awal Siswa:</span>
-                &ldquo;{chatLamaran.pesanMotivasi}&rdquo;
-              </div>
+              {activeThread.initialNote && (
+                <div className="p-3 rounded-2xl bg-[#FFF1EB] border border-[#FFD9CA] text-xs text-[#964825]">
+                  <span className="font-bold block">Pesan Proposal Awal Siswa:</span>
+                  &ldquo;{activeThread.initialNote}&rdquo;
+                </div>
+              )}
 
               {activeChatMessages.length > 0 ? (
                 activeChatMessages.map((msg) => {
@@ -662,7 +868,7 @@ export default function UmkmDashboard() {
                 type="text"
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Tulis pesan untuk siswa..."
+                placeholder="Tulis balasan pesan untuk siswa..."
                 className="flex-1 h-11 bg-[#F5F5F5] rounded-full px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
               />
               <button

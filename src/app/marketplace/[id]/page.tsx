@@ -133,10 +133,13 @@ export default function DetailProyekPage() {
 
     sendAkadChat({
       proyekId: id,
+      judulProyek: foundProyek?.judul || 'Lowongan Proyek',
+      namaUsaha: foundProyek?.namaUsaha || '',
       senderId: user?.id || 'pelajar-active',
-      senderName: user?.nama || (user?.role === 'umkm' ? user?.namaUsaha || 'Pemilik Usaha' : 'Pelajar Mitra Muda'),
+      senderName: user?.nama || (user?.role === 'umkm' ? user?.namaUsaha || 'Pemilik Usaha' : 'Pelajar Siswa'),
       senderRole: user?.role === 'umkm' ? 'umkm' : 'pelajar',
       recipientId: user?.role === 'umkm' ? 'pelajar' : targetUmkmId,
+      recipientName: user?.role === 'umkm' ? 'Pelajar Siswa' : foundProyek?.namaUsaha || 'Pemilik Usaha',
       text: chatMessage.trim()
     })
     setChatMessage('')
