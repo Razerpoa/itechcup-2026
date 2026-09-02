@@ -192,6 +192,23 @@ export interface ApiLamaranResponse {
   }
 }
 
+export interface ApiTransaksiResponse {
+  id: string
+  proyekId: string
+  lamaranId: string
+  totalAmount: number
+  dpAmount: number
+  dpPaid: boolean
+  fullPaid: boolean
+  status: string
+  submitUrl?: string | null
+  catatanPelajar?: string | null
+  catatanUMKM?: string | null
+  deliverablesJson?: string | null
+  rating?: number
+  updatedAt?: string
+}
+
 export async function syncAkadWithDB(): Promise<AkadStoreData> {
   const currentState = getAkadState()
   let mergedLamaran = currentState.lamaranList
@@ -199,9 +216,10 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
   let mergedChatMessages = currentState.chatMessages
 
   try {
-    const [lamaranRes, chatRes] = await Promise.allSettled([
+    const [lamaranRes, chatRes, trxRes] = await Promise.allSettled([
       fetch('/api/lamaran', { cache: 'no-store' }),
-      fetch('/api/chat', { cache: 'no-store' })
+      fetch('/api/chat', { cache: 'no-store' }),
+      fetch('/api/transaksi', { cache: 'no-store' })
     ])
 
     if (lamaranRes.status === 'fulfilled' && lamaranRes.value.ok) {
@@ -231,7 +249,9 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
         const generatedAkads: AkadTransaksiItem[] = mergedLamaran
           .filter((l) => l.status === 'ACCEPTED')
           .map((l) => {
-            const existingAkad = currentState.akadList.find((a) => a.proyekId === l.proyekId || a.id === l.id || a.id === 'akad-' + l.id)
+            const existingAkad = currentState.akadList.find(
+              (a) => a.proyekId === l.proyekId || a.id === l.id || a.id === 'akad-' + l.id
+            )
             if (existingAkad) return existingAkad
             const nominalTotal = l.hargaTawar || 500000
             const nominalDP = Math.round(nominalTotal * 0.3)
@@ -256,6 +276,67 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
           ...generatedAkads,
           ...currentState.akadList.filter((a) => !generatedAkads.some((g) => g.id === a.id))
         ]
+      }
+    }
+
+    if (trxRes.status === 'fulfilled' && trxRes.value.ok) {
+      const trxJson = await trxRes.value.json()
+      if (Array.isArray(trxJson.data) && trxJson.data.length > 0) {
+        const dbTrxs: ApiTransaksiResponse[] = trxJson.data
+
+        mergedAkadList = mergedAkadList.map((akad) => {
+          const matchingTrx = dbTrxs.find(
+            (t) =>
+              t.proyekId === akad.proyekId ||
+              t.id === akad.id ||
+              t.id === akad.id.replace('akad-', '') ||
+              t.lamaranId === akad.id.replace('akad-', '')
+          )
+
+          if (!matchingTrx) return akad
+
+          let newStep: 1 | 2 | 3 | 4 = akad.step
+          if (matchingTrx.status === 'SELESAI' || matchingTrx.fullPaid) {
+            newStep = 4
+            releaseProjectCompletionToPelajar({
+              proyekId: akad.proyekId,
+              pelajarId: akad.pelajarId,
+              namaPelajar: akad.namaPelajar,
+              nominalTotal: matchingTrx.totalAmount || akad.nominalTotal,
+              nominalDP: matchingTrx.dpAmount || akad.nominalDP,
+              umkmId: akad.umkmId,
+              namaUsaha: akad.namaUsaha,
+              judulProyek: akad.judulProyek
+            })
+          } else if (matchingTrx.status === 'DIREVISE') {
+            newStep = 2
+          } else if (matchingTrx.status === 'SUBMITTED' || (matchingTrx.deliverablesJson && matchingTrx.deliverablesJson.length > 5)) {
+            if (akad.step !== 4) newStep = 3
+          }
+
+          let mergedDeliverables = akad.deliverables
+          if (matchingTrx.deliverablesJson) {
+            try {
+              const parsedDelivs = JSON.parse(matchingTrx.deliverablesJson)
+              if (Array.isArray(parsedDelivs) && parsedDelivs.length > 0) {
+                mergedDeliverables = [
+                  ...parsedDelivs,
+                  ...akad.deliverables.filter((d) => !parsedDelivs.some((p: DeliverableItem) => p.id === d.id || p.fileName === d.fileName))
+                ]
+              }
+            } catch {
+            }
+          }
+
+          return {
+            ...akad,
+            step: newStep,
+            deliverables: mergedDeliverables,
+            rating: matchingTrx.rating || akad.rating || 5,
+            ulasan: matchingTrx.catatanUMKM || akad.ulasan,
+            completedAt: matchingTrx.status === 'SELESAI' ? matchingTrx.updatedAt || new Date().toISOString() : akad.completedAt
+          }
+        })
       }
     }
 
@@ -467,6 +548,21 @@ export function acceptLamaranAndCreateAkad(lamaranId: string): { success: boolea
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ACCEPTED' })
     }).catch(() => {})
+
+    fetch('/api/transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lamaran.id,
+        proyekId: lamaran.proyekId,
+        lamaranId: lamaran.id,
+        totalAmount: nominalTotal,
+        dpAmount: nominalDP,
+        dpPaid: true,
+        fullPaid: false,
+        status: 'PENGERJAAN'
+      })
+    }).catch(() => {})
   } catch {
   }
 
@@ -511,12 +607,14 @@ export function uploadDeliverableWork(
     uploadedAt: new Date().toISOString()
   }
 
+  const newDeliverablesList = [...targetAkad.deliverables, newDeliverable]
+
   const updated = state.akadList.map((a) => {
     if (a.id === targetAkad.id) {
       return {
         ...a,
         step: 3 as const,
-        deliverables: [...a.deliverables, newDeliverable]
+        deliverables: newDeliverablesList
       }
     }
     return a
@@ -538,6 +636,27 @@ export function uploadDeliverableWork(
     namaUsaha: targetAkad.namaUsaha,
     text: `[Penyerahan Karya]: Berkas "${item.fileName}" telah saya serahkan untuk ditinjau.`
   })
+
+  try {
+    fetch('/api/transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: targetAkad.id.replace('akad-', ''),
+        proyekId: targetAkad.proyekId,
+        lamaranId: targetAkad.id.replace('akad-', ''),
+        totalAmount: targetAkad.nominalTotal,
+        dpAmount: targetAkad.nominalDP,
+        dpPaid: true,
+        fullPaid: false,
+        status: 'SUBMITTED',
+        submitUrl: item.fileUrl || item.fileName,
+        catatanPelajar: item.catatan || `Berkas ${item.fileName} diserahkan`,
+        deliverablesJson: JSON.stringify(newDeliverablesList)
+      })
+    }).catch(() => {})
+  } catch {
+  }
 
   return true
 }
@@ -578,6 +697,25 @@ export function requestRevisionWork(akadId: string, catatanRevisi: string): bool
     namaUsaha: targetAkad.namaUsaha,
     text: `[Permintaan Revisi]: ${catatanRevisi}`
   })
+
+  try {
+    fetch('/api/transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: targetAkad.id.replace('akad-', ''),
+        proyekId: targetAkad.proyekId,
+        lamaranId: targetAkad.id.replace('akad-', ''),
+        totalAmount: targetAkad.nominalTotal,
+        dpAmount: targetAkad.nominalDP,
+        dpPaid: true,
+        fullPaid: false,
+        status: 'DIREVISE',
+        catatanUMKM: catatanRevisi
+      })
+    }).catch(() => {})
+  } catch {
+  }
 
   return true
 }
@@ -631,7 +769,9 @@ export function completeAkadAndPayout(akadId: string, rating: number, ulasan?: s
         dpPaid: true,
         fullPaid: true,
         status: 'SELESAI',
-        catatanUMKM: ulasan || 'Pekerjaan diselesaikan dengan sangat baik.'
+        rating,
+        catatanUMKM: ulasan || 'Pekerjaan diselesaikan dengan sangat baik.',
+        deliverablesJson: JSON.stringify(targetAkad.deliverables)
       })
     }).catch(() => {})
   } catch {

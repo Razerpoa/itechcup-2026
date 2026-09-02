@@ -15,6 +15,11 @@ export default function DompetPage() {
   useEffect(() => {
     syncEscrowWithDB()
     syncAkadWithDB()
+    const interval = setInterval(() => {
+      syncEscrowWithDB()
+      syncAkadWithDB()
+    }, 3000)
+    return () => clearInterval(interval)
   }, [])
 
   const isDemoPelajar = user?.id === 'pelajar-active' || user?.email === 'pelajar.google@gmail.com' || !user?.id

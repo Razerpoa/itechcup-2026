@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { formatRupiah, formatDate, formatRelativeTime } from '@/lib/utils'
 import { useAuthUser, useRealtimeVerificationSync, setCurrentUser } from '@/lib/auth-client'
-import { useEscrowStore } from '@/lib/escrow-store'
+import { useEscrowStore, syncEscrowWithDB } from '@/lib/escrow-store'
 import { useAkadStore, syncAkadWithDB, sendAkadChat, ChatAttachment } from '@/lib/akad-store'
 import { useJasaStore } from '@/lib/jasa-store'
 
@@ -53,6 +53,16 @@ export default function PelajarDashboard() {
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null)
   const chatImageInputRef = React.useRef<HTMLInputElement>(null)
   const chatFileInputRef = React.useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    syncAkadWithDB()
+    syncEscrowWithDB()
+    const interval = setInterval(() => {
+      syncAkadWithDB()
+      syncEscrowWithDB()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     async function fetchPelajarProfile() {

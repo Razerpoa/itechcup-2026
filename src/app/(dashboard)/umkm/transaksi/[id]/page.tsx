@@ -83,6 +83,15 @@ export default function UmkmTransaksiRoomPage() {
   const [reviewText, setReviewText] = useState('Pekerjaan diselesaikan dengan sangat baik, komunikasi responsif, dan hasil deliverable memuaskan!')
 
   useEffect(() => {
+    syncAkadWithDB()
+    syncEscrowWithDB()
+    const interval = setInterval(() => {
+      syncAkadWithDB()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [akadState.chatMessages])
 

@@ -81,6 +81,14 @@ export default function PelajarTransaksiRoomPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    syncAkadWithDB()
+    const interval = setInterval(() => {
+      syncAkadWithDB()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [akadState.chatMessages])
 
