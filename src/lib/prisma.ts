@@ -19,9 +19,20 @@ function getConnectionString(): string {
     } catch {}
   }
   if (!url) {
-    url = 'postgresql://postgres:itechnocup123@db.jhabgqztnlujwnwlfyou.supabase.co:5432/postgres'
+    url = 'postgresql://postgres.tqjgcmjgyndtkwejtuqp:Raffarizqi2010@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true'
   }
-  return url.replace(/["'\r\n\s]/g, '').trim()
+
+  url = url.replace(/["'\r\n\s]/g, '').trim()
+
+  // Auto-upgrade Supabase pooler from session mode (5432) to transaction mode (6543)
+  if (url.includes('pooler.supabase.com:5432')) {
+    url = url.replace('pooler.supabase.com:5432', 'pooler.supabase.com:6543')
+    if (!url.includes('pgbouncer=true')) {
+      url += (url.includes('?') ? '&' : '?') + 'pgbouncer=true'
+    }
+  }
+
+  return url
 }
 
 function createPrismaClient() {
@@ -29,9 +40,9 @@ function createPrismaClient() {
   const pool = new Pool({
     connectionString,
     ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false },
-    max: 10,
-    idleTimeoutMillis: 20000,
-    connectionTimeoutMillis: 10000
+    max: 5,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 6000
   })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })

@@ -147,6 +147,7 @@ export default function LoginPage() {
   }
 
   const [resetError, setResetError] = useState<string | null>(null)
+  const [resetDirectUrl, setResetDirectUrl] = useState<string | null>(null)
 
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,11 +165,12 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setResetError(data.error || 'Gagal mengirim email pemulihan. Periksa alamat email Anda.')
+        setResetError(data.error || 'Gagal memproses pemulihan. Periksa alamat email Anda.')
         setIsResetLoading(false)
         return
       }
 
+      setResetDirectUrl(data.resetUrl || `/auth/callback?type=recovery&email=${encodeURIComponent(resetEmail.trim())}`)
       setIsResetLoading(false)
       setIsResetSuccess(true)
     } catch {
@@ -540,15 +542,31 @@ export default function LoginPage() {
                     <Mail className="w-4 h-4 shrink-0" /> Cek Kotak Masuk / Spam
                   </p>
                   <p className="text-[11px] text-gray-600">
-                    Buka pesan dari Mitra Muda untuk mengatur ulang password baru Anda.
+                    Buka pesan dari Mitra Muda untuk mengatur ulang kata sandi baru Anda.
                   </p>
                 </div>
-                <button
-                  onClick={() => setIsForgotModalOpen(false)}
-                  className="w-full py-3 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
-                >
-                  Kembali ke Halaman Login
-                </button>
+                <div className="space-y-2 pt-2">
+                  {resetDirectUrl ? (
+                    <a
+                      href={resetDirectUrl}
+                      className="w-full py-3 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Atur Ulang Kata Sandi Sekarang</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotModalOpen(false)
+                      setIsResetSuccess(false)
+                      setResetDirectUrl(null)
+                    }}
+                    className="w-full py-2.5 rounded-full border border-gray-200 text-gray-700 font-bold text-xs hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Kembali ke Halaman Login
+                  </button>
+                </div>
               </div>
             ) : (
               <div>
