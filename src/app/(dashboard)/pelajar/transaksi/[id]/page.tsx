@@ -6,10 +6,8 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
-  Check,
   CheckCircle2,
   FileText,
-  Download,
   ShieldCheck,
   Sparkles,
   Send,
@@ -24,7 +22,9 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
-  Plus
+  Paperclip,
+  Camera,
+  Download
 } from 'lucide-react'
 import { formatRupiah, formatDate } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
@@ -33,7 +33,7 @@ import {
   sendAkadChat,
   submitPelajarDeliverable,
   syncAkadWithDB,
-  DeliverableItem
+  ChatAttachment
 } from '@/lib/akad-store'
 import InvoiceModal from '@/components/invoice-modal'
 
@@ -43,6 +43,9 @@ export default function PelajarTransaksiRoomPage() {
   const user = useAuthUser()
   const akadState = useAkadStore()
   const chatBottomRef = useRef<HTMLDivElement>(null)
+
+  const chatImageInputRef = useRef<HTMLInputElement>(null)
+  const chatFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     syncAkadWithDB()
@@ -62,6 +65,7 @@ export default function PelajarTransaksiRoomPage() {
     ) || akadState.akadList[0]
 
   const [inputMsg, setInputMsg] = useState('')
+  const [chatAttachment, setChatAttachment] = useState<ChatAttachment | null>(null)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showCertificate, setShowCertificate] = useState(false)
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null)
@@ -121,9 +125,47 @@ export default function PelajarTransaksiRoomPage() {
       (activeAkad.id && m.proyekId === activeAkad.id.replace('akad-', ''))
   )
 
+  const handleChatImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const sizeInMB = file.size / (1024 * 1024)
+    const sizeStr = sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setChatAttachment({
+        name: file.name,
+        size: sizeStr,
+        type: 'image',
+        dataUrl: reader.result as string
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleChatFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const sizeInMB = file.size / (1024 * 1024)
+    const sizeStr = sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setChatAttachment({
+        name: file.name,
+        size: sizeStr,
+        type: 'file',
+        dataUrl: reader.result as string
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputMsg.trim() || !user) return
+    if ((!inputMsg.trim() && !chatAttachment) || !user) return
 
     sendAkadChat({
       proyekId: activeAkad.proyekId,
@@ -134,9 +176,14 @@ export default function PelajarTransaksiRoomPage() {
       recipientId: activeAkad.umkmId,
       recipientName: activeAkad.namaUsaha,
       namaUsaha: activeAkad.namaUsaha,
-      text: inputMsg.trim()
+      text: inputMsg.trim(),
+      attachment: chatAttachment || undefined
     })
+
     setInputMsg('')
+    setChatAttachment(null)
+    if (chatImageInputRef.current) chatImageInputRef.current.value = ''
+    if (chatFileInputRef.current) chatFileInputRef.current.value = ''
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -311,7 +358,7 @@ export default function PelajarTransaksiRoomPage() {
                   {msg.senderName}
                 </span>
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed ${
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs font-medium leading-relaxed ${
                     isDeliverableNote
                       ? 'bg-blue-50 text-blue-900 border border-blue-200 shadow-2xs'
                       : isRevisionNote
@@ -321,7 +368,51 @@ export default function PelajarTransaksiRoomPage() {
                       : 'bg-white text-gray-800 border border-gray-200 rounded-tl-xs shadow-2xs'
                   }`}
                 >
-                  {msg.text}
+                  {msg.attachment && (
+                    <div className="mb-2">
+                      {msg.attachment.type === 'image' && msg.attachment.dataUrl ? (
+                        <div
+                          onClick={() => setSelectedPreviewImage(msg.attachment?.dataUrl || null)}
+                          className="rounded-xl overflow-hidden cursor-pointer relative max-w-xs border border-black/10 hover:opacity-90 transition-opacity"
+                        >
+                          <img
+                            src={msg.attachment.dataUrl}
+                            alt={msg.attachment.name}
+                            className="max-h-60 w-full object-cover rounded-xl"
+                          />
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-md">
+                            {msg.attachment.size}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 ${
+                          isMe ? 'bg-white/20 border-white/30 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                        }`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="w-5 h-5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-xs truncate">{msg.attachment.name}</p>
+                              <p className="text-[10px] opacity-80">{msg.attachment.size}</p>
+                            </div>
+                          </div>
+                          {msg.attachment.dataUrl && (
+                            <a
+                              href={msg.attachment.dataUrl}
+                              download={msg.attachment.name}
+                              className={`p-1.5 rounded-lg shrink-0 ${
+                                isMe ? 'bg-white/30 hover:bg-white/40 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                              }`}
+                              title="Unduh Berkas"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
                 </div>
                 <span className="text-[10px] text-gray-400 mt-1 px-1">
                   {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
@@ -334,7 +425,7 @@ export default function PelajarTransaksiRoomPage() {
             <MessageCircle className="w-8 h-8 text-gray-300 mb-2" />
             <p className="font-bold text-gray-600">Mulai Obrolan Akad Proyek</p>
             <p className="text-[11px] text-gray-400 mt-1">
-              Diskusikan kebutuhan proyek dan koordinasikan penyerahan karya Anda di sini.
+              Diskusikan kebutuhan proyek, kirim foto/dokumen, atau koordinasikan penyerahan karya Anda di sini.
             </p>
           </div>
         )}
@@ -424,18 +515,83 @@ export default function PelajarTransaksiRoomPage() {
         <div ref={chatBottomRef} />
       </main>
 
-      <footer className="p-4 bg-white border-t border-[#EAEAEA] flex flex-col gap-3">
+      <footer className="p-4 bg-white border-t border-[#EAEAEA] flex flex-col gap-2">
+        {chatAttachment && (
+          <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {chatAttachment.type === 'image' && chatAttachment.dataUrl ? (
+                <div className="w-10 h-10 rounded-lg overflow-hidden relative border border-gray-300 shrink-0">
+                  <img src={chatAttachment.dataUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-[#FFF1EB] text-[#964825] flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-extrabold text-xs text-gray-900 truncate">{chatAttachment.name}</p>
+                <p className="text-[10px] text-gray-500">{chatAttachment.size}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setChatAttachment(null)
+                if (chatImageInputRef.current) chatImageInputRef.current.value = ''
+                if (chatFileInputRef.current) chatFileInputRef.current.value = ''
+              }}
+              className="p-1 rounded-full hover:bg-gray-200 text-gray-500 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={chatImageInputRef}
+            onChange={handleChatImageSelect}
+            accept="image/*"
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={chatFileInputRef}
+            onChange={handleChatFileSelect}
+            accept="*/*"
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={() => chatImageInputRef.current?.click()}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title="Pilih Foto dari Galeri / Kamera Langsung"
+          >
+            <Camera className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => chatFileInputRef.current?.click()}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title="Pilih Berkas / Dokumen dari Folder Langsung"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+
           <input
             type="text"
             value={inputMsg}
             onChange={(e) => setInputMsg(e.target.value)}
-            placeholder="Tulis pesan untuk pemilik UMKM..."
+            placeholder="Tulis pesan atau lampirkan foto/file..."
             className="flex-1 h-11 bg-[#F5F5F5] rounded-full px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
           />
           <button
             type="submit"
-            className="w-11 h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0"
+            disabled={!inputMsg.trim() && !chatAttachment}
+            className="w-11 h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -444,10 +600,10 @@ export default function PelajarTransaksiRoomPage() {
         <div className="pt-1">
           <button
             onClick={() => setShowUploadModal(true)}
-            className="w-full py-3 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            className="w-full py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Unggah Foto / Berkas Hasil Karya (Tanpa Batas)</span>
+            <span>Unggah Foto / Berkas Hasil Karya Final (Tanpa Batas)</span>
           </button>
         </div>
       </footer>
@@ -604,7 +760,7 @@ export default function PelajarTransaksiRoomPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-4 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h4 className="font-extrabold text-sm text-gray-900">Pratinjau Karya Siswa</h4>
+              <h4 className="font-extrabold text-sm text-gray-900">Pratinjau Foto</h4>
               <button
                 onClick={() => setSelectedPreviewImage(null)}
                 className="p-1 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"
@@ -615,7 +771,7 @@ export default function PelajarTransaksiRoomPage() {
             <div className="flex-1 overflow-auto p-2 flex items-center justify-center">
               <img
                 src={selectedPreviewImage}
-                alt="Preview Deliverable"
+                alt="Preview"
                 className="max-h-[70vh] object-contain rounded-xl"
               />
             </div>

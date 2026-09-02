@@ -19,6 +19,14 @@ export interface LamaranItem {
   createdAt: string
 }
 
+export interface ChatAttachment {
+  name: string
+  size: string
+  type: 'image' | 'file'
+  dataUrl?: string
+  fileUrl?: string
+}
+
 export interface ChatMsgItem {
   id: string
   proyekId: string
@@ -32,6 +40,7 @@ export interface ChatMsgItem {
   text: string
   createdAt: string
   isRead?: boolean
+  attachment?: ChatAttachment
 }
 
 export interface DeliverableItem {
@@ -352,6 +361,7 @@ export function sendAkadChat(payload: {
   recipientName?: string
   namaUsaha?: string
   text: string
+  attachment?: ChatAttachment
 }): ChatMsgItem {
   const state = getAkadState()
   const newChat: ChatMsgItem = {
@@ -366,7 +376,8 @@ export function sendAkadChat(payload: {
     namaUsaha: payload.namaUsaha || '',
     text: payload.text,
     createdAt: new Date().toISOString(),
-    isRead: false
+    isRead: false,
+    attachment: payload.attachment
   }
 
   saveAkadState({

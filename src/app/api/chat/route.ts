@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export interface ChatAttachment {
+  name: string
+  size: string
+  type: 'image' | 'file'
+  dataUrl?: string
+  fileUrl?: string
+}
+
 export interface ApiChatMessage {
   id: string
   proyekId: string
@@ -13,6 +21,7 @@ export interface ApiChatMessage {
   text: string
   createdAt: string
   isRead?: boolean
+  attachment?: ChatAttachment
 }
 
 declare global {
@@ -60,10 +69,11 @@ export async function POST(request: NextRequest) {
       recipientName,
       namaUsaha,
       text,
-      createdAt
+      createdAt,
+      attachment
     } = body
 
-    if (!text || !proyekId) {
+    if ((!text && !attachment) || !proyekId) {
       return NextResponse.json({ error: 'Data chat tidak lengkap' }, { status: 400 })
     }
 
@@ -81,9 +91,10 @@ export async function POST(request: NextRequest) {
       recipientId: recipientId || 'recipient-default',
       recipientName: recipientName || '',
       namaUsaha: namaUsaha || '',
-      text: text.trim(),
+      text: (text || '').trim(),
       createdAt: createdAt || new Date().toISOString(),
-      isRead: false
+      isRead: false,
+      attachment: attachment || undefined
     }
 
     const existingIndex = global.__global_mitra_muda_chat__.findIndex((m) => m.id === newMsg.id)
