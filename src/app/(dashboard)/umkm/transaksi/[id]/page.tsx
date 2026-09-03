@@ -26,7 +26,7 @@ import {
   Paperclip,
   Camera
 } from 'lucide-react'
-import { formatRupiah, formatDate } from '@/lib/utils'
+import { formatRupiah, formatDate, compressImageFile } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import {
   useAkadStore,
@@ -83,14 +83,7 @@ export default function UmkmTransaksiRoomPage() {
   const [hoverRating, setHoverRating] = useState(0)
   const [reviewText, setReviewText] = useState('Pekerjaan diselesaikan dengan sangat baik, komunikasi responsif, dan hasil deliverable memuaskan!')
 
-  useEffect(() => {
-    syncAkadWithDB()
-    syncEscrowWithDB()
-    const interval = setInterval(() => {
-      syncAkadWithDB()
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -137,28 +130,49 @@ export default function UmkmTransaksiRoomPage() {
       (activeAkad.id && m.proyekId === activeAkad.id.replace('akad-', ''))
   )
 
-  const handleChatImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChatImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const sizeInMB = file.size / (1024 * 1024)
-    const sizeStr = sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`
-
-    const reader = new FileReader()
-    reader.onload = () => {
+    try {
+      const { dataUrl, sizeStr } = await compressImageFile(file, 1200, 0.75)
       setChatAttachment({
         name: file.name,
         size: sizeStr,
         type: 'image',
-        dataUrl: reader.result as string
+        dataUrl
       })
+    } catch {
+      const reader = new FileReader()
+      reader.onload = () => {
+        setChatAttachment({
+          name: file.name,
+          size: `${Math.round(file.size / 1024)} KB`,
+          type: 'image',
+          dataUrl: reader.result as string
+        })
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
-  const handleChatFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChatFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.type.startsWith('image/')) {
+      try {
+        const { dataUrl, sizeStr } = await compressImageFile(file, 1200, 0.75)
+        setChatAttachment({
+          name: file.name,
+          size: sizeStr,
+          type: 'file',
+          dataUrl
+        })
+        return
+      } catch {
+      }
+    }
 
     const sizeInMB = file.size / (1024 * 1024)
     const sizeStr = sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`

@@ -65,3 +65,51 @@ export function parseThousand(val: string | number): number {
   return digits ? Number(digits) : 0
 }
 
+export function compressImageFile(file: File, maxWidth = 1200, quality = 0.75): Promise<{ dataUrl: string; sizeStr: string }> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const sizeInMB = file.size / (1024 * 1024)
+        const sizeStr = sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`
+        resolve({ dataUrl: reader.result as string, sizeStr })
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+
+    const img = document.createElement('img')
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width)
+        width = maxWidth
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        const reader = new FileReader()
+        reader.onload = () => resolve({ dataUrl: reader.result as string, sizeStr: 'Gambar' })
+        reader.readAsDataURL(file)
+        return
+      }
+      ctx.drawImage(img, 0, 0, width, height)
+      const dataUrl = canvas.toDataURL('image/jpeg', quality)
+      const estimatedBytes = Math.round((dataUrl.length * 3) / 4)
+      const sizeInMB = estimatedBytes / (1024 * 1024)
+      const sizeStr = sizeInMB < 1 ? `${Math.round(estimatedBytes / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`
+      resolve({ dataUrl, sizeStr })
+    }
+    img.onerror = () => {
+      const reader = new FileReader()
+      reader.onload = () => resolve({ dataUrl: reader.result as string, sizeStr: 'Gambar' })
+      reader.readAsDataURL(file)
+    }
+    img.src = url
+  })
+}
+

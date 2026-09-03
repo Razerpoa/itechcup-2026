@@ -130,13 +130,33 @@ export function getAkadState(): AkadStoreData {
     }
     lastRaw = raw
     if (!raw) {
+      if (cachedData.chatMessages.length > 0 || cachedData.akadList.length > 0) {
+        return cachedData
+      }
       cachedData = INITIAL_DATA
     } else {
-      cachedData = JSON.parse(raw) as AkadStoreData
+      const parsed = JSON.parse(raw) as AkadStoreData
+      const localChats = cachedData.chatMessages || []
+      const parsedChats = parsed.chatMessages || []
+      const mergedChats = [
+        ...parsedChats,
+        ...localChats.filter((c) => !parsedChats.some((p) => p.id === c.id))
+      ]
+      const localAkads = cachedData.akadList || []
+      const parsedAkads = parsed.akadList || []
+      const mergedAkads = [
+        ...parsedAkads,
+        ...localAkads.filter((a) => !parsedAkads.some((p) => p.id === a.id))
+      ]
+      cachedData = {
+        lamaranList: parsed.lamaranList || [],
+        akadList: mergedAkads,
+        chatMessages: mergedChats
+      }
     }
     return cachedData
   } catch {
-    return INITIAL_DATA
+    return cachedData || INITIAL_DATA
   }
 }
 
@@ -152,6 +172,25 @@ function saveAkadState(data: AkadStoreData) {
         chatBroadcastChannel.postMessage({ type: 'SYNC_AKAD' })
       }
     } catch {
+      try {
+        const prunedChats = data.chatMessages.map((m, idx, arr) => {
+          if (idx < arr.length - 8 && m.attachment?.dataUrl && m.attachment.dataUrl.length > 40000) {
+            return {
+              ...m,
+              attachment: {
+                ...m.attachment,
+                dataUrl: undefined
+              }
+            }
+          }
+          return m
+        })
+        const prunedData = { ...data, chatMessages: prunedChats }
+        const prunedSerialized = JSON.stringify(prunedData)
+        localStorage.setItem(STORAGE_KEY, prunedSerialized)
+        lastRaw = prunedSerialized
+      } catch {
+      }
     }
   }
   emitChange()
@@ -218,7 +257,12 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
   try {
     const [lamaranRes, chatRes, trxRes] = await Promise.allSettled([
       fetch('/api/lamaran', { cache: 'no-store' }),
-      fetch('/api/chat', { cache: 'no-store' }),
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'SYNC', chats: currentState.chatMessages }),
+        cache: 'no-store'
+      }),
       fetch('/api/transaksi', { cache: 'no-store' })
     ])
 
@@ -346,10 +390,20 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
       const chatJson = await chatRes.value.json()
       if (Array.isArray(chatJson.data)) {
         const apiChats: ChatMsgItem[] = chatJson.data
-        mergedChatMessages = [
-          ...apiChats,
-          ...currentState.chatMessages.filter((c) => !apiChats.some((a) => a.id === c.id))
-        ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        const localChats = currentState.chatMessages
+        mergedChatMessages = apiChats.map((ac) => {
+          const localMatch = localChats.find((lc) => lc.id === ac.id)
+          if (localMatch?.attachment?.dataUrl && !ac.attachment?.dataUrl) {
+            return { ...ac, attachment: localMatch.attachment }
+          }
+          return ac
+        })
+        for (const lc of localChats) {
+          if (!mergedChatMessages.some((m) => m.id === lc.id)) {
+            mergedChatMessages.push(lc)
+          }
+        }
+        mergedChatMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
       }
     }
 

@@ -58,6 +58,32 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    if (!global.__global_mitra_muda_chat__) {
+      global.__global_mitra_muda_chat__ = []
+    }
+
+    if (body.type === 'SYNC') {
+      const clientChats: ApiChatMessage[] = Array.isArray(body.chats) ? body.chats : []
+      for (const clientMsg of clientChats) {
+        if (!clientMsg || !clientMsg.id) continue
+        const existingIdx = global.__global_mitra_muda_chat__.findIndex((m) => m.id === clientMsg.id)
+        if (existingIdx >= 0) {
+          if (!global.__global_mitra_muda_chat__[existingIdx].attachment && clientMsg.attachment) {
+            global.__global_mitra_muda_chat__[existingIdx] = clientMsg
+          }
+        } else {
+          global.__global_mitra_muda_chat__.push(clientMsg)
+        }
+      }
+
+      if (global.__global_mitra_muda_chat__.length > 300) {
+        global.__global_mitra_muda_chat__ = global.__global_mitra_muda_chat__.slice(-300)
+      }
+
+      return NextResponse.json({ success: true, data: global.__global_mitra_muda_chat__ })
+    }
+
     const {
       id,
       proyekId,
@@ -75,10 +101,6 @@ export async function POST(request: NextRequest) {
 
     if ((!text && !attachment) || !proyekId) {
       return NextResponse.json({ error: 'Data chat tidak lengkap' }, { status: 400 })
-    }
-
-    if (!global.__global_mitra_muda_chat__) {
-      global.__global_mitra_muda_chat__ = []
     }
 
     const newMsg: ApiChatMessage = {
