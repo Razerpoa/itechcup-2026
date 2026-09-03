@@ -200,6 +200,14 @@ src/
 - **Pedoman Perlindungan Jam Belajar (`/perlindungan-pelajar`):** Menjamin pengerjaan proyek tidak mengganggu jam wajib sekolah, larangan kerja paksa, dan hotline pengaduan: `lapor@mitramuda.biz.id`.
 - **Syarat & Ketentuan Layanan (`/syarat-ketentuan`):** Penegasan pengalihan HAKI sah setelah pelunasan dan 0% biaya platform bagi pelajar.
 
+### 10. Arsitektur Komunikasi & Serah Terima Langsung ke Database PostgreSQL (Zero LocalStorage Dependency)
+- **Lokasi:** `src/lib/akad-store.ts`, `src/app/api/chat/route.ts`, `src/app/api/transaksi/route.ts`, `prisma/schema.prisma`
+- **Fitur:**
+  - Seluruh riwayat obrolan ruang transaksi disimpan langsung ke tabel PostgreSQL `ChatMessage` melalui Prisma ORM v7.
+  - Berkas serah terima karya siswa (*deliverables*) disimpan langsung ke tabel PostgreSQL `DeliverableWork`.
+  - Mengeliminasi ketergantungan pada `localStorage` peramban untuk membaca atau menyimpan obrolan dan transaksi, menjamin data tidak akan pernah hilang atau terhapus (*mental*).
+  - Dilengkapi kompresi gambar otomatis sisi klien (`compressImageFile`) untuk performa tinggi dan bandwidth hemat.
+
 ---
 
 ## Standar Keamanan Data & Server (Security SSS-Tier)

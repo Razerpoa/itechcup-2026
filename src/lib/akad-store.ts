@@ -122,78 +122,27 @@ function emitChange() {
 }
 
 export function getAkadState(): AkadStoreData {
-  if (typeof window === 'undefined') return INITIAL_DATA
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === lastRaw) {
-      return cachedData
-    }
-    lastRaw = raw
-    if (!raw) {
-      if (cachedData.chatMessages.length > 0 || cachedData.akadList.length > 0) {
-        return cachedData
-      }
-      cachedData = INITIAL_DATA
-    } else {
-      const parsed = JSON.parse(raw) as AkadStoreData
-      const localChats = cachedData.chatMessages || []
-      const parsedChats = parsed.chatMessages || []
-      const mergedChats = [
-        ...parsedChats,
-        ...localChats.filter((c) => !parsedChats.some((p) => p.id === c.id))
-      ]
-      const localAkads = cachedData.akadList || []
-      const parsedAkads = parsed.akadList || []
-      const mergedAkads = [
-        ...parsedAkads,
-        ...localAkads.filter((a) => !parsedAkads.some((p) => p.id === a.id))
-      ]
-      cachedData = {
-        lamaranList: parsed.lamaranList || [],
-        akadList: mergedAkads,
-        chatMessages: mergedChats
-      }
-    }
-    return cachedData
-  } catch {
-    return cachedData || INITIAL_DATA
-  }
+  return cachedData
 }
 
 function saveAkadState(data: AkadStoreData) {
   cachedData = data
   if (typeof window !== 'undefined') {
     try {
-      const serialized = JSON.stringify(data)
-      lastRaw = serialized
-      localStorage.setItem(STORAGE_KEY, serialized)
-      window.dispatchEvent(new Event('storage'))
       if (chatBroadcastChannel) {
         chatBroadcastChannel.postMessage({ type: 'SYNC_AKAD' })
       }
+      window.dispatchEvent(new CustomEvent('mitramuda_akad_change'))
     } catch {
-      try {
-        const prunedChats = data.chatMessages.map((m, idx, arr) => {
-          if (idx < arr.length - 8 && m.attachment?.dataUrl && m.attachment.dataUrl.length > 40000) {
-            return {
-              ...m,
-              attachment: {
-                ...m.attachment,
-                dataUrl: undefined
-              }
-            }
-          }
-          return m
-        })
-        const prunedData = { ...data, chatMessages: prunedChats }
-        const prunedSerialized = JSON.stringify(prunedData)
-        localStorage.setItem(STORAGE_KEY, prunedSerialized)
-        lastRaw = prunedSerialized
-      } catch {
-      }
     }
   }
   emitChange()
+}
+
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    syncAkadWithDB().catch(() => {})
+  }, 100)
 }
 
 export interface ApiLamaranResponse {

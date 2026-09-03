@@ -262,3 +262,36 @@ model Transaksi {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
+
+model ChatMessage {
+  id            String   @id @default(uuid())
+  proyekId      String
+  judulProyek   String?
+  senderId      String
+  senderName    String
+  senderRole    String
+  recipientId   String
+  recipientName String?
+  namaUsaha     String?
+  text          String   @db.Text
+  attachment    Json?
+  createdAt     DateTime @default(now())
+
+  @@index([proyekId])
+}
+
+model DeliverableWork {
+  id          String   @id @default(uuid())
+  proyekId    String
+  transaksiId String?
+  fileName    String
+  fileSize    String
+  fileUrl     String?
+  filePreview String?  @db.Text
+  fileType    String?
+  catatan     String?  @db.Text
+  uploadedAt  DateTime @default(now())
+
+  @@index([proyekId])
+}
+

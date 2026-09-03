@@ -45,6 +45,9 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 5. **Model Transaksi: `Lamaran` & `Transaksi`**
    - `Lamaran`: Pengajuan proposal dari pelajar ke UMKM.
    - `Transaksi`: Sistem Akad digital yang mencatat status pekerjaan (`MENUNGGU_PEMBAYARAN`, `DP_DIBAYAR`, `DIKERJAKAN`, `MENUNGGU_REVIEW`, `SELESAI`) serta alur pembayaran Escrow.
+6. **Model Komunikasi & Serah Terima: `ChatMessage` & `DeliverableWork`**
+   - `ChatMessage`: Menyimpan seluruh riwayat obrolan ruang transaksi, lampiran file/gambar, dan identitas pengirim langsung di tabel PostgreSQL.
+   - `DeliverableWork`: Menyimpan seluruh catatan dan berkas serah terima karya siswa secara permanen di database, terbebas dari batasan kuota localStorage browser.
 
 ---
 
@@ -142,6 +145,8 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ## 5. Changelog Pengembangan
 
 ### Sesi September 2026:
+- **feat:** Migrasi penuh sistem obrolan dan berkas karya langsung ke PostgreSQL (`ChatMessage` & `DeliverableWork`), menghapus ketergantungan pada `localStorage` sehingga data obrolan dan serah terima karya tidak akan hilang (*mental*) atau terhapus kuota peramban.
+- **fix:** Penambahan kompresi otomatis gambar di sisi klien (`compressImageFile`) dan sinkronisasi real-time dua arah (`POST /api/chat` dengan tipe `SYNC`).
 - **feat:** Sinkronisasi dua arah real-time untuk penarikan dana pelajar ke dashboard admin (`/api/deposit` & `escrow-store.ts`).
 - **feat:** Pemasangan logo resmi kanal pembayaran e-wallet (GoPay, DANA, OVO, ShopeePay) pada formulir penarikan dompet siswa.
 - **fix:** Perbaikan kalkulasi saldo dompet siswa menjadi idempotent dan akurat sesuai nominal riil proyek selesai.

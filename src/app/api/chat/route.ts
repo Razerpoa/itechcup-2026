@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export interface ChatAttachment {
   name: string
@@ -36,23 +37,57 @@ export async function GET(request: NextRequest) {
   const proyekId = request.nextUrl.searchParams.get('proyekId')
   const recipientId = request.nextUrl.searchParams.get('recipientId')
   const senderId = request.nextUrl.searchParams.get('senderId')
-  const allChats = global.__global_mitra_muda_chat__ || []
 
-  let filtered = allChats
+  try {
+    const where: Record<string, unknown> = {}
+    if (proyekId) where.proyekId = proyekId
 
-  if (proyekId) {
-    filtered = filtered.filter((c) => c.proyekId === proyekId)
+    const dbChats = await prisma.chatMessage.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+      take: 300
+    })
+
+    const formattedDbChats: ApiChatMessage[] = dbChats.map((c) => ({
+      id: c.id,
+      proyekId: c.proyekId,
+      judulProyek: c.judulProyek || undefined,
+      senderId: c.senderId,
+      senderName: c.senderName,
+      senderRole: c.senderRole as 'pelajar' | 'umkm' | 'sekolah',
+      recipientId: c.recipientId,
+      recipientName: c.recipientName || undefined,
+      namaUsaha: c.namaUsaha || undefined,
+      text: c.text,
+      createdAt: c.createdAt.toISOString(),
+      attachment: (c.attachment as unknown as ChatAttachment) || undefined
+    }))
+
+    const memoryChats = global.__global_mitra_muda_chat__ || []
+    let merged = [
+      ...formattedDbChats,
+      ...memoryChats.filter((m) => !formattedDbChats.some((d) => d.id === m.id))
+    ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+
+    if (proyekId) {
+      merged = merged.filter((c) => c.proyekId === proyekId)
+    }
+
+    if (recipientId || senderId) {
+      merged = merged.filter(
+        (c) =>
+          (recipientId && (c.recipientId === recipientId || c.recipientId === 'umkm-default')) ||
+          (senderId && c.senderId === senderId)
+      )
+    }
+
+    return NextResponse.json({ data: merged })
+  } catch {
+    const allChats = global.__global_mitra_muda_chat__ || []
+    let filtered = allChats
+    if (proyekId) filtered = filtered.filter((c) => c.proyekId === proyekId)
+    return NextResponse.json({ data: filtered })
   }
-
-  if (recipientId || senderId) {
-    filtered = filtered.filter(
-      (c) =>
-        (recipientId && (c.recipientId === recipientId || c.recipientId === 'umkm-default')) ||
-        (senderId && c.senderId === senderId)
-    )
-  }
-
-  return NextResponse.json({ data: filtered })
 }
 
 export async function POST(request: NextRequest) {
@@ -75,13 +110,62 @@ export async function POST(request: NextRequest) {
         } else {
           global.__global_mitra_muda_chat__.push(clientMsg)
         }
+
+        try {
+          await prisma.chatMessage.upsert({
+            where: { id: clientMsg.id },
+            update: {
+              text: clientMsg.text,
+              attachment: (clientMsg.attachment as unknown as object) || undefined
+            },
+            create: {
+              id: clientMsg.id,
+              proyekId: clientMsg.proyekId,
+              judulProyek: clientMsg.judulProyek || null,
+              senderId: clientMsg.senderId,
+              senderName: clientMsg.senderName,
+              senderRole: clientMsg.senderRole,
+              recipientId: clientMsg.recipientId,
+              recipientName: clientMsg.recipientName || null,
+              namaUsaha: clientMsg.namaUsaha || null,
+              text: clientMsg.text,
+              attachment: (clientMsg.attachment as unknown as object) || undefined,
+              createdAt: clientMsg.createdAt ? new Date(clientMsg.createdAt) : new Date()
+            }
+          })
+        } catch {
+        }
       }
 
-      if (global.__global_mitra_muda_chat__.length > 300) {
-        global.__global_mitra_muda_chat__ = global.__global_mitra_muda_chat__.slice(-300)
+      let allData: ApiChatMessage[] = global.__global_mitra_muda_chat__
+      try {
+        const dbChats = await prisma.chatMessage.findMany({
+          orderBy: { createdAt: 'asc' },
+          take: 300
+        })
+        const formattedDbChats: ApiChatMessage[] = dbChats.map((c) => ({
+          id: c.id,
+          proyekId: c.proyekId,
+          judulProyek: c.judulProyek || undefined,
+          senderId: c.senderId,
+          senderName: c.senderName,
+          senderRole: c.senderRole as 'pelajar' | 'umkm' | 'sekolah',
+          recipientId: c.recipientId,
+          recipientName: c.recipientName || undefined,
+          namaUsaha: c.namaUsaha || undefined,
+          text: c.text,
+          createdAt: c.createdAt.toISOString(),
+          attachment: (c.attachment as unknown as ChatAttachment) || undefined
+        }))
+
+        allData = [
+          ...formattedDbChats,
+          ...global.__global_mitra_muda_chat__.filter((m) => !formattedDbChats.some((d) => d.id === m.id))
+        ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      } catch {
       }
 
-      return NextResponse.json({ success: true, data: global.__global_mitra_muda_chat__ })
+      return NextResponse.json({ success: true, data: allData })
     }
 
     const {
@@ -126,8 +210,34 @@ export async function POST(request: NextRequest) {
       global.__global_mitra_muda_chat__.push(newMsg)
     }
 
+    try {
+      await prisma.chatMessage.upsert({
+        where: { id: newMsg.id },
+        update: {
+          text: newMsg.text,
+          attachment: (newMsg.attachment as unknown as object) || undefined
+        },
+        create: {
+          id: newMsg.id,
+          proyekId: newMsg.proyekId,
+          judulProyek: newMsg.judulProyek || null,
+          senderId: newMsg.senderId,
+          senderName: newMsg.senderName,
+          senderRole: newMsg.senderRole,
+          recipientId: newMsg.recipientId,
+          recipientName: newMsg.recipientName || null,
+          namaUsaha: newMsg.namaUsaha || null,
+          text: newMsg.text,
+          attachment: (newMsg.attachment as unknown as object) || undefined,
+          createdAt: new Date(newMsg.createdAt)
+        }
+      })
+    } catch {
+    }
+
     return NextResponse.json({ success: true, data: newMsg }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Gagal mengirim chat' }, { status: 500 })
   }
 }
+

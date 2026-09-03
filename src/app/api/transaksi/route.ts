@@ -70,7 +70,46 @@ export async function GET(request: NextRequest) {
       ...dbData.filter((d: any) => !filteredMemory.some((m) => m.proyekId === d.proyekId || m.id === d.id))
     ]
 
-    return NextResponse.json({ data: allData })
+    let dbDeliverables: any[] = []
+    try {
+      dbDeliverables = await prisma.deliverableWork.findMany({
+        orderBy: { uploadedAt: 'asc' }
+      })
+    } catch {
+    }
+
+    const enriched = allData.map((trx: any) => {
+      const pDelivs = dbDeliverables.filter((d) => d.proyekId === trx.proyekId)
+      if (pDelivs.length > 0) {
+        let currentDelivs: any[] = []
+        if (trx.deliverablesJson) {
+          try {
+            currentDelivs = JSON.parse(trx.deliverablesJson)
+          } catch {
+          }
+        }
+        const mergedDelivs = [
+          ...pDelivs.map((d) => ({
+            id: d.id,
+            fileName: d.fileName,
+            fileSize: d.fileSize,
+            fileUrl: d.fileUrl || undefined,
+            filePreview: d.filePreview || undefined,
+            fileType: d.fileType || undefined,
+            catatan: d.catatan || undefined,
+            uploadedAt: d.uploadedAt ? new Date(d.uploadedAt).toISOString() : new Date().toISOString()
+          })),
+          ...currentDelivs.filter((cd: any) => !pDelivs.some((pd) => pd.id === cd.id))
+        ]
+        return {
+          ...trx,
+          deliverablesJson: JSON.stringify(mergedDelivs)
+        }
+      }
+      return trx
+    })
+
+    return NextResponse.json({ data: enriched })
   } catch {
     return NextResponse.json({ data: global.__global_mitra_muda_transaksi__ || [] })
   }
@@ -173,6 +212,41 @@ export async function POST(request: NextRequest) {
             catatanUMKM: catatanUMKM !== undefined ? catatanUMKM : undefined
           }
         })
+      }
+
+      if (deliverablesJson) {
+        try {
+          const parsed = JSON.parse(deliverablesJson)
+          if (Array.isArray(parsed)) {
+            for (const d of parsed) {
+              if (!d.id || !d.fileName) continue
+              await prisma.deliverableWork.upsert({
+                where: { id: d.id },
+                update: {
+                  fileName: d.fileName,
+                  fileSize: d.fileSize || '1 MB',
+                  fileUrl: d.fileUrl || null,
+                  filePreview: d.filePreview || null,
+                  fileType: d.fileType || 'file',
+                  catatan: d.catatan || null
+                },
+                create: {
+                  id: d.id,
+                  proyekId,
+                  transaksiId: id || null,
+                  fileName: d.fileName,
+                  fileSize: d.fileSize || '1 MB',
+                  fileUrl: d.fileUrl || null,
+                  filePreview: d.filePreview || null,
+                  fileType: d.fileType || 'file',
+                  catatan: d.catatan || null,
+                  uploadedAt: d.uploadedAt ? new Date(d.uploadedAt) : new Date()
+                }
+              })
+            }
+          }
+        } catch {
+        }
       }
     } catch {
     }
