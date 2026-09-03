@@ -816,44 +816,47 @@ export default function UmkmDashboard() {
                         <span className="text-lg font-extrabold text-[#964825]">{formatRupiah(akad.nominalTotal)}</span>
                       </div>
 
-                      <div className="flex items-center flex-wrap gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => updateAkadStatusDirectly(akad.id, 2, 'UMKM mengubah status ke Pengerjaan / Revisi')}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border ${
-                            akad.step === 2
-                              ? 'bg-[#FF9B71] text-white border-[#FF9B71]'
-                              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                          }`}
-                          title="Ubah status ke Pengerjaan"
-                        >
-                          Pengerjaan
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateAkadStatusDirectly(akad.id, 3, 'UMKM sedang meninjau karya')}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border ${
-                            akad.step === 3
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                          }`}
-                          title="Ubah status ke Review UMKM"
-                        >
-                          Review UMKM
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateAkadStatusDirectly(akad.id, 4, 'Proyek disetujui & diselesaikan')}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border ${
-                            akad.step === 4
-                              ? 'bg-emerald-600 text-white border-emerald-600'
-                              : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
-                          }`}
-                          title="Setujui & Cairkan Saldo"
-                        >
-                          Selesai
-                        </button>
-                      </div>
+                      {akad.step === 4 ? (
+                        <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Selesai & Lunas</span>
+                        </span>
+                      ) : (
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => updateAkadStatusDirectly(akad.id, 2, 'UMKM mengubah status ke Pengerjaan / Revisi')}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border ${
+                              akad.step === 2
+                                ? 'bg-[#FF9B71] text-white border-[#FF9B71]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                            }`}
+                            title="Ubah status ke Pengerjaan"
+                          >
+                            Pengerjaan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateAkadStatusDirectly(akad.id, 3, 'UMKM sedang meninjau karya')}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border ${
+                              akad.step === 3
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                            }`}
+                            title="Ubah status ke Review UMKM"
+                          >
+                            Review UMKM
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateAkadStatusDirectly(akad.id, 4, 'Proyek disetujui & diselesaikan')}
+                            className="px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer border bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                            title="Setujui & Cairkan Saldo"
+                          >
+                            Selesai
+                          </button>
+                        </div>
+                      )}
 
                       <Link
                         href={`/umkm/transaksi/${akad.id}`}

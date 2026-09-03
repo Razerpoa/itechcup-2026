@@ -670,7 +670,7 @@ export function requestRevisionWork(akadId: string, catatanRevisi: string): bool
   const targetAkad = state.akadList.find(
     (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
   )
-  if (!targetAkad) return false
+  if (!targetAkad || targetAkad.step === 4) return false
 
   const updated = state.akadList.map((a) => {
     if (a.id === targetAkad.id) {
@@ -791,7 +791,7 @@ export function updateAkadStatusDirectly(
   const targetAkad = state.akadList.find(
     (a) => a.id === akadId || a.proyekId === akadId || a.id === 'akad-' + akadId
   )
-  if (!targetAkad) return false
+  if (!targetAkad || (targetAkad.step === 4 && newStep !== 4)) return false
 
   if (newStep === 4) {
     releaseProjectCompletionToPelajar({

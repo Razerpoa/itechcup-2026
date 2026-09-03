@@ -605,15 +605,22 @@ export default function PelajarTransaksiRoomPage() {
           </button>
         </form>
 
-        <div className="pt-1">
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="w-full py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>Unggah Foto / Berkas Hasil Karya Final (Tanpa Batas)</span>
-          </button>
-        </div>
+        {step === 4 ? (
+          <div className="w-full py-2.5 px-4 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2 shadow-2xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Karya Telah Disetujui & Dana Lunas Masuk ke Dompet Digital</span>
+          </div>
+        ) : (
+          <div className="pt-1">
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="w-full py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Unggah Foto / Berkas Hasil Karya Final (Tanpa Batas)</span>
+            </button>
+          </div>
+        )}
       </footer>
 
       {showUploadModal && (
