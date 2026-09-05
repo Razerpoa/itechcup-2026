@@ -235,14 +235,16 @@ export function useRealtimeVerificationSync() {
     
     checkStatus()
 
-    
-    
-    const alreadyVerified = user.isVerified || user.verificationStatus === 'VERIFIED'
-    const pollInterval = alreadyVerified ? 10000 : 1500
-    const interval = setInterval(checkStatus, pollInterval)
+    const pollInterval = 30000
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      checkStatus()
+    }, pollInterval)
 
     const handleFocus = () => {
-      checkStatus()
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        checkStatus()
+      }
     }
 
     window.addEventListener('focus', handleFocus)

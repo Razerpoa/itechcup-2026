@@ -55,10 +55,26 @@ export default function UmkmTransaksiRoomPage() {
     syncAkadWithDB()
     syncEscrowWithDB()
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAkadWithDB()
       syncEscrowWithDB()
-    }, 2000)
-    return () => clearInterval(interval)
+    }, 15000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAkadWithDB()
+        syncEscrowWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const activeAkad =

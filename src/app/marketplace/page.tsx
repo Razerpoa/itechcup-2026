@@ -70,11 +70,26 @@ export default function MarketplacePage() {
     syncAkadWithDB()
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncProjectsWithDB()
       syncAkadWithDB()
-    }, 8000)
+    }, 30000)
 
-    return () => clearInterval(interval)
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncProjectsWithDB()
+        syncAkadWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   useEffect(() => {

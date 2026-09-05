@@ -57,9 +57,23 @@ export default function Navbar({ onMenuClick, title }: NavbarProps) {
   useEffect(() => {
     syncAkadWithDB()
     const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAkadWithDB()
-    }, 4000)
-    return () => clearInterval(timer)
+    }, 30000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAkadWithDB()
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const role = user?.role || 'pelajar'

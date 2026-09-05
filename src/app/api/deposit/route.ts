@@ -55,7 +55,7 @@ async function getFullEscrowState(): Promise<ApiEscrowState> {
     nominal: d.nominal,
     bankTujuan: d.bankTujuan || 'QRIS Pakasir',
     nomorPengirim: d.nomorPengirim || d.orderId,
-    buktiTransferUrl: d.buktiTransferUrl || d.qrisUrl || undefined,
+    buktiTransferUrl: d.buktiTransferUrl ? (d.buktiTransferUrl.length > 200 ? 'ATTACHED' : d.buktiTransferUrl) : (d.qrisUrl || undefined),
     status: d.status as 'PENDING' | 'APPROVED' | 'REJECTED',
     catatanAdmin: d.catatanAdmin || undefined,
     createdAt: d.createdAt.toISOString(),

@@ -34,7 +34,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ data })
+    const sanitized = data.map((p) => ({
+      ...p,
+      fotoKartuPelajar: p.fotoKartuPelajar ? (p.fotoKartuPelajar.length > 200 ? 'ATTACHED' : p.fotoKartuPelajar) : null
+    }))
+
+    return NextResponse.json({ data: sanitized })
   } catch {
     return NextResponse.json({ error: 'Gagal mengambil data pelajar' }, { status: 500 })
   }

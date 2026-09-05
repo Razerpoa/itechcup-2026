@@ -47,6 +47,22 @@ export default function MasterAdminEscrowPage() {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'pelajar' | 'sekolah' | 'umkm' | 'deposits' | 'withdrawals' | 'escrows'>('overview')
   const [selectedProofImg, setSelectedProofImg] = useState<{ url: string; title: string } | null>(null)
+
+  const handleOpenDoc = async (url: string, title: string, fetchUrl?: string) => {
+    if (url === 'ATTACHED' && fetchUrl) {
+      try {
+        const res = await fetch(fetchUrl)
+        const json = await res.json()
+        const doc = json.data?.fotoKartuPelajar || json.data?.buktiLegalitas || json.data?.buktiTransferUrl
+        if (doc) {
+          setSelectedProofImg({ url: doc, title })
+          return
+        }
+      } catch {
+      }
+    }
+    setSelectedProofImg({ url, title })
+  }
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -323,12 +339,28 @@ export default function MasterAdminEscrowPage() {
     syncAkadWithDB()
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAdminUsersFromDB()
       syncEscrowWithDB()
       syncAkadWithDB()
-    }, 2000)
+    }, 25000)
 
-    return () => clearInterval(interval)
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAdminUsersFromDB()
+        syncEscrowWithDB()
+        syncAkadWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [router])
 
   const handleAdminLogout = () => {
@@ -725,7 +757,7 @@ export default function MasterAdminEscrowPage() {
                             </td>
                             <td className="px-5 py-4 align-top">
                               {p.fotoKartuPelajar ? (
-                                <button onClick={() => setSelectedProofImg({url: p.fotoKartuPelajar!, title: `Kartu Pelajar: ${p.namaLengkap}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
+                                <button onClick={() => handleOpenDoc(p.fotoKartuPelajar!, `Kartu Pelajar: ${p.namaLengkap}`, `/api/pelajar/${p.id}`)} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
                               ) : (
                                 <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                               )}
@@ -980,7 +1012,7 @@ export default function MasterAdminEscrowPage() {
                           </td>
                           <td className="px-5 py-4 align-top">
                             {u.buktiLegalitas ? (
-                              <button onClick={() => setSelectedProofImg({url: u.buktiLegalitas!, title: `Legalitas: ${u.namaUsaha}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
+                              <button onClick={() => handleOpenDoc(u.buktiLegalitas!, `Legalitas: ${u.namaUsaha}`, `/api/umkm/${u.id}`)} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Dokumen</button>
                             ) : (
                               <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                             )}
@@ -1079,7 +1111,7 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{d.bankTujuan}</td>
                           <td className="px-5 py-4 align-top">
                             {d.buktiTransferUrl ? (
-                              <button onClick={() => setSelectedProofImg({url: d.buktiTransferUrl!, title: `Bukti Transfer: ${d.namaUsaha}`})} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Bukti</button>
+                              <button onClick={() => handleOpenDoc(d.buktiTransferUrl!, `Bukti Transfer: ${d.namaUsaha}`, `/api/deposit/${d.id}`)} className="border border-[#E0DAD2] bg-white text-[#2D2319] hover:bg-[#F6F3EE] px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap shadow-2xs transition-colors">Lihat Bukti</button>
                             ) : (
                               <span className="text-xs text-[#B5ADA4]">Tidak ada</span>
                             )}

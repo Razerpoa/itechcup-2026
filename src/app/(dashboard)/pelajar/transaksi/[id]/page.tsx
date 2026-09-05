@@ -50,9 +50,24 @@ export default function PelajarTransaksiRoomPage() {
   useEffect(() => {
     syncAkadWithDB()
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAkadWithDB()
-    }, 2000)
-    return () => clearInterval(interval)
+    }, 15000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAkadWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const activeAkad =

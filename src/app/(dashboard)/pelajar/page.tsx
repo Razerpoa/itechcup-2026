@@ -57,11 +57,28 @@ export default function PelajarDashboard() {
   useEffect(() => {
     syncAkadWithDB()
     syncEscrowWithDB()
+
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAkadWithDB()
       syncEscrowWithDB()
-    }, 3000)
-    return () => clearInterval(interval)
+    }, 25000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAkadWithDB()
+        syncEscrowWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   useEffect(() => {
@@ -70,13 +87,25 @@ export default function PelajarDashboard() {
       if (user.sekolah && user.nama) return
 
       try {
-        const res = await fetch('/api/pelajar')
+        const endpoint = user.id ? `/api/pelajar/${user.id}` : '/api/pelajar'
+        const res = await fetch(endpoint)
         const json = await res.json()
-        if (json.data && Array.isArray(json.data)) {
-          const match = json.data.find(
-            (p: any) =>
-              (user.id && p.id === user.id) ||
-              (user.email && p.email.toLowerCase() === user.email.toLowerCase())
+        const p = json.data
+        if (p && !Array.isArray(p)) {
+          setCurrentUser({
+            ...user,
+            nama: p.namaLengkap || user.nama,
+            sekolah: p.sekolah?.namaSekolah || p.kelas || user.sekolah,
+            nisn: p.nis || user.nisn,
+            registrationId: p.nis || user.registrationId,
+            isVerified: p.verificationStatus === 'VERIFIED',
+            verificationStatus: p.verificationStatus || user.verificationStatus
+          })
+        } else if (Array.isArray(p)) {
+          const match = p.find(
+            (item: any) =>
+              (user.id && item.id === user.id) ||
+              (user.email && item.email.toLowerCase() === user.email.toLowerCase())
           )
           if (match) {
             setCurrentUser({
@@ -114,16 +143,6 @@ export default function PelajarDashboard() {
   const isVerifiedAccount = Boolean(
     user?.isVerified || user?.verificationStatus === 'VERIFIED'
   )
-
-  useEffect(() => {
-    syncAkadWithDB()
-
-    const interval = setInterval(() => {
-      syncAkadWithDB()
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
 
   const myAkadList = akadState.akadList.filter((a) => {
     if (isDemoPelajar) return true

@@ -83,3 +83,40 @@ export async function PATCH(
     return NextResponse.json({ error: 'Gagal memperbarui status transaksi di database' }, { status: 500 })
   }
 }
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const existingDeposit = await prisma.depositTransaction.findFirst({
+      where: {
+        OR: [{ id }, { orderId: id }]
+      }
+    })
+
+    if (existingDeposit) {
+      return NextResponse.json({
+        data: {
+          id: existingDeposit.id,
+          umkmId: existingDeposit.umkmId,
+          namaUsaha: existingDeposit.namaUsaha,
+          namaPemilik: existingDeposit.namaPemilik,
+          nominal: existingDeposit.nominal,
+          bankTujuan: existingDeposit.bankTujuan || 'QRIS Pakasir',
+          nomorPengirim: existingDeposit.nomorPengirim || existingDeposit.orderId,
+          buktiTransferUrl: existingDeposit.buktiTransferUrl || existingDeposit.qrisUrl || undefined,
+          status: existingDeposit.status,
+          catatanAdmin: existingDeposit.catatanAdmin,
+          createdAt: existingDeposit.createdAt.toISOString(),
+          approvedAt: existingDeposit.approvedAt?.toISOString()
+        }
+      })
+    }
+
+    return NextResponse.json({ error: 'Deposit tidak ditemukan' }, { status: 404 })
+  } catch {
+    return NextResponse.json({ error: 'Gagal mengambil data deposit' }, { status: 500 })
+  }
+}

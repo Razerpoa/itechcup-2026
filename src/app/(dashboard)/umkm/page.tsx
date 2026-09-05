@@ -75,13 +75,23 @@ export default function UmkmDashboard() {
       if (user.namaUsaha && user.nama) return
 
       try {
-        const res = await fetch('/api/umkm')
+        const endpoint = user.id ? `/api/umkm/${user.id}` : '/api/umkm'
+        const res = await fetch(endpoint)
         const json = await res.json()
-        if (json.data && Array.isArray(json.data)) {
-          const match = json.data.find(
-            (u: any) =>
-              (user.id && u.id === user.id) ||
-              (user.email && u.email.toLowerCase() === user.email.toLowerCase())
+        const u = json.data
+        if (u && !Array.isArray(u)) {
+          setCurrentUser({
+            ...user,
+            namaUsaha: u.namaUsaha || user.namaUsaha,
+            nama: u.namaPemilik || user.nama,
+            nomorWa: u.nomorWa || user.nomorWa,
+            isVerified: Boolean(u.isVerified)
+          })
+        } else if (Array.isArray(u)) {
+          const match = u.find(
+            (item: any) =>
+              (user.id && item.id === user.id) ||
+              (user.email && item.email.toLowerCase() === user.email.toLowerCase())
           )
           if (match) {
             setCurrentUser({
@@ -105,11 +115,26 @@ export default function UmkmDashboard() {
     syncAkadWithDB()
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAkadWithDB()
       syncProjectsWithDB()
-    }, 3000)
+    }, 25000)
 
-    return () => clearInterval(interval)
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncAkadWithDB()
+        syncProjectsWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const umkmId = user?.id || 'umkm-default'

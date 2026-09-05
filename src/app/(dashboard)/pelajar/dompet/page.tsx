@@ -15,11 +15,28 @@ export default function DompetPage() {
   useEffect(() => {
     syncEscrowWithDB()
     syncAkadWithDB()
+
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncEscrowWithDB()
       syncAkadWithDB()
-    }, 3000)
-    return () => clearInterval(interval)
+    }, 25000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncEscrowWithDB()
+        syncAkadWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const isDemoPelajar = user?.id === 'pelajar-active' || user?.email === 'pelajar.google@gmail.com' || !user?.id

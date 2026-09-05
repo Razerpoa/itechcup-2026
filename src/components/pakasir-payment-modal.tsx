@@ -51,6 +51,7 @@ export default function PakasirPaymentModal({
   useEffect(() => {
     if (isPaid) return
     const poll = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       try {
         const res = await fetch(`/api/payment/pakasir/status?orderId=${encodeURIComponent(orderId)}`, {
           cache: 'no-store'
@@ -68,7 +69,7 @@ export default function PakasirPaymentModal({
         }
       } catch {
       }
-    }, 2500)
+    }, 4000)
     return () => clearInterval(poll)
   }, [orderId, isPaid, onSuccess])
 

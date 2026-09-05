@@ -45,7 +45,12 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ data })
+    const sanitized = data.map((u) => ({
+      ...u,
+      buktiLegalitas: u.buktiLegalitas ? (u.buktiLegalitas.length > 200 ? 'ATTACHED' : u.buktiLegalitas) : null
+    }))
+
+    return NextResponse.json({ data: sanitized })
   } catch {
     return NextResponse.json({ error: 'Gagal mengambil data UMKM' }, { status: 500 })
   }

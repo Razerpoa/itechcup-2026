@@ -30,9 +30,24 @@ export default function UMKMSaldoDepositPage() {
   useEffect(() => {
     syncEscrowWithDB()
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncEscrowWithDB()
-    }, 2000)
-    return () => clearInterval(interval)
+    }, 20000)
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncEscrowWithDB()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const umkmId = user?.id || 'umkm-default'

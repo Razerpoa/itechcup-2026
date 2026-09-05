@@ -197,8 +197,12 @@ export interface ApiTransaksiResponse {
   updatedAt?: string
 }
 
+let isSyncingAkad = false
+
 export async function syncAkadWithDB(): Promise<AkadStoreData> {
   const currentState = getAkadState()
+  if (isSyncingAkad) return currentState
+  isSyncingAkad = true
   let mergedLamaran = currentState.lamaranList
   let mergedAkadList = currentState.akadList
   let mergedChatMessages = currentState.chatMessages
@@ -206,12 +210,7 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
   try {
     const [lamaranRes, chatRes, trxRes] = await Promise.allSettled([
       fetch('/api/lamaran', { cache: 'no-store' }),
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'SYNC', chats: currentState.chatMessages }),
-        cache: 'no-store'
-      }),
+      fetch('/api/chat', { cache: 'no-store' }),
       fetch('/api/transaksi', { cache: 'no-store' })
     ])
 
@@ -364,6 +363,8 @@ export async function syncAkadWithDB(): Promise<AkadStoreData> {
     saveAkadState(newState)
     return newState
   } catch {
+  } finally {
+    isSyncingAkad = false
   }
 
   return currentState
