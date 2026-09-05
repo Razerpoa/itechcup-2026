@@ -35,11 +35,12 @@ export async function POST(request: NextRequest) {
 
         if (pakasirRes.ok) {
           const pakasirJson = await pakasirRes.json()
-          if (pakasirJson?.data?.qr_string) {
-            qrisString = pakasirJson.data.qr_string
+          const paymentData = pakasirJson?.payment || pakasirJson?.data || pakasirJson
+          if (paymentData?.payment_number || paymentData?.qr_string) {
+            qrisString = paymentData.payment_number || paymentData.qr_string
           }
-          if (pakasirJson?.data?.qr_image || pakasirJson?.data?.payment_url) {
-            qrisUrl = pakasirJson.data.qr_image || pakasirJson.data.payment_url
+          if (paymentData?.qr_image || paymentData?.payment_url) {
+            qrisUrl = paymentData.qr_image || paymentData.payment_url
           }
         }
       } catch {

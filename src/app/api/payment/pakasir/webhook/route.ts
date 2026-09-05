@@ -4,7 +4,11 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { amount, order_id, project, status, payment_method, completed_at } = body
+    const raw = body?.transaction || body?.data || body
+    const order_id = raw.order_id || raw.orderId || body.order_id
+    const status = raw.status || body.status
+    const payment_method = raw.payment_method || body.payment_method
+    const completed_at = raw.completed_at || body.completed_at
 
     if (!order_id) {
       return NextResponse.json({ error: 'order_id wajib disertakan' }, { status: 400 })

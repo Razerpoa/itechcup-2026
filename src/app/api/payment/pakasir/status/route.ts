@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
 
           if (detailRes.ok) {
             const detailJson = await detailRes.json()
-            const status = detailJson?.data?.status || detailJson?.status
-            if (status === 'completed' || status === 'COMPLETED' || status === 'PAID') {
+            const trx = detailJson?.transaction || detailJson?.data || detailJson
+            const status = trx?.status
+            if (status === 'completed' || status === 'COMPLETED' || status === 'PAID' || status === 'success') {
               const approvedAt = new Date()
               await prisma.depositTransaction.update({
                 where: { orderId },
