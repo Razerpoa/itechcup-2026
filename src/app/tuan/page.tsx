@@ -1066,6 +1066,14 @@ export default function MasterAdminEscrowPage() {
                           <td className="px-5 py-4 align-top">
                             <div className="font-bold text-[#2D2319]">{d.namaUsaha}</div>
                             <div className="text-xs text-[#8B7E74]">{d.namaPemilik}</div>
+                            <div className="font-mono text-[11px] font-extrabold text-[#964825] mt-1 bg-[#FFF1EB] px-2 py-0.5 rounded-md border border-[#FFD9CA] w-fit">
+                              ID: {d.id}
+                            </div>
+                            {d.nomorPengirim && d.nomorPengirim !== d.id && (
+                              <div className="text-[10px] text-gray-500 mt-0.5 font-medium truncate max-w-[180px]">
+                                Pengirim: {d.nomorPengirim}
+                              </div>
+                            )}
                           </td>
                           <td className="px-5 py-4 align-top text-[#2D2319] font-bold tabular-nums">{formatRupiah(d.nominal)}</td>
                           <td className="px-5 py-4 align-top text-[#2D2319] font-medium">{d.bankTujuan}</td>

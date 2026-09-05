@@ -296,7 +296,7 @@ model DeliverableWork {
 }
 
 model DepositTransaction {
-  id                String    @id @default(uuid())
+  id                String    @id
   orderId           String    @unique
   umkmId            String
   namaUsaha         String
@@ -307,12 +307,32 @@ model DepositTransaction {
   qrisUrl           String?   @db.Text
   qrisString        String?   @db.Text
   pakasirPaymentUrl String?   @db.Text
+  bankTujuan        String?
+  nomorPengirim     String?
+  buktiTransferUrl  String?   @db.Text
+  catatanAdmin      String?
   approvedAt        DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([umkmId])
   @@index([orderId])
+}
+
+model WithdrawalTransaction {
+  id           String    @id
+  pelajarId    String
+  namaPelajar  String
+  nominal      Int
+  eWalletType  String
+  eWalletNomor String
+  status       String    @default("PENDING")
+  catatanAdmin String?
+  approvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([pelajarId])
 }
 
 

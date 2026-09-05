@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { generateDepositId } from '@/lib/utils'
 
 export interface ApiDepositItem {
   id: string
@@ -36,28 +37,71 @@ export interface ApiEscrowState {
   pelajarBalances: Record<string, number>
 }
 
-declare global {
-  var __global_mitra_muda_escrow__: ApiEscrowState | undefined
-}
+async function getFullEscrowState(): Promise<ApiEscrowState> {
+  const [dbDeposits, dbWithdrawals] = await Promise.all([
+    prisma.depositTransaction.findMany({
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.withdrawalTransaction.findMany({
+      orderBy: { createdAt: 'desc' }
+    })
+  ])
 
-if (!global.__global_mitra_muda_escrow__) {
-  global.__global_mitra_muda_escrow__ = {
-    deposits: [],
-    withdrawals: [],
-    umkmBalances: {},
-    pelajarBalances: {}
+  const deposits: ApiDepositItem[] = dbDeposits.map((d) => ({
+    id: d.id,
+    umkmId: d.umkmId,
+    namaUsaha: d.namaUsaha,
+    namaPemilik: d.namaPemilik,
+    nominal: d.nominal,
+    bankTujuan: d.bankTujuan || 'QRIS Pakasir',
+    nomorPengirim: d.nomorPengirim || d.orderId,
+    buktiTransferUrl: d.buktiTransferUrl || d.qrisUrl || undefined,
+    status: d.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+    catatanAdmin: d.catatanAdmin || undefined,
+    createdAt: d.createdAt.toISOString(),
+    approvedAt: d.approvedAt ? d.approvedAt.toISOString() : undefined
+  }))
+
+  const withdrawals: ApiWithdrawalItem[] = dbWithdrawals.map((w) => ({
+    id: w.id,
+    pelajarId: w.pelajarId,
+    namaPelajar: w.namaPelajar,
+    nominal: w.nominal,
+    eWalletType: w.eWalletType as 'GoPay' | 'DANA' | 'OVO' | 'ShopeePay',
+    eWalletNomor: w.eWalletNomor,
+    status: w.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+    catatanAdmin: w.catatanAdmin || undefined,
+    createdAt: w.createdAt.toISOString(),
+    approvedAt: w.approvedAt ? w.approvedAt.toISOString() : undefined
+  }))
+
+  const umkmBalances: Record<string, number> = {}
+  for (const dep of deposits) {
+    if (dep.status === 'APPROVED') {
+      umkmBalances[dep.umkmId] = (umkmBalances[dep.umkmId] || 0) + dep.nominal
+    }
   }
+
+  const pelajarBalances: Record<string, number> = {}
+  for (const w of withdrawals) {
+    if (w.status === 'APPROVED') {
+      pelajarBalances[w.pelajarId] = Math.max(0, (pelajarBalances[w.pelajarId] || 0) - w.nominal)
+    }
+  }
+
+  return { deposits, withdrawals, umkmBalances, pelajarBalances }
 }
 
 export async function GET(_request: NextRequest) {
-  const state = global.__global_mitra_muda_escrow__ || {
-    deposits: [],
-    withdrawals: [],
-    umkmBalances: {},
-    pelajarBalances: {}
+  try {
+    const state = await getFullEscrowState()
+    return NextResponse.json({ success: true, data: state })
+  } catch {
+    return NextResponse.json({
+      success: true,
+      data: { deposits: [], withdrawals: [], umkmBalances: {}, pelajarBalances: {} }
+    })
   }
-
-  return NextResponse.json({ data: state })
 }
 
 export async function POST(request: NextRequest) {
@@ -65,158 +109,163 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { type, action, payload } = body
 
-    if (!global.__global_mitra_muda_escrow__) {
-      global.__global_mitra_muda_escrow__ = {
-        deposits: [],
-        withdrawals: [],
-        umkmBalances: {},
-        pelajarBalances: {}
-      }
-    }
-
     if (type === 'SYNC') {
       const clientDeposits: ApiDepositItem[] = body.deposits || []
       const clientWithdrawals: ApiWithdrawalItem[] = body.withdrawals || []
 
       for (const cd of clientDeposits) {
-        const existingIdx = global.__global_mitra_muda_escrow__.deposits.findIndex((d) => d.id === cd.id)
-        if (existingIdx >= 0) {
-          const s = global.__global_mitra_muda_escrow__.deposits[existingIdx]
-          if (s.status === 'PENDING' && cd.status !== 'PENDING') {
-            global.__global_mitra_muda_escrow__.deposits[existingIdx] = cd
-          }
-        } else {
-          global.__global_mitra_muda_escrow__.deposits.unshift(cd)
+        if (!cd.id) continue
+        try {
+          await prisma.depositTransaction.upsert({
+            where: { id: cd.id },
+            update: {
+              status: cd.status,
+              approvedAt: cd.approvedAt ? new Date(cd.approvedAt) : undefined,
+              catatanAdmin: cd.catatanAdmin
+            },
+            create: {
+              id: cd.id,
+              orderId: cd.nomorPengirim || cd.id,
+              umkmId: cd.umkmId || 'umkm-default',
+              namaUsaha: cd.namaUsaha || 'UMKM Mitra Muda',
+              namaPemilik: cd.namaPemilik || 'Pemilik Usaha',
+              nominal: cd.nominal || 500000,
+              paymentMethod: cd.bankTujuan?.includes('QRIS') ? 'qris' : 'manual',
+              bankTujuan: cd.bankTujuan || 'BCA',
+              nomorPengirim: cd.nomorPengirim,
+              buktiTransferUrl: cd.buktiTransferUrl,
+              status: cd.status || 'PENDING',
+              createdAt: cd.createdAt ? new Date(cd.createdAt) : new Date(),
+              approvedAt: cd.approvedAt ? new Date(cd.approvedAt) : undefined
+            }
+          })
+        } catch {
         }
       }
 
       for (const cw of clientWithdrawals) {
-        const existingIdx = global.__global_mitra_muda_escrow__.withdrawals.findIndex((w) => w.id === cw.id)
-        if (existingIdx >= 0) {
-          const s = global.__global_mitra_muda_escrow__.withdrawals[existingIdx]
-          if (s.status === 'PENDING' && cw.status !== 'PENDING') {
-            global.__global_mitra_muda_escrow__.withdrawals[existingIdx] = cw
-          }
-        } else {
-          global.__global_mitra_muda_escrow__.withdrawals.unshift(cw)
+        if (!cw.id) continue
+        try {
+          await prisma.withdrawalTransaction.upsert({
+            where: { id: cw.id },
+            update: {
+              status: cw.status,
+              approvedAt: cw.approvedAt ? new Date(cw.approvedAt) : undefined,
+              catatanAdmin: cw.catatanAdmin
+            },
+            create: {
+              id: cw.id,
+              pelajarId: cw.pelajarId || 'pelajar-1',
+              namaPelajar: cw.namaPelajar || 'Pelajar Mitra Muda',
+              nominal: cw.nominal || 100000,
+              eWalletType: cw.eWalletType || 'GoPay',
+              eWalletNomor: cw.eWalletNomor || '081234567890',
+              status: cw.status || 'PENDING',
+              createdAt: cw.createdAt ? new Date(cw.createdAt) : new Date(),
+              approvedAt: cw.approvedAt ? new Date(cw.approvedAt) : undefined
+            }
+          })
+        } catch {
         }
       }
 
-      try {
-        const dbDeposits = await prisma.depositTransaction.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 50
-        })
-        for (const dbDep of dbDeposits) {
-          const existing = global.__global_mitra_muda_escrow__.deposits.find(
-            (d) => d.id === dbDep.id || d.nomorPengirim === dbDep.orderId
-          )
-          if (!existing) {
-            global.__global_mitra_muda_escrow__.deposits.unshift({
-              id: dbDep.id,
-              umkmId: dbDep.umkmId,
-              namaUsaha: dbDep.namaUsaha,
-              namaPemilik: dbDep.namaPemilik,
-              nominal: dbDep.nominal,
-              bankTujuan: 'QRIS Pakasir',
-              nomorPengirim: dbDep.orderId,
-              buktiTransferUrl: dbDep.qrisUrl || undefined,
-              status: dbDep.status as 'PENDING' | 'APPROVED' | 'REJECTED',
-              createdAt: dbDep.createdAt.toISOString(),
-              approvedAt: dbDep.approvedAt ? dbDep.approvedAt.toISOString() : undefined
-            })
-          } else {
-            existing.status = dbDep.status as 'PENDING' | 'APPROVED' | 'REJECTED'
-            if (dbDep.approvedAt) {
-              existing.approvedAt = dbDep.approvedAt.toISOString()
-            }
-          }
-          if (dbDep.status === 'APPROVED') {
-            const currentBal = global.__global_mitra_muda_escrow__.umkmBalances[dbDep.umkmId] || 0
-            if (currentBal === 0) {
-              global.__global_mitra_muda_escrow__.umkmBalances[dbDep.umkmId] = dbDep.nominal
-            }
-          }
-        }
-      } catch {
-      }
-
-      return NextResponse.json({ success: true, data: global.__global_mitra_muda_escrow__ })
+      const state = await getFullEscrowState()
+      return NextResponse.json({ success: true, data: state })
     }
 
     if (type === 'RELEASE_TO_PELAJAR' || action === 'RELEASE_TO_PELAJAR') {
       const targetPelajarId = (payload?.pelajarId || body.pelajarId || 'pelajar-active') as string
       const nominal = Number(payload?.nominalTotal || body.nominalTotal) || 500000
-
-      const currentBal = global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId] || 0
-      global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId] = currentBal + nominal
-
-      if (targetPelajarId !== 'pelajar-active') {
-        const actBal = global.__global_mitra_muda_escrow__.pelajarBalances['pelajar-active'] || 0
-        global.__global_mitra_muda_escrow__.pelajarBalances['pelajar-active'] = actBal + nominal
-      }
-
+      const state = await getFullEscrowState()
+      const newBal = (state.pelajarBalances[targetPelajarId] || 0) + nominal
       return NextResponse.json({
         success: true,
         pelajarId: targetPelajarId,
         nominal,
-        newBalance: global.__global_mitra_muda_escrow__.pelajarBalances[targetPelajarId]
+        newBalance: newBal
       })
     }
 
     if (type === 'DEPOSIT') {
-      const newDeposit: ApiDepositItem = {
-        id: payload.id || 'dep-' + Date.now(),
-        umkmId: payload.umkmId || 'umkm-default',
-        namaUsaha: payload.namaUsaha || 'UMKM Mitra Muda',
-        namaPemilik: payload.namaPemilik || 'Pemilik Usaha',
-        nominal: Number(payload.nominal) || 500000,
-        bankTujuan: payload.bankTujuan || 'BCA',
-        nomorPengirim: payload.nomorPengirim,
-        buktiTransferUrl: payload.buktiTransferUrl,
-        status: payload.status || 'PENDING',
-        createdAt: payload.createdAt || new Date().toISOString()
-      }
+      const depositId = payload.id || generateDepositId('MTU')
+      const createdDeposit = await prisma.depositTransaction.upsert({
+        where: { id: depositId },
+        update: {
+          status: payload.status || 'PENDING',
+          nominal: Number(payload.nominal) || 500000,
+          bankTujuan: payload.bankTujuan || 'BCA',
+          nomorPengirim: payload.nomorPengirim,
+          buktiTransferUrl: payload.buktiTransferUrl,
+          catatanAdmin: payload.catatanAdmin
+        },
+        create: {
+          id: depositId,
+          orderId: payload.orderId || depositId,
+          umkmId: payload.umkmId || 'umkm-default',
+          namaUsaha: payload.namaUsaha || 'UMKM Mitra Muda',
+          namaPemilik: payload.namaPemilik || 'Pemilik Usaha',
+          nominal: Number(payload.nominal) || 500000,
+          paymentMethod: payload.paymentMethod || (payload.bankTujuan?.includes('QRIS') ? 'qris' : 'manual'),
+          bankTujuan: payload.bankTujuan || 'BCA',
+          nomorPengirim: payload.nomorPengirim,
+          buktiTransferUrl: payload.buktiTransferUrl,
+          status: payload.status || 'PENDING'
+        }
+      })
 
-      const existingIndex = global.__global_mitra_muda_escrow__.deposits.findIndex(
-        (d) => d.id === newDeposit.id
-      )
-
-      if (existingIndex >= 0) {
-        global.__global_mitra_muda_escrow__.deposits[existingIndex] = newDeposit
-      } else {
-        global.__global_mitra_muda_escrow__.deposits.unshift(newDeposit)
-      }
-
-      return NextResponse.json({ success: true, data: newDeposit }, { status: 201 })
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: createdDeposit.id,
+          umkmId: createdDeposit.umkmId,
+          namaUsaha: createdDeposit.namaUsaha,
+          namaPemilik: createdDeposit.namaPemilik,
+          nominal: createdDeposit.nominal,
+          bankTujuan: createdDeposit.bankTujuan || 'BCA',
+          nomorPengirim: createdDeposit.nomorPengirim || undefined,
+          buktiTransferUrl: createdDeposit.buktiTransferUrl || undefined,
+          status: createdDeposit.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+          createdAt: createdDeposit.createdAt.toISOString()
+        }
+      }, { status: 201 })
     }
 
     if (type === 'WITHDRAWAL') {
-      const newWithdrawal: ApiWithdrawalItem = {
-        id: payload.id || 'wd-' + Date.now(),
-        pelajarId: payload.pelajarId || 'pelajar-1',
-        namaPelajar: payload.namaPelajar || 'Pelajar Mitra Muda',
-        nominal: Number(payload.nominal) || 100000,
-        eWalletType: payload.eWalletType || 'GoPay',
-        eWalletNomor: payload.eWalletNomor || '081234567890',
-        status: payload.status || 'PENDING',
-        createdAt: payload.createdAt || new Date().toISOString()
-      }
+      const withdrawalId = payload.id || `WD-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+      const createdWithdrawal = await prisma.withdrawalTransaction.upsert({
+        where: { id: withdrawalId },
+        update: {
+          status: payload.status || 'PENDING',
+          catatanAdmin: payload.catatanAdmin
+        },
+        create: {
+          id: withdrawalId,
+          pelajarId: payload.pelajarId || 'pelajar-1',
+          namaPelajar: payload.namaPelajar || 'Pelajar Mitra Muda',
+          nominal: Number(payload.nominal) || 100000,
+          eWalletType: payload.eWalletType || 'GoPay',
+          eWalletNomor: payload.eWalletNomor || '081234567890',
+          status: payload.status || 'PENDING'
+        }
+      })
 
-      const existingIdx = global.__global_mitra_muda_escrow__.withdrawals.findIndex(
-        (w) => w.id === newWithdrawal.id
-      )
-      if (existingIdx >= 0) {
-        global.__global_mitra_muda_escrow__.withdrawals[existingIdx] = newWithdrawal
-      } else {
-        global.__global_mitra_muda_escrow__.withdrawals.unshift(newWithdrawal)
-      }
-
-      return NextResponse.json({ success: true, data: newWithdrawal }, { status: 201 })
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: createdWithdrawal.id,
+          pelajarId: createdWithdrawal.pelajarId,
+          namaPelajar: createdWithdrawal.namaPelajar,
+          nominal: createdWithdrawal.nominal,
+          eWalletType: createdWithdrawal.eWalletType,
+          eWalletNomor: createdWithdrawal.eWalletNomor,
+          status: createdWithdrawal.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+          createdAt: createdWithdrawal.createdAt.toISOString()
+        }
+      }, { status: 201 })
     }
 
     return NextResponse.json({ error: 'Tipe transaksi tidak valid' }, { status: 400 })
   } catch {
-    return NextResponse.json({ error: 'Gagal memproses deposit' }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal memproses transaksi database' }, { status: 500 })
   }
 }

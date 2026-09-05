@@ -41,19 +41,6 @@ export async function GET(request: NextRequest) {
                 }
               })
 
-              if (global.__global_mitra_muda_escrow__) {
-                const idx = global.__global_mitra_muda_escrow__.deposits.findIndex(
-                  (d) => d.nomorPengirim === orderId || d.id === deposit.id
-                )
-                if (idx >= 0) {
-                  global.__global_mitra_muda_escrow__.deposits[idx].status = 'APPROVED'
-                  global.__global_mitra_muda_escrow__.deposits[idx].approvedAt = approvedAt.toISOString()
-                }
-
-                const currentBalance = global.__global_mitra_muda_escrow__.umkmBalances[deposit.umkmId] || 0
-                global.__global_mitra_muda_escrow__.umkmBalances[deposit.umkmId] = currentBalance + deposit.nominal
-              }
-
               return NextResponse.json({
                 success: true,
                 status: 'APPROVED',

@@ -47,19 +47,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    if (global.__global_mitra_muda_escrow__) {
-      const idx = global.__global_mitra_muda_escrow__.deposits.findIndex(
-        (d) => d.nomorPengirim === orderId || d.id === existingDeposit.id
-      )
-      if (idx >= 0) {
-        global.__global_mitra_muda_escrow__.deposits[idx].status = 'APPROVED'
-        global.__global_mitra_muda_escrow__.deposits[idx].approvedAt = approvedAt.toISOString()
-      }
-
-      const currentBalance = global.__global_mitra_muda_escrow__.umkmBalances[existingDeposit.umkmId] || 0
-      global.__global_mitra_muda_escrow__.umkmBalances[existingDeposit.umkmId] = currentBalance + existingDeposit.nominal
-    }
-
     return NextResponse.json({
       success: true,
       message: 'Simulasi pembayaran berhasil! Saldo deposit telah masuk.',

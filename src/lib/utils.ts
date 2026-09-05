@@ -113,3 +113,15 @@ export function compressImageFile(file: File, maxWidth = 1200, quality = 0.75): 
   })
 }
 
+export function generateNoResi(prefix = 'MTU', customYear?: number): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let random = ''
+  for (let i = 0; i < 4; i++) {
+    random += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  const year = customYear || new Date().getFullYear()
+  return `${prefix}-${year}-${random}`
+}
+
+export const generateDepositId = generateNoResi
+

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { generateNoResi } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const calculatedNominal = Math.round(Number(nominal))
-    const orderId = `MM-DEP-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+    const orderId = generateNoResi('MTU')
     const slug = process.env.PAKASIR_PROJECT_SLUG || 'mitra-muda'
     const apiKey = process.env.PAKASIR_API_KEY || ''
 
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
 
     const newDeposit = await prisma.depositTransaction.create({
       data: {
+        id: orderId,
         orderId,
         umkmId,
         namaUsaha: namaUsaha || 'UMKM Mitra Muda',
@@ -67,21 +69,6 @@ export async function POST(request: NextRequest) {
         pakasirPaymentUrl
       }
     })
-
-    if (global.__global_mitra_muda_escrow__) {
-      global.__global_mitra_muda_escrow__.deposits.unshift({
-        id: newDeposit.id,
-        umkmId,
-        namaUsaha: newDeposit.namaUsaha,
-        namaPemilik: newDeposit.namaPemilik,
-        nominal: calculatedNominal,
-        bankTujuan: 'QRIS Pakasir',
-        nomorPengirim: orderId,
-        buktiTransferUrl: qrisUrl,
-        status: 'PENDING',
-        createdAt: newDeposit.createdAt.toISOString()
-      })
-    }
 
     const expiredAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 

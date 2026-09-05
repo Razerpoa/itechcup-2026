@@ -204,3 +204,43 @@ CREATE TABLE IF NOT EXISTS "Transaksi" (
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS "DepositTransaction" (
+  "id" TEXT PRIMARY KEY,
+  "orderId" TEXT UNIQUE NOT NULL,
+  "umkmId" TEXT NOT NULL,
+  "namaUsaha" TEXT NOT NULL,
+  "namaPemilik" TEXT NOT NULL,
+  "nominal" INTEGER NOT NULL,
+  "paymentMethod" TEXT NOT NULL DEFAULT 'qris',
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "qrisUrl" TEXT,
+  "qrisString" TEXT,
+  "pakasirPaymentUrl" TEXT,
+  "bankTujuan" TEXT,
+  "nomorPengirim" TEXT,
+  "buktiTransferUrl" TEXT,
+  "catatanAdmin" TEXT,
+  "approvedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "DepositTransaction_umkmId_idx" ON "DepositTransaction"("umkmId");
+CREATE INDEX IF NOT EXISTS "DepositTransaction_orderId_idx" ON "DepositTransaction"("orderId");
+
+CREATE TABLE IF NOT EXISTS "WithdrawalTransaction" (
+  "id" TEXT PRIMARY KEY,
+  "pelajarId" TEXT NOT NULL,
+  "namaPelajar" TEXT NOT NULL,
+  "nominal" INTEGER NOT NULL,
+  "eWalletType" TEXT NOT NULL,
+  "eWalletNomor" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "catatanAdmin" TEXT,
+  "approvedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "WithdrawalTransaction_pelajarId_idx" ON "WithdrawalTransaction"("pelajarId");

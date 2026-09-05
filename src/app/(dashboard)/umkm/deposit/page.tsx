@@ -17,7 +17,7 @@ import {
   AlertCircle,
   ArrowDownLeft
 } from 'lucide-react'
-import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
+import { formatRupiah, formatDate, formatThousand, parseThousand, generateNoResi } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, submitUMKMDeposit, syncEscrowWithDB } from '@/lib/escrow-store'
 import PakasirPaymentModal from '@/components/pakasir-payment-modal'
@@ -51,6 +51,7 @@ export default function UMKMSaldoDepositPage() {
   const [isSuccessModal, setIsSuccessModal] = useState<boolean>(false)
   const [successInfo, setSuccessInfo] = useState<{ title: string; desc: string } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [resiManual, setResiManual] = useState<string>(() => generateNoResi('MTU'))
 
   const [pakasirModalData, setPakasirModalData] = useState<{
     orderId: string
@@ -159,7 +160,9 @@ export default function UMKMSaldoDepositPage() {
       return
     }
 
+    const depositId = resiManual
     submitUMKMDeposit({
+      id: depositId,
       umkmId,
       namaUsaha: user?.namaUsaha || 'UMKM Mitra Muda',
       namaPemilik: user?.nama || 'Pemilik Usaha',
@@ -171,12 +174,13 @@ export default function UMKMSaldoDepositPage() {
 
     setSuccessInfo({
       title: 'Konfirmasi Deposit Terkirim!',
-      desc: 'Bukti transfer deposit Anda telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.'
+      desc: `Bukti transfer deposit Anda dengan ID Deposit ${depositId} telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.`
     })
     setIsSuccessModal(true)
     setCustomNominal('')
     setNomorPengirim('')
     setBuktiPreview(null)
+    setResiManual(generateNoResi('MTU'))
   }
 
   return (
@@ -471,6 +475,25 @@ export default function UMKMSaldoDepositPage() {
                     4. Unggah Bukti Transfer & Konfirmasi
                   </label>
 
+                  <div className="flex items-center justify-between bg-amber-50/80 border border-amber-200 p-3.5 rounded-2xl">
+                    <div>
+                      <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                        ID Deposit Pembayaran:
+                      </span>
+                      <span className="font-mono text-xs sm:text-sm font-extrabold text-[#964825]">
+                        {resiManual}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(resiManual, 'resi')}
+                      className="px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      {isCopied === 'resi' ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{isCopied === 'resi' ? 'Tersalin' : 'Salin ID'}</span>
+                    </button>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-gray-600 block">
                       Nomor Rekening / Nama Pengirim (Opsional)
@@ -574,6 +597,13 @@ export default function UMKMSaldoDepositPage() {
                     </div>
 
                     <p className="text-[11px] text-gray-500 truncate">{dep.bankTujuan}</p>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-gray-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+                      <span className="text-[10px] text-gray-400 font-sans">ID Deposit:</span>
+                      <span className="font-bold text-[#964825]">{dep.id}</span>
+                    </div>
+                    {dep.nomorPengirim && dep.nomorPengirim !== dep.id && (
+                      <p className="text-[10px] text-gray-500 truncate">Pengirim: {dep.nomorPengirim}</p>
+                    )}
                     <p className="text-[10px] text-gray-400">{formatDate(dep.createdAt)}</p>
                   </div>
                 ))}

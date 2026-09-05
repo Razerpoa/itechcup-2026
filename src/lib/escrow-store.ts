@@ -1,6 +1,7 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { generateDepositId } from '@/lib/utils'
 
 export interface UMKMDepositItem {
   id: string
@@ -40,8 +41,8 @@ export interface EscrowHoldingItem {
   namaPelajar: string
   nominalTotal: number
   nominalDP: number
-  dpStatus: 'HELD_IN_ESCROW' | 'RELEASED_TO_PELAJAR' | 'REFUNDED'
-  pelunasanStatus: 'PENDING' | 'HELD_IN_ESCROW' | 'RELEASED_TO_PELAJAR'
+  dpStatus: 'HELD_IN_ESCROW' | 'RELEASED_TO_PELAJAR' | 'REFUNDED_TO_UMKM'
+  pelunasanStatus: 'PENDING' | 'HELD_IN_ESCROW' | 'RELEASED_TO_PELAJAR' | 'REFUNDED_TO_UMKM'
   createdAt: string
   updatedAt: string
 }
@@ -54,8 +55,6 @@ export interface EscrowStoreData {
   pelajarBalances: Record<string, number>
 }
 
-const STORAGE_KEY = 'mitra_muda_escrow_store_v1'
-
 const INITIAL_DATA: EscrowStoreData = {
   deposits: [],
   withdrawals: [],
@@ -65,60 +64,33 @@ const INITIAL_DATA: EscrowStoreData = {
 }
 
 let cachedData: EscrowStoreData = INITIAL_DATA
-let lastRaw: string | null = '__init__'
 const listeners = new Set<() => void>()
 
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('mitra_muda_escrow_store_v1')
+  } catch {
+  }
+}
+
 function emitChange() {
-  lastRaw = '__dirty__'
   for (const listener of listeners) {
     listener()
   }
 }
 
 export function getEscrowState(): EscrowStoreData {
-  if (typeof window === 'undefined') return INITIAL_DATA
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === lastRaw) {
-      return cachedData
-    }
-    lastRaw = raw
-    if (!raw) {
-      cachedData = INITIAL_DATA
-    } else {
-      cachedData = JSON.parse(raw) as EscrowStoreData
-    }
-    return cachedData
-  } catch {
-    return INITIAL_DATA
-  }
+  return cachedData
 }
 
 function saveEscrowState(data: EscrowStoreData) {
   cachedData = data
-  if (typeof window !== 'undefined') {
-    try {
-      const serialized = JSON.stringify(data)
-      lastRaw = serialized
-      localStorage.setItem(STORAGE_KEY, serialized)
-      window.dispatchEvent(new Event('storage'))
-    } catch {
-    }
-  }
   emitChange()
 }
 
 export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
-  const currentState = getEscrowState()
   try {
     const res = await fetch('/api/deposit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'SYNC',
-        deposits: currentState.deposits,
-        withdrawals: currentState.withdrawals
-      }),
       cache: 'no-store'
     })
     if (res.ok) {
@@ -129,57 +101,23 @@ export async function syncEscrowWithDB(): Promise<EscrowStoreData> {
         const apiUmkmBalances: Record<string, number> = json.data.umkmBalances || {}
         const apiPelajarBalances: Record<string, number> = json.data.pelajarBalances || {}
 
-        const mergedDeposits = apiDeposits.map((ad) => {
-          const local = currentState.deposits.find((ld) => ld.id === ad.id)
-          if (local && local.status !== 'PENDING' && ad.status === 'PENDING') {
-            return local
-          }
-          return ad
-        })
-        for (const ld of currentState.deposits) {
-          if (!mergedDeposits.some((d) => d.id === ld.id)) {
-            mergedDeposits.push(ld)
+        cachedData = {
+          ...cachedData,
+          deposits: apiDeposits,
+          withdrawals: apiWithdrawals,
+          umkmBalances: apiUmkmBalances,
+          pelajarBalances: {
+            ...cachedData.pelajarBalances,
+            ...apiPelajarBalances
           }
         }
-
-        const mergedWithdrawals = apiWithdrawals.map((aw) => {
-          const local = currentState.withdrawals.find((lw) => lw.id === aw.id)
-          if (local && local.status !== 'PENDING' && aw.status === 'PENDING') {
-            return local
-          }
-          return aw
-        })
-        for (const lw of currentState.withdrawals) {
-          if (!mergedWithdrawals.some((w) => w.id === lw.id)) {
-            mergedWithdrawals.push(lw)
-          }
-        }
-
-        const mergedUmkmBalances = {
-          ...currentState.umkmBalances,
-          ...apiUmkmBalances
-        }
-
-        const mergedPelajarBalances = {
-          ...currentState.pelajarBalances,
-          ...apiPelajarBalances
-        }
-
-        const newState: EscrowStoreData = {
-          ...currentState,
-          deposits: mergedDeposits,
-          withdrawals: mergedWithdrawals,
-          umkmBalances: mergedUmkmBalances,
-          pelajarBalances: mergedPelajarBalances
-        }
-
-        saveEscrowState(newState)
-        return newState
+        emitChange()
+        return cachedData
       }
     }
   } catch {
   }
-  return currentState
+  return cachedData
 }
 
 export function getUMKMBalance(umkmId: string): number {
@@ -210,6 +148,7 @@ export function getPelajarBalance(pelajarId: string): number {
 }
 
 export function submitUMKMDeposit(payload: {
+  id?: string
   umkmId: string
   namaUsaha: string
   namaPemilik: string
@@ -218,9 +157,9 @@ export function submitUMKMDeposit(payload: {
   nomorPengirim?: string
   buktiTransferUrl?: string
 }): UMKMDepositItem {
-  const state = getEscrowState()
+  const depositId = payload.id || generateDepositId('MTU')
   const newDeposit: UMKMDepositItem = {
-    id: 'dep-' + Date.now(),
+    id: depositId,
     umkmId: payload.umkmId,
     namaUsaha: payload.namaUsaha,
     namaPemilik: payload.namaPemilik,
@@ -232,18 +171,20 @@ export function submitUMKMDeposit(payload: {
     createdAt: new Date().toISOString()
   }
 
-  const updatedDeposits = [newDeposit, ...state.deposits]
-  saveEscrowState({
-    ...state,
-    deposits: updatedDeposits
-  })
+  cachedData = {
+    ...cachedData,
+    deposits: [newDeposit, ...cachedData.deposits.filter((d) => d.id !== depositId)]
+  }
+  emitChange()
 
   try {
     fetch('/api/deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'DEPOSIT', payload: newDeposit })
-    }).catch(() => {})
+    })
+      .then(() => syncEscrowWithDB())
+      .catch(() => {})
   } catch {
   }
 
@@ -272,18 +213,21 @@ export function adminApproveDeposit(depositId: string, catatanAdmin?: string): b
     [deposit.umkmId]: currentBal + deposit.nominal
   }
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     deposits: updatedDeposits,
     umkmBalances: updatedBalances
-  })
+  }
+  emitChange()
 
   try {
     fetch(`/api/deposit/${depositId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'APPROVE', catatanAdmin })
-    }).catch(() => {})
+    })
+      .then(() => syncEscrowWithDB())
+      .catch(() => {})
   } catch {
   }
 
@@ -306,17 +250,20 @@ export function adminRejectDeposit(depositId: string, reason?: string): boolean 
       : d
   )
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     deposits: updatedDeposits
-  })
+  }
+  emitChange()
 
   try {
     fetch(`/api/deposit/${depositId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
-    }).catch(() => {})
+    })
+      .then(() => syncEscrowWithDB())
+      .catch(() => {})
   } catch {
   }
 
@@ -324,6 +271,7 @@ export function adminRejectDeposit(depositId: string, reason?: string): boolean 
 }
 
 export function submitPelajarWithdrawal(payload: {
+  id?: string
   pelajarId: string
   namaPelajar: string
   nominal: number
@@ -333,8 +281,9 @@ export function submitPelajarWithdrawal(payload: {
   const state = getEscrowState()
   const currentBal = state.pelajarBalances[payload.pelajarId] || 0
 
+  const withdrawalId = payload.id || `WD-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
   const newWithdrawal: PelajarWithdrawalItem = {
-    id: 'wd-' + Date.now(),
+    id: withdrawalId,
     pelajarId: payload.pelajarId,
     namaPelajar: payload.namaPelajar,
     nominal: payload.nominal,
@@ -344,17 +293,18 @@ export function submitPelajarWithdrawal(payload: {
     createdAt: new Date().toISOString()
   }
 
-  const updatedWithdrawals = [newWithdrawal, ...state.withdrawals]
+  const updatedWithdrawals = [newWithdrawal, ...state.withdrawals.filter((w) => w.id !== withdrawalId)]
   const updatedBalances = {
     ...state.pelajarBalances,
     [payload.pelajarId]: Math.max(0, currentBal - payload.nominal)
   }
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     withdrawals: updatedWithdrawals,
     pelajarBalances: updatedBalances
-  })
+  }
+  emitChange()
 
   try {
     fetch('/api/deposit', {
@@ -388,17 +338,20 @@ export function adminApproveWithdrawal(withdrawalId: string, catatanAdmin?: stri
       : w
   )
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     withdrawals: updatedWithdrawals
-  })
+  }
+  emitChange()
 
   try {
     fetch(`/api/deposit/${withdrawalId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'APPROVE', catatanAdmin })
-    }).catch(() => {})
+    })
+      .then(() => syncEscrowWithDB())
+      .catch(() => {})
   } catch {
   }
 
@@ -427,18 +380,21 @@ export function adminRejectWithdrawal(withdrawalId: string, reason?: string): bo
     [wd.pelajarId]: currentBal + wd.nominal
   }
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     withdrawals: updatedWithdrawals,
     pelajarBalances: updatedBalances
-  })
+  }
+  emitChange()
 
   try {
     fetch(`/api/deposit/${withdrawalId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECT', catatanAdmin: reason })
-    }).catch(() => {})
+    })
+      .then(() => syncEscrowWithDB())
+      .catch(() => {})
   } catch {
   }
 
@@ -485,11 +441,12 @@ export function payProjectDPWithDeposit(payload: {
     [payload.umkmId]: Math.max(0, umkmBal - payload.nominalDP)
   }
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     escrows: updatedEscrows,
     umkmBalances: updatedUmkmBalances
-  })
+  }
+  emitChange()
 
   return { success: true }
 }
@@ -575,11 +532,12 @@ export function releaseProjectCompletionToPelajar(
     'pelajar-active': accurateBalance
   }
 
-  saveEscrowState({
+  cachedData = {
     ...state,
     escrows: updatedEscrows,
     pelajarBalances: updatedPelajarBalances
-  })
+  }
+  emitChange()
 
   try {
     fetch('/api/deposit', {
@@ -600,19 +558,8 @@ export function releaseProjectCompletionToPelajar(
 
 function subscribe(callback: () => void) {
   listeners.add(callback)
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY) {
-      emitChange()
-    }
-  }
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', handleStorage)
-  }
   return () => {
     listeners.delete(callback)
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('storage', handleStorage)
-    }
   }
 }
 

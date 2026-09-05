@@ -171,14 +171,14 @@ export default function PakasirPaymentModal({
               </div>
 
               <div className="flex items-center justify-between bg-gray-50 px-3.5 py-2 rounded-xl text-xs border border-gray-100">
-                <span className="text-gray-500 font-medium">Order ID:</span>
+                <span className="text-gray-500 font-medium">No. Resi Transaksi:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-gray-800">{orderId}</span>
+                  <span className="font-mono font-bold text-gray-900 tracking-wider">{orderId}</span>
                   <button
                     type="button"
                     onClick={handleCopyOrderId}
                     className="text-gray-400 hover:text-gray-700 cursor-pointer"
-                    title="Salin Order ID"
+                    title="Salin No. Resi"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
