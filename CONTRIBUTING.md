@@ -79,6 +79,8 @@ src/
 │   │   ├── jasa/                 # Listing Jasa Keahlian Siswa
 │   │   ├── deposit/              # Manajemen Deposit UMKM & Sinkronisasi Penarikan Siswa
 │   │   │   └── [id]/route.ts     # Aksi Approval/Rejection Deposit & Penarikan
+│   │   ├── payment/              # Gateway Pembayaran Otomatis
+│   │   │   └── pakasir/          # Endpoints Pakasir (create, webhook, status, simulate)
 │   │   ├── lamaran/              # Pengajuan Proposal Siswa
 │   │   └── transaksi/            # Akad Transaksi, Multi-Device Sync & Escrow Vault
 │   ├── globals.css               # Tailwind CSS v4 Theme Tokens (CSS-First)
@@ -89,6 +91,7 @@ src/
 │   ├── marketplace/              # ProyekCard, JasaCard
 │   ├── ai-assistant.tsx          # Widget Terpadu AI Chatbot (Google Gemini) & CS WhatsApp
 │   ├── invoice-modal.tsx         # Generator Cetak Kwitansi Resmi & Surat Pengalaman Kerja
+│   ├── pakasir-payment-modal.tsx # Modal QRIS Dinamis & Simulasi Gateway Pakasir
 │   └── two-factor-modal.tsx      # Modal 2FA Security
 ├── lib/
 │   ├── prisma.ts                 # Prisma ORM v7 Client Singleton

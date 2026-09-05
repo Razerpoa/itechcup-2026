@@ -295,3 +295,24 @@ model DeliverableWork {
   @@index([proyekId])
 }
 
+model DepositTransaction {
+  id                String    @id @default(uuid())
+  orderId           String    @unique
+  umkmId            String
+  namaUsaha         String
+  namaPemilik       String
+  nominal           Int
+  paymentMethod     String    @default("qris")
+  status            String    @default("PENDING")
+  qrisUrl           String?   @db.Text
+  qrisString        String?   @db.Text
+  pakasirPaymentUrl String?   @db.Text
+  approvedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([umkmId])
+  @@index([orderId])
+}
+
+

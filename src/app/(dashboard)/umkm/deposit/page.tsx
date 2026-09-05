@@ -20,6 +20,8 @@ import {
 import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, submitUMKMDeposit, syncEscrowWithDB } from '@/lib/escrow-store'
+import PakasirPaymentModal from '@/components/pakasir-payment-modal'
+import { QrCode, Zap, ExternalLink } from 'lucide-react'
 
 export default function UMKMSaldoDepositPage() {
   const user = useAuthUser()
@@ -39,6 +41,7 @@ export default function UMKMSaldoDepositPage() {
   const userDeposits = escrowState.deposits.filter((d) => d.umkmId === umkmId)
   const userEscrows = escrowState.escrows.filter((e) => e.umkmId === umkmId)
 
+  const [paymentMode, setPaymentMode] = useState<'pakasir' | 'manual'>('pakasir')
   const [selectedNominal, setSelectedNominal] = useState<number>(1000000)
   const [customNominal, setCustomNominal] = useState<string>('')
   const [selectedBank, setSelectedBank] = useState<string>('BCA')
@@ -46,7 +49,17 @@ export default function UMKMSaldoDepositPage() {
   const [buktiPreview, setBuktiPreview] = useState<string | null>(null)
   const [isCopied, setIsCopied] = useState<string | null>(null)
   const [isSuccessModal, setIsSuccessModal] = useState<boolean>(false)
+  const [successInfo, setSuccessInfo] = useState<{ title: string; desc: string } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const [pakasirModalData, setPakasirModalData] = useState<{
+    orderId: string
+    nominal: number
+    qrisUrl: string
+    qrisString?: string
+    pakasirPaymentUrl: string
+  } | null>(null)
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false)
 
   const nominalPresets = [500000, 1000000, 2500000, 5000000, 10000000]
 
@@ -94,6 +107,48 @@ export default function UMKMSaldoDepositPage() {
     }
   }
 
+  const handlePakasirPayment = async () => {
+    setErrorMessage(null)
+    const finalAmount = customNominal ? parseThousand(customNominal) : selectedNominal
+    if (!finalAmount || finalAmount < 10000) {
+      setErrorMessage('Nominal deposit minimal adalah Rp 10.000')
+      return
+    }
+
+    setIsCreatingPayment(true)
+    try {
+      const res = await fetch('/api/payment/pakasir/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          umkmId,
+          namaUsaha: user?.namaUsaha || 'UMKM Mitra Muda',
+          namaPemilik: user?.nama || 'Pemilik Usaha',
+          nominal: finalAmount
+        })
+      })
+
+      if (!res.ok) {
+        const json = await res.json()
+        setErrorMessage(json?.error || 'Gagal membuat tagihan QRIS Pakasir')
+        return
+      }
+
+      const json = await res.json()
+      setPakasirModalData({
+        orderId: json.data.orderId,
+        nominal: json.data.nominal,
+        qrisUrl: json.data.qrisUrl,
+        qrisString: json.data.qrisString,
+        pakasirPaymentUrl: json.data.pakasirPaymentUrl
+      })
+    } catch {
+      setErrorMessage('Terjadi kesalahan jaringan saat menghubungkan ke gateway Pakasir')
+    } finally {
+      setIsCreatingPayment(false)
+    }
+  }
+
   const handleTopUpSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
@@ -114,6 +169,10 @@ export default function UMKMSaldoDepositPage() {
       buktiTransferUrl: buktiPreview || undefined
     })
 
+    setSuccessInfo({
+      title: 'Konfirmasi Deposit Terkirim!',
+      desc: 'Bukti transfer deposit Anda telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.'
+    })
     setIsSuccessModal(true)
     setCustomNominal('')
     setNomorPengirim('')
@@ -264,109 +323,208 @@ export default function UMKMSaldoDepositPage() {
 
             <div className="space-y-3 pt-2">
               <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
-                2. Pilih Rekening Bank Resmi Admin Mitra Muda
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {['BCA', 'Mandiri', 'BRI'].map((bank) => (
-                  <button
-                    key={bank}
-                    type="button"
-                    onClick={() => setSelectedBank(bank)}
-                    className={`py-3 px-3 rounded-2xl font-bold text-xs transition-all border text-center cursor-pointer ${
-                      selectedBank === bank
-                        ? 'bg-[#FFF1EB] border-[#FF9B71] text-[#964825] shadow-xs'
-                        : 'bg-[#F5F5F5] border-transparent text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <span className="block text-sm font-extrabold">{bank}</span>
-                    <span className="text-[10px] text-gray-400">Escrow Resmi</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="bg-[#FFF7F3] p-5 rounded-2xl border border-[#FFD9CA] space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-600">Bank Tujuan:</span>
-                  <span className="text-xs font-extrabold text-gray-900">{currentBank.bank}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-600">Nomor Rekening:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-extrabold text-[#964825]">{currentBank.noRek}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(currentBank.noRek, 'rek')}
-                      className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-                      title="Salin Nomor Rekening"
-                    >
-                      {isCopied === 'rek' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-600">Atas Nama:</span>
-                  <span className="text-xs font-extrabold text-gray-900">{currentBank.atasNama}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
-                3. Unggah Bukti Transfer & Konfirmasi
+                2. Pilih Metode Pembayaran
               </label>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-600 block">
-                  Nomor Rekening / Nama Pengirim (Opsional)
-                </label>
-                <input
-                  type="text"
-                  value={nomorPengirim}
-                  onChange={(e) => setNomorPengirim(e.target.value)}
-                  placeholder="Contoh: BCA 123456789 a/n Budi Santoso"
-                  className="w-full h-12 bg-[#F5F5F5] rounded-2xl px-4 text-xs font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
-                />
-              </div>
-
-              <label className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF7F3] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF1EB] transition-colors group min-h-[140px] relative">
-                <input
-                  type="file"
-                  className="sr-only"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-                {buktiPreview ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden relative border border-[#FFD9CA]">
-                      <Image src={buktiPreview} alt="Bukti Transfer" fill className="object-cover" unoptimized />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('pakasir')}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                    paymentMode === 'pakasir'
+                      ? 'bg-[#FFF7F3] border-[#FF9B71] text-gray-900 shadow-xs'
+                      : 'bg-[#F5F5F5] border-transparent text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#FF9B71] text-white flex items-center justify-center">
+                        <QrCode className="w-4 h-4" />
+                      </div>
+                      <span className="font-extrabold text-sm">QRIS Pakasir</span>
                     </div>
-                    <span className="text-xs font-bold text-green-700 flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Bukti transfer terlampir
+                    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      Otomatis & Instan
                     </span>
                   </div>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 bg-[#FFD9CA] rounded-full flex items-center justify-center text-[#964825] group-hover:scale-110 transition-transform mb-2">
-                      <UploadCloud className="w-5 h-5" />
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Scan via BCA, Mandiri, BRI, BNI, GoPay, DANA, OVO, ShopeePay. Saldo masuk otomatis tanpa upload struk.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('manual')}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    paymentMode === 'manual'
+                      ? 'bg-[#FFF7F3] border-[#FF9B71] text-gray-900 shadow-xs'
+                      : 'bg-[#F5F5F5] border-transparent text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gray-200 text-gray-700 flex items-center justify-center">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <span className="font-extrabold text-sm">Transfer Manual</span>
                     </div>
-                    <p className="font-bold text-xs text-[#964825] mb-0.5">
-                      Klik untuk unggah screenshot bukti transfer
-                    </p>
-                    <p className="text-[10px] text-gray-500">
-                      Format JPG atau PNG (Maksimal 5MB)
-                    </p>
-                  </>
-                )}
-              </label>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                      Verifikasi Admin
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Transfer langsung ke rekening penampungan bank admin dan unggah bukti transfer.
+                  </p>
+                </button>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Kirim Konfirmasi Deposit ke Admin</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {paymentMode === 'pakasir' ? (
+              <div className="space-y-4 pt-2">
+                <div className="bg-[#FFF7F3] p-5 rounded-2xl border border-[#FFD9CA] space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Metode:</span>
+                    <span className="font-extrabold text-gray-900">QRIS Dinamis (Pakasir Payment Gateway)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Total Nominal:</span>
+                    <span className="font-extrabold text-[#964825] text-base">
+                      {formatRupiah(customNominal ? parseThousand(customNominal) : selectedNominal)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Biaya Layanan:</span>
+                    <span className="font-extrabold text-emerald-700">Rp 0 (Gratis)</span>
+                  </div>
+                  <div className="pt-2 border-t border-[#FFD9CA]/60 flex items-center justify-between text-[11px] text-gray-500">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#FF9B71]" />
+                      <span>Keamanan Transaksi Terjamin</span>
+                    </span>
+                    <span className="font-bold text-gray-700">Konfirmasi Real-Time</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePakasirPayment}
+                  disabled={isCreatingPayment}
+                  className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>{isCreatingPayment ? 'Menyiapkan QRIS Pakasir...' : 'Bayar via QRIS Pakasir (Otomatis & Real-Time)'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 pt-2">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
+                    3. Pilih Rekening Bank Resmi Admin Mitra Muda
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['BCA', 'Mandiri', 'BRI'].map((bank) => (
+                      <button
+                        key={bank}
+                        type="button"
+                        onClick={() => setSelectedBank(bank)}
+                        className={`py-3 px-3 rounded-2xl font-bold text-xs transition-all border text-center cursor-pointer ${
+                          selectedBank === bank
+                            ? 'bg-[#FFF1EB] border-[#FF9B71] text-[#964825] shadow-xs'
+                            : 'bg-[#F5F5F5] border-transparent text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <span className="block text-sm font-extrabold">{bank}</span>
+                        <span className="text-[10px] text-gray-400">Escrow Resmi</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="bg-[#FFF7F3] p-5 rounded-2xl border border-[#FFD9CA] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-600">Bank Tujuan:</span>
+                      <span className="text-xs font-extrabold text-gray-900">{currentBank.bank}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-600">Nomor Rekening:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-extrabold text-[#964825]">{currentBank.noRek}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(currentBank.noRek, 'rek')}
+                          className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+                          title="Salin Nomor Rekening"
+                        >
+                          {isCopied === 'rek' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-600">Atas Nama:</span>
+                      <span className="text-xs font-extrabold text-gray-900">{currentBank.atasNama}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
+                    4. Unggah Bukti Transfer & Konfirmasi
+                  </label>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-600 block">
+                      Nomor Rekening / Nama Pengirim (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={nomorPengirim}
+                      onChange={(e) => setNomorPengirim(e.target.value)}
+                      placeholder="Contoh: BCA 123456789 a/n Budi Santoso"
+                      className="w-full h-12 bg-[#F5F5F5] rounded-2xl px-4 text-xs font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+                    />
+                  </div>
+
+                  <label className="border-2 border-dashed border-[#FFD9CA] bg-[#FFF7F3] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF1EB] transition-colors group min-h-[140px] relative">
+                    <input
+                      type="file"
+                      className="sr-only"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                    {buktiPreview ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden relative border border-[#FFD9CA]">
+                          <Image src={buktiPreview} alt="Bukti Transfer" fill className="object-cover" unoptimized />
+                        </div>
+                        <span className="text-xs font-bold text-green-700 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Bukti transfer terlampir
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 bg-[#FFD9CA] rounded-full flex items-center justify-center text-[#964825] group-hover:scale-110 transition-transform mb-2">
+                          <UploadCloud className="w-5 h-5" />
+                        </div>
+                        <p className="font-bold text-xs text-[#964825] mb-0.5">
+                          Klik untuk unggah screenshot bukti transfer
+                        </p>
+                        <p className="text-[10px] text-gray-500">
+                          Format JPG atau PNG (Maksimal 5MB)
+                        </p>
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Kirim Konfirmasi Transfer ke Admin</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </form>
         </div>
 
@@ -433,15 +591,37 @@ export default function UMKMSaldoDepositPage() {
         </div>
       </div>
 
+      {pakasirModalData && (
+        <PakasirPaymentModal
+          orderId={pakasirModalData.orderId}
+          nominal={pakasirModalData.nominal}
+          qrisUrl={pakasirModalData.qrisUrl}
+          qrisString={pakasirModalData.qrisString}
+          pakasirPaymentUrl={pakasirModalData.pakasirPaymentUrl}
+          onClose={() => setPakasirModalData(null)}
+          onSuccess={() => {
+            setPakasirModalData(null)
+            setSuccessInfo({
+              title: 'Top Up Deposit Berhasil!',
+              desc: 'Pembayaran QRIS Pakasir telah diverifikasi secara otomatis dan saldo escrow Anda telah bertambah.'
+            })
+            setIsSuccessModal(true)
+            syncEscrowWithDB()
+          }}
+        />
+      )}
+
       {isSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#EAEAEA] text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-extrabold text-gray-900 mb-2">Konfirmasi Deposit Terkirim!</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-2">
+              {successInfo?.title || 'Konfirmasi Deposit Terkirim!'}
+            </h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-6">
-              Bukti transfer deposit Anda telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.
+              {successInfo?.desc || 'Bukti transfer deposit Anda telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.'}
             </p>
             <button
               onClick={() => setIsSuccessModal(false)}

@@ -48,6 +48,8 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 6. **Model Komunikasi & Serah Terima: `ChatMessage` & `DeliverableWork`**
    - `ChatMessage`: Menyimpan seluruh riwayat obrolan ruang transaksi, lampiran file/gambar, dan identitas pengirim langsung di tabel PostgreSQL.
    - `DeliverableWork`: Menyimpan seluruh catatan dan berkas serah terima karya siswa secara permanen di database, terbebas dari batasan kuota localStorage browser.
+7. **Model Gateway Pembayaran: `DepositTransaction`**
+   - Menyimpan seluruh transaksi tagihan deposit UMKM via payment gateway Pakasir (orderId unik, nominal, status PENDING/APPROVED/REJECTED, URL QRIS, QRIS string, URL pembayaran Pakasir Pay, waktu verifikasi).
 
 ---
 
@@ -121,7 +123,14 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 - **Spesifikasi:**
   - Kepatuhan UU PDP No. 27/2022 untuk perlindungan data anak di bawah umur.
   - Pedoman jam wajib belajar dan anti-eksploitasi siswa.
-  - Pengalihan HAKI sah setelah pelunasan dan 0% potongan bagi pelajar.
+### J. Integrasi Gateway Pembayaran Pakasir (QRIS Dinamis & Otomatisasi Rekber)
+- **Lokasi:** `src/app/(dashboard)/umkm/deposit/page.tsx`, `src/components/pakasir-payment-modal.tsx`, `src/app/api/payment/pakasir/*`
+- **Spesifikasi:**
+  - **Dukungan QRIS Nasional:** Menghasilkan kode QRIS dinamis otomatis berbasis order ID unik (`MM-DEP-[TIMESTAMP]-[RANDOM]`), dapat dipindai oleh seluruh aplikasi m-banking (BCA, Mandiri, BRI, BNI) dan e-wallet (GoPay, OVO, DANA, ShopeePay, LinkAja).
+  - **Webhook & Polling Terpadu:** Webhook endpoint (`/api/payment/pakasir/webhook`) menerima callback otomatis saat pembayaran selesai (`completed`), langsung memperbarui status menjadi `APPROVED` dan menambahkan saldo escrow UMKM. Didukung polling live (`/api/payment/pakasir/status`) setiap 2.5 detik.
+  - **Mode Simulasi Sandbox Terintegrasi:** Tombol simulasi bayar instan (`/api/payment/pakasir/simulate`) untuk pengujian langsung tanpa perlu menunggu proses verifikasi KYC merchant selesai.
+  - **Persistensi PostgreSQL:** Setiap transaksi tagihan tersimpan di tabel `DepositTransaction` dan disinkronkan secara kontinu ke global store rekber.
+  - **Opsi Multi-Metode:** Memberikan kebebasan kepada UMKM untuk memilih antara QRIS Pakasir (Otomatis & Real-Time) atau Transfer Manual ke rekening penampungan resmi admin.
 
 ---
 
@@ -145,6 +154,7 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ## 5. Changelog Pengembangan
 
 ### Sesi September 2026:
+- **feat:** Integrasi gateway pembayaran otomatis Pakasir (QRIS Dinamis) pada halaman deposit UMKM, verifikasi webhook instan, penyimpanan persisten PostgreSQL (DepositTransaction), serta mode simulasi sandbox.
 - **feat:** Migrasi penuh sistem obrolan dan berkas karya langsung ke PostgreSQL (`ChatMessage` & `DeliverableWork`), menghapus ketergantungan pada `localStorage` sehingga data obrolan dan serah terima karya tidak akan hilang (*mental*) atau terhapus kuota peramban.
 - **fix:** Penambahan kompresi otomatis gambar di sisi klien (`compressImageFile`) dan sinkronisasi real-time dua arah (`POST /api/chat` dengan tipe `SYNC`).
 - **feat:** Sinkronisasi dua arah real-time untuk penarikan dana pelajar ke dashboard admin (`/api/deposit` & `escrow-store.ts`).

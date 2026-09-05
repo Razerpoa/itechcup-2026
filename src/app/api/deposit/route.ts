@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export interface ApiDepositItem {
   id: string
@@ -99,6 +100,45 @@ export async function POST(request: NextRequest) {
         } else {
           global.__global_mitra_muda_escrow__.withdrawals.unshift(cw)
         }
+      }
+
+      try {
+        const dbDeposits = await prisma.depositTransaction.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        })
+        for (const dbDep of dbDeposits) {
+          const existing = global.__global_mitra_muda_escrow__.deposits.find(
+            (d) => d.id === dbDep.id || d.nomorPengirim === dbDep.orderId
+          )
+          if (!existing) {
+            global.__global_mitra_muda_escrow__.deposits.unshift({
+              id: dbDep.id,
+              umkmId: dbDep.umkmId,
+              namaUsaha: dbDep.namaUsaha,
+              namaPemilik: dbDep.namaPemilik,
+              nominal: dbDep.nominal,
+              bankTujuan: 'QRIS Pakasir',
+              nomorPengirim: dbDep.orderId,
+              buktiTransferUrl: dbDep.qrisUrl || undefined,
+              status: dbDep.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+              createdAt: dbDep.createdAt.toISOString(),
+              approvedAt: dbDep.approvedAt ? dbDep.approvedAt.toISOString() : undefined
+            })
+          } else {
+            existing.status = dbDep.status as 'PENDING' | 'APPROVED' | 'REJECTED'
+            if (dbDep.approvedAt) {
+              existing.approvedAt = dbDep.approvedAt.toISOString()
+            }
+          }
+          if (dbDep.status === 'APPROVED') {
+            const currentBal = global.__global_mitra_muda_escrow__.umkmBalances[dbDep.umkmId] || 0
+            if (currentBal === 0) {
+              global.__global_mitra_muda_escrow__.umkmBalances[dbDep.umkmId] = dbDep.nominal
+            }
+          }
+        }
+      } catch {
       }
 
       return NextResponse.json({ success: true, data: global.__global_mitra_muda_escrow__ })
