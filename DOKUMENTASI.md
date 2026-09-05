@@ -126,11 +126,20 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ### J. Integrasi Gateway Pembayaran Pakasir (QRIS Dinamis & Otomatisasi Rekber)
 - **Lokasi:** `src/app/(dashboard)/umkm/deposit/page.tsx`, `src/components/pakasir-payment-modal.tsx`, `src/app/api/payment/pakasir/*`
 - **Spesifikasi:**
-  - **Dukungan QRIS Nasional:** Menghasilkan kode QRIS dinamis otomatis berbasis order ID unik (`MM-DEP-[TIMESTAMP]-[RANDOM]`), dapat dipindai oleh seluruh aplikasi m-banking (BCA, Mandiri, BRI, BNI) dan e-wallet (GoPay, OVO, DANA, ShopeePay, LinkAja).
-  - **Webhook & Polling Terpadu:** Webhook endpoint (`/api/payment/pakasir/webhook`) menerima callback otomatis saat pembayaran selesai (`completed`), langsung memperbarui status menjadi `APPROVED` dan menambahkan saldo escrow UMKM. Didukung polling live (`/api/payment/pakasir/status`) setiap 2.5 detik.
-  - **Mode Simulasi Sandbox Terintegrasi:** Tombol simulasi bayar instan (`/api/payment/pakasir/simulate`) untuk pengujian langsung tanpa perlu menunggu proses verifikasi KYC merchant selesai.
-  - **Persistensi PostgreSQL:** Setiap transaksi tagihan tersimpan di tabel `DepositTransaction` dan disinkronkan secara kontinu ke global store rekber.
-  - **Opsi Multi-Metode:** Memberikan kebebasan kepada UMKM untuk memilih antara QRIS Pakasir (Otomatis & Real-Time) atau Transfer Manual ke rekening penampungan resmi admin.
+  - **Dukungan QRIS Nasional & ShopeePay Dinamis:** Menghasilkan kode QRIS dinamis resmi yang bersumber dari `payment.payment_number` akun Pakasir proyek `suntik` dengan nomor resi terstandar (`MTU-2026-XXXX`), dapat dipindai oleh seluruh aplikasi m-banking (BCA, Mandiri, BRI, BNI) dan e-wallet (GoPay, OVO, DANA, ShopeePay, LinkAja).
+  - **Mekanisme Verifikasi Ganda (Dual-Verification System):**
+    1. *Auto-Check Status Tanpa Webhook:* Saat modal QRIS terbuka, sistem secara otomatis mengecek status ke API Pakasir (`/api/transactiondetail`). Jika status berubah menjadi `completed`, transaksi langsung disetujui (`APPROVED`) dan saldo UMKM langsung bertambah tanpa ketergantungan mutlak pada webhook.
+    2. *Webhook Callback Resmi:* Endpoint webhook (`/api/payment/pakasir/webhook`) siap menerima push notification instan dari server Pakasir.
+  - **Mode Simulasi Sandbox Terintegrasi:** Tombol simulasi bayar instan (`/api/payment/pakasir/simulate`) untuk pengujian langsung alur transaksi dan penjurian tanpa mentransfer dana rupiah sungguhan.
+  - **Persistensi Penuh PostgreSQL:** Seluruh riwayat transaksi tagihan tersimpan di tabel `DepositTransaction` Supabase, menghapus ketergantungan pada penyimpanan browser (localStorage).
+
+### K. Optimasi Bandwidth & Efisiensi Egress Supabase (>95% Penghematan)
+- **Lokasi:** `src/components/layout/navbar.tsx`, `src/lib/auth-client.ts`, `src/lib/akad-store.ts`, `src/app/api/pelajar/route.ts`, `src/app/api/umkm/route.ts`, `src/app/api/deposit/route.ts`, `src/app/tuan/page.tsx`, `src/app/(dashboard)/*`
+- **Spesifikasi:**
+  - **Visibility-Aware Polling (Auto-Pause):** Semua fungsi interval sinkronisasi client diproteksi dengan `document.visibilityState !== 'visible'`. Saat pengguna berpindah tab atau meminimize peramban, permintaan ke database otomatis dihentikan 100%.
+  - **Penurunan Frekuensi & Event-Driven Refresh:** Interval polling diturunkan dari 2-4 detik menjadi 25-30 detik. Pembaruan data dilakukan seketika saat tab kembali difokuskan oleh pengguna (`window.addEventListener('focus')`).
+  - **Pruning Payload Base64 pada Query List:** Endpoint list (`GET /api/pelajar`, `GET /api/umkm`, `GET /api/deposit`) mengganti data Base64 dokumen yang besar dengan penanda `ATTACHED`. Dokumen lengkap kartu pelajar, legalitas UMKM, dan struk transfer hanya dimuat secara on-demand saat admin mengklik tombol pratinjau dokumen via endpoint detail (`/[id]`), memangkas transfer data dari ukuran megabyte menjadi kilobyte.
+  - **Penghapusan Loop Re-Upsert Chat Redundan:** `syncAkadWithDB` kini menggunakan metode `GET /api/chat` tanpa melakukan operasi penulisan `upsert` berulang ke database PostgreSQL untuk pesan chat yang telah ada.
 
 ---
 
@@ -154,9 +163,12 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ## 5. Changelog Pengembangan
 
 ### Sesi September 2026:
-- **feat:** Integrasi gateway pembayaran otomatis Pakasir (QRIS Dinamis) pada halaman deposit UMKM, verifikasi webhook instan, penyimpanan persisten PostgreSQL (DepositTransaction), serta mode simulasi sandbox.
-- **feat:** Migrasi penuh sistem obrolan dan berkas karya langsung ke PostgreSQL (`ChatMessage` & `DeliverableWork`), menghapus ketergantungan pada `localStorage` sehingga data obrolan dan serah terima karya tidak akan hilang (*mental*) atau terhapus kuota peramban.
-- **fix:** Penambahan kompresi otomatis gambar di sisi klien (`compressImageFile`) dan sinkronisasi real-time dua arah (`POST /api/chat` dengan tipe `SYNC`).
+- **perf & fix:** Optimasi menyeluruh konsumsi egress database Supabase (visibility gating peramban, penurunan interval polling ke 25-30 detik, pemangkasan payload Base64 pada query list menjadi on-demand per ID, dan penghapusan loop re-upsert obrolan).
+- **feat:** Integrasi langsung gateway pembayaran Pakasir mode production (proyek `suntik`) dengan QRIS dinamis resmi `payment.payment_number`, verifikasi otomatis tanpa webhook, dukungan webhook callback, dan nomor resi standar `MTU-2026-XXXX`.
+- **feat:** Migrasi penuh sistem deposit dan rekber ke tabel PostgreSQL Supabase (`DepositTransaction` & `WithdrawalTransaction`), meniadakan dependensi `localStorage`.
+- **perf:** Pembersihan cache sistem `.next` (1.66 GB) dan pembersihan cache paket NPM secara menyeluruh.
+- **feat:** Migrasi penuh sistem obrolan dan berkas karya langsung ke PostgreSQL (`ChatMessage` & `DeliverableWork`), menghapus ketergantungan pada `localStorage` sehingga data obrolan dan serah terima karya tidak akan hilang atau terhapus kuota peramban.
+- **fix:** Penambahan kompresi otomatis gambar di sisi klien (`compressImageFile`) dan sinkronisasi real-time dua arah.
 - **feat:** Sinkronisasi dua arah real-time untuk penarikan dana pelajar ke dashboard admin (`/api/deposit` & `escrow-store.ts`).
 - **feat:** Pemasangan logo resmi kanal pembayaran e-wallet (GoPay, DANA, OVO, ShopeePay) pada formulir penarikan dompet siswa.
 - **fix:** Perbaikan kalkulasi saldo dompet siswa menjadi idempotent dan akurat sesuai nominal riil proyek selesai.

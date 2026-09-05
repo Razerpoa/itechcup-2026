@@ -65,14 +65,17 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 | Fitur | Deskripsi | Keunggulan |
 | :--- | :--- | :--- |
-| **Verifikasi Sekolah & ID Registrasi Siswa** | Alur pendaftaran pelajar yang terhubung langsung ke database sekolah terdaftar dengan kode unik `MM-2026-XXXXX`. | Mencegah kecurangan akun; guru dapat[...]
-| **Marketplace Proyek & Jasa Siswa** | Portal lowongan pekerjaan dua arah: UMKM mempublikasikan lowongan proyek, dan pelajar menawarkan katalog paket keahlian (Basic, Standard, Premium). | Memudahkan[...]
-| **Sistem Akad Escrow (Rekening Bersama)** | Penguncian uang muka (DP 30%–50%) di dompet penampung aman sistem sebelum pekerjaan dimulai hingga serah terima hasil. | Menghilangkan risiko gagal baya[...]
-| **Kwitansi & Invoice Resmi Digital (UMKM)** | Penerbitan dan pencetakan faktur digital berstandar pembukuan akuntansi UMKM lengkap dengan nomor transaksi unik, rincian biaya, dan validasi QR sistem.[...]
-| **Surat Pengalaman Kerja Industri (Pelajar)** | Penerbitan surat keterangan pengalaman kerja resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, dan rating kepuasan kerja. | Dok[...]
-| **Asisten Virtual AI (Google Gemini Multi-Tier)** | Chatbot cerdas terpadu di pojok aplikasi untuk konsultasi platform, pembuatan ringkasan penawaran, dan bantuan teknis. | Menggunakan arsitektur *w[...]
+| **Verifikasi Sekolah & ID Registrasi Siswa** | Alur pendaftaran pelajar yang terhubung langsung ke database sekolah terdaftar dengan kode unik `MM-2026-XXXXX`. | Mencegah kecurangan akun; guru dapat memvalidasi siswa secara instan tanpa birokrasi manual. |
+| **Marketplace Proyek & Jasa Siswa** | Portal lowongan pekerjaan dua arah: UMKM mempublikasikan lowongan proyek, dan pelajar menawarkan katalog paket keahlian (Basic, Standard, Premium). | Memudahkan temu jodoh kebutuhan UMKM dan keahlian siswa vokasi Indonesia. |
+| **Sistem Akad Escrow (Rekening Bersama)** | Penguncian uang muka (DP 30%–50%) di dompet penampung aman sistem sebelum pekerjaan dimulai hingga serah terima hasil. | Menghilangkan risiko gagal bayar bagi siswa dan melindungi dana proyek UMKM dari wanprestasi. |
+| **Gateway Pembayaran QRIS Pakasir (Otomatis)** | Integrasi gateway pembayaran QRIS Dinamis (ShopeePay/QRIS Nasional) untuk pengisian deposit UMKM dengan verifikasi otomatis tanpa webhook dan dukungan webhook callback resmi. | Mempermudah UMKM mengisi saldo rekber tanpa transfer manual; verifikasi berjalan otomatis secara real-time. |
+| **Kwitansi & Invoice Resmi Digital (UMKM)** | Penerbitan dan pencetakan faktur digital berstandar pembukuan akuntansi UMKM lengkap dengan nomor transaksi unik, rincian biaya, dan validasi QR sistem. | Bukti pengeluaran legal dan transparan untuk laporan keuangan UMKM. |
+| **Surat Pengalaman Kerja Industri (Pelajar)** | Penerbitan surat keterangan pengalaman kerja resmi berlogo Mitra Muda yang mencantumkan nama proyek, nama UMKM mitra, dan rating kepuasan kerja. | Dokumen portofolio kredibel untuk melamar magang atau kerja setelah lulus sekolah. |
+| **Asisten Virtual AI (Google Gemini Multi-Tier)** | Chatbot cerdas terpadu di pojok aplikasi untuk konsultasi platform, pembuatan ringkasan penawaran, dan bantuan teknis. | Menggunakan arsitektur *waterfall* bertingkat untuk keandalan maksimal dan efisiensi kuota. |
 
 ### Fitur Tambahan & Kepatuhan Publik
+* **Gateway QRIS Dinamis Pakasir & Dual Verification:** Pengisian deposit rekber UMKM otomatis via scan QRIS dinamis resmi dari seluruh m-Banking & e-Wallet nasional, dilengkapi auto-polling status tanpa webhook serta webhook callback resmi.
+* **Optimasi Bandwidth & Efisiensi Database:** Perlindungan konsumsi egress Supabase dengan sistem visibility gating (auto-pause di background), interval polling cerdas 25-30s, dan pemuatan dokumen on-demand per ID.
 * **Kepatuhan Regulasi UU PDP No. 27/2022:** Perlindungan ketat data pribadi pelajar di bawah umur, enkripsi database, dan jaminan tanpa penjualan data ke pihak ketiga (`/kebijakan-privasi`).
 * **Pedoman Perlindungan Talenta Pelajar:** Perlindungan jam wajib belajar sekolah, etika interaksi profesional, larangan eksploitasi kerja, dan hotline darurat (`/perlindungan-pelajar`).
 * **Syarat & Ketentuan Layanan (0% Komisi Pelajar):** Regulasi perlindungan hak kekayaan intelektual (HAKI) karya siswa dan prosedur mediasi sengketa formal (`/syarat-ketentuan`).
@@ -80,7 +83,7 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 * **Koordinasi Cepat via WhatsApp:** Tautan interaktif satu klik dengan pesan kontekstual ruang akad proyek antara siswa dan UMKM.
 * **Integrasi Lookup Kemendikdasmen RI:** Validasi otomatis NPSN 8-digit dan nama sekolah resmi secara *real-time* saat pendaftaran sekolah.
 * **Dompet Digital Siswa:** Pencairan saldo aman langsung ke berbagai e-wallet (GoPay, OVO, DANA, ShopeePay) dengan verifikasi nama pemilik akun.
-* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app dengan sistem *Mutation [...]
+* **Panel Moderasi Admin Tuan:** Portal kontrol terpusat untuk verifikasi legalitas UMKM, peninjauan sengketa escrow, serta modal dialog penolakan dan pencabutan status in-app dengan sistem *Mutation Lock*.
 * **Multi-Factor Authentication (2FA Modal):** Pengamanan verifikasi transaksi dan penarikan saldo melalui kode autentikasi instan.
 
 ---
@@ -422,6 +425,12 @@ npm run lint
 * `POST /api/umkm` — Registrasi data profil UMKM beserta dokumen izin usaha.
 * `GET  /api/proyek` — Menampilkan feed lowongan proyek dengan filter kategori dan budget.
 * `POST /api/proyek` — Menerbitkan lowongan proyek baru dari pihak UMKM.
+
+#### Gateway Pembayaran Pakasir (QRIS Dinamis)
+* `POST /api/payment/pakasir/create` — Menghasilkan tagihan deposit dan kode QRIS dinamis resmi (`payment.payment_number`) dari Pakasir.
+* `GET  /api/payment/pakasir/status?orderId={id}` — Memeriksa status verifikasi pembayaran langsung ke API Pakasir (auto-approval tanpa webhook).
+* `POST /api/payment/pakasir/webhook` — Endpoint callback penerima notifikasi instan dari server Pakasir.
+* `POST /api/payment/pakasir/simulate` — Endpoint simulasi bayar instan untuk keperluan pengujian dan demonstrasi penjurian.
 
 #### AI Virtual Assistant
 * `POST /api/ai/assistant` — Konsultasi chatbot terproteksi rate-limiter dengan eskalasi model Google Gemini.

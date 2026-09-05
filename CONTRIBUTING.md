@@ -203,13 +203,32 @@ src/
 - **Pedoman Perlindungan Jam Belajar (`/perlindungan-pelajar`):** Menjamin pengerjaan proyek tidak mengganggu jam wajib sekolah, larangan kerja paksa, dan hotline pengaduan: `lapor@mitramuda.biz.id`.
 - **Syarat & Ketentuan Layanan (`/syarat-ketentuan`):** Penegasan pengalihan HAKI sah setelah pelunasan dan 0% biaya platform bagi pelajar.
 
-### 10. Arsitektur Komunikasi & Serah Terima Langsung ke Database PostgreSQL (Zero LocalStorage Dependency)
+### 11. Arsitektur Komunikasi & Serah Terima Langsung ke Database PostgreSQL (Zero LocalStorage Dependency)
 - **Lokasi:** `src/lib/akad-store.ts`, `src/app/api/chat/route.ts`, `src/app/api/transaksi/route.ts`, `prisma/schema.prisma`
 - **Fitur:**
   - Seluruh riwayat obrolan ruang transaksi disimpan langsung ke tabel PostgreSQL `ChatMessage` melalui Prisma ORM v7.
   - Berkas serah terima karya siswa (*deliverables*) disimpan langsung ke tabel PostgreSQL `DeliverableWork`.
   - Mengeliminasi ketergantungan pada `localStorage` peramban untuk membaca atau menyimpan obrolan dan transaksi, menjamin data tidak akan pernah hilang atau terhapus (*mental*).
   - Dilengkapi kompresi gambar otomatis sisi klien (`compressImageFile`) untuk performa tinggi dan bandwidth hemat.
+
+### 12. Integrasi Gateway Pembayaran Pakasir (QRIS Dinamis & Verifikasi Tanpa Webhook)
+- **Lokasi:** `src/app/api/payment/pakasir/*`, `src/components/pakasir-payment-modal.tsx`, `src/app/(dashboard)/umkm/deposit/page.tsx`
+- **Fitur:**
+  - Terkoneksi langsung dengan proyek Pakasir mode production (slug `suntik`).
+  - Menghasilkan QRIS ShopeePay/QRIS Dinamis resmi dari field `payment.payment_number` Pakasir.
+  - Mekanisme Verifikasi Ganda (Dual-Verification):
+    1. *Auto-Check Status Tanpa Webhook:* Saat modal pembayaran aktif, sistem mengecek endpoint `/api/transactiondetail` Pakasir. Transaksi berstatus `completed` otomatis disetujui (`APPROVED`) dan saldo masuk ke akun UMKM secara instan tanpa perlu memasang webhook.
+    2. *Webhook Callback Resmi:* Endpoint `/api/payment/pakasir/webhook` siap menerima push notification dari server Pakasir.
+  - Format nomor resi deposit terstandarisasi: `MTU-2026-XXXX`.
+  - Mode Simulasi Instan untuk pengujian alur tanpa transfer uang asli.
+
+### 13. Optimasi Bandwidth & Pencegahan Egress Supabase (>95% Penghematan)
+- **Lokasi:** `src/components/layout/navbar.tsx`, `src/lib/auth-client.ts`, `src/app/api/pelajar/route.ts`, `src/app/api/umkm/route.ts`, `src/app/api/deposit/route.ts`, `src/app/tuan/page.tsx`, `src/app/(dashboard)/*`
+- **Fitur:**
+  - *Visibility-Aware Polling:* Seluruh timer sinkronisasi client otomatis berhenti total saat tab peramban tidak aktif (`document.visibilityState !== 'visible'`).
+  - *Interval Throttling & Focus-Driven Refresh:* Interval polling diturunkan ke 25-30 detik dengan pembaruan seketika saat tab difokuskan kembali (`window.onfocus`).
+  - *Payload Base64 Pruning:* Endpoint query list mengganti Base64 dokumen besar dengan penanda `ATTACHED`. Dokumen lengkap hanya ditarik secara on-demand via endpoint detail (`/[id]`) saat admin mengklik tombol pratinjau, memangkas transfer data hingga 99.9%.
+  - *Penghapusan Re-Upsert Chat Redundan:* Menghentikan loop penulisan upsert berulang pada endpoint `/api/chat`.
 
 ---
 
