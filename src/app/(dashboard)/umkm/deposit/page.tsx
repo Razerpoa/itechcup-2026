@@ -126,8 +126,8 @@ export default function UMKMSaldoDepositPage() {
   const handlePakasirPayment = async () => {
     setErrorMessage(null)
     const finalAmount = customNominal ? parseThousand(customNominal) : selectedNominal
-    if (!finalAmount || finalAmount < 10000) {
-      setErrorMessage('Nominal deposit minimal adalah Rp 10.000')
+    if (!finalAmount || finalAmount < 1000) {
+      setErrorMessage('Nominal deposit minimal adalah Rp 1.000')
       return
     }
 
@@ -170,8 +170,8 @@ export default function UMKMSaldoDepositPage() {
     setErrorMessage(null)
 
     const finalAmount = customNominal ? parseThousand(customNominal) : selectedNominal
-    if (!finalAmount || finalAmount < 50000) {
-      setErrorMessage('Nominal deposit minimal adalah Rp 50.000')
+    if (!finalAmount || finalAmount < 1000) {
+      setErrorMessage('Nominal deposit minimal adalah Rp 1.000')
       return
     }
 
@@ -333,7 +333,7 @@ export default function UMKMSaldoDepositPage() {
                     inputMode="numeric"
                     value={formatThousand(customNominal)}
                     onChange={(e) => setCustomNominal(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Contoh: 1.500.000"
+                    placeholder="Minimal Rp 1.000 (contoh: 50.000)"
                     className="w-full h-12 bg-[#F5F5F5] rounded-2xl pl-10 pr-4 text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
                   />
                 </div>
