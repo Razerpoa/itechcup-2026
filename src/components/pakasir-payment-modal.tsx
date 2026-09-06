@@ -12,9 +12,12 @@ import {
   Zap,
   ShieldCheck,
   X,
-  AlertCircle
+  AlertCircle,
+  CreditCard,
+  Building2,
+  ChevronRight
 } from 'lucide-react'
-import { formatRupiah, calculatePakasirFee } from '@/lib/utils'
+import { formatRupiah, calculatePakasirFee, SUPPORTED_BANKS, generateVirtualAccountNumber } from '@/lib/utils'
 import { syncEscrowWithDB } from '@/lib/escrow-store'
 
 interface PakasirPaymentModalProps {
@@ -25,6 +28,10 @@ interface PakasirPaymentModalProps {
   qrisUrl: string
   qrisString?: string
   pakasirPaymentUrl: string
+  initialPaymentMethod?: string
+  initialBank?: string
+  vaNumber?: string
+  bankTujuan?: string
   onClose: () => void
   onSuccess: () => void
 }
@@ -36,10 +43,23 @@ export default function PakasirPaymentModal({
   totalPayment,
   qrisUrl,
   pakasirPaymentUrl,
+  initialPaymentMethod,
+  initialBank,
+  vaNumber: initialVaNumber,
   onClose,
   onSuccess
 }: PakasirPaymentModalProps) {
-  const [copied, setCopied] = useState(false)
+  const isInitialBank = initialPaymentMethod && initialPaymentMethod !== 'qris'
+  const [activeTab, setActiveTab] = useState<'qris' | 'bank'>(isInitialBank ? 'bank' : 'qris')
+
+  const defaultBank = initialBank || (isInitialBank ? initialPaymentMethod : 'bca')
+  const [selectedBank, setSelectedBank] = useState<string>(
+    SUPPORTED_BANKS.some((b) => b.id === defaultBank) ? defaultBank : 'bca'
+  )
+
+  const [copiedOrderId, setCopiedOrderId] = useState(false)
+  const [copiedVa, setCopiedVa] = useState(false)
+  const [copiedNominal, setCopiedNominal] = useState(false)
   const [timeLeft, setTimeLeft] = useState(15 * 60)
   const [isSimulating, setIsSimulating] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
@@ -47,6 +67,13 @@ export default function PakasirPaymentModal({
 
   const actualFee = fee !== undefined ? fee : calculatePakasirFee(nominal)
   const actualTotal = totalPayment || (nominal + actualFee)
+
+  const activeBankObj = SUPPORTED_BANKS.find((b) => b.id === selectedBank) || SUPPORTED_BANKS[0]
+
+  const currentVaNumber =
+    selectedBank === defaultBank && initialVaNumber
+      ? initialVaNumber
+      : generateVirtualAccountNumber(selectedBank, orderId)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -80,11 +107,19 @@ export default function PakasirPaymentModal({
     return () => clearInterval(poll)
   }, [orderId, isPaid, onSuccess])
 
-  const handleCopyOrderId = () => {
+  const handleCopy = (text: string, type: 'order' | 'va' | 'nominal') => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(orderId)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(text)
+      if (type === 'order') {
+        setCopiedOrderId(true)
+        setTimeout(() => setCopiedOrderId(false), 2000)
+      } else if (type === 'va') {
+        setCopiedVa(true)
+        setTimeout(() => setCopiedVa(false), 2000)
+      } else {
+        setCopiedNominal(true)
+        setTimeout(() => setCopiedNominal(false), 2000)
+      }
     }
   }
 
@@ -120,20 +155,20 @@ export default function PakasirPaymentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
-        <div className="bg-[#FFF7F3] p-5 border-b border-[#FFD9CA] flex items-center justify-between">
+      <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[92vh]">
+        <div className="bg-[#FFF7F3] p-4 sm:p-5 border-b border-[#FFD9CA] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#FF9B71] text-white flex items-center justify-center font-extrabold shadow-xs">
-              <QrCode className="w-5 h-5" />
+              {activeTab === 'qris' ? <QrCode className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-extrabold text-gray-900">QRIS & Transfer Bank Pakasir</span>
+                <span className="text-xs font-extrabold text-gray-900">Gateway Pakasir Escrow</span>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#964825] text-white">
                   Otomatis
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500">Scan QRIS m-Banking / E-Wallet atau Transfer Bank</p>
+              <p className="text-[11px] text-gray-500">Pilih QRIS atau Transfer Virtual Account Bank</p>
             </div>
           </div>
           <button
@@ -145,7 +180,7 @@ export default function PakasirPaymentModal({
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-4">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
           {isPaid ? (
             <div className="py-8 text-center space-y-3 animate-in zoom-in-95 duration-200">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -158,6 +193,33 @@ export default function PakasirPaymentModal({
             </div>
           ) : (
             <>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('qris')}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    activeTab === 'qris'
+                      ? 'bg-white text-[#964825] shadow-xs font-extrabold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>QRIS Dinamis</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bank')}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    activeTab === 'bank'
+                      ? 'bg-white text-[#964825] shadow-xs font-extrabold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Transfer Bank & VA</span>
+                </button>
+              </div>
+
               <div className="bg-[#FAFAFA] rounded-2xl p-4 border border-gray-100 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block">
@@ -202,33 +264,137 @@ export default function PakasirPaymentModal({
                   <span className="font-mono font-bold text-gray-900 tracking-wider">{orderId}</span>
                   <button
                     type="button"
-                    onClick={handleCopyOrderId}
+                    onClick={() => handleCopy(orderId, 'order')}
                     className="text-gray-400 hover:text-gray-700 cursor-pointer"
                     title="Salin No. Resi"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedOrderId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center p-5 bg-white border-2 border-dashed border-[#FFD9CA] rounded-2xl relative">
-                <div className="w-56 h-56 relative rounded-xl overflow-hidden shadow-xs border border-gray-100 bg-white flex items-center justify-center">
-                  <Image
-                    src={qrisUrl}
-                    alt="QRIS Pakasir"
-                    fill
-                    className="object-contain p-2"
-                    unoptimized
-                  />
+              {activeTab === 'qris' ? (
+                <div className="flex flex-col items-center justify-center p-5 bg-white border-2 border-dashed border-[#FFD9CA] rounded-2xl relative animate-in fade-in duration-150">
+                  <div className="w-52 h-52 relative rounded-xl overflow-hidden shadow-xs border border-gray-100 bg-white flex items-center justify-center">
+                    <Image
+                      src={qrisUrl}
+                      alt="QRIS Pakasir"
+                      fill
+                      className="object-contain p-2"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-[11px] font-bold text-gray-700 mt-3 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#FF9B71]" />
+                    <span>NMID: ID1024388192839 - MITRA MUDA ESCROW</span>
+                  </p>
+                  <p className="text-[10px] text-gray-400 text-center mt-0.5">
+                    Scan via m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet (GoPay, OVO, DANA, ShopeePay).
+                  </p>
                 </div>
-                <p className="text-[11px] font-bold text-gray-700 mt-3 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#FF9B71]" />
-                  <span>NMID: ID1024388192839 - MITRA MUDA ESCROW</span>
-                </p>
-                <p className="text-[10px] text-gray-400 text-center mt-0.5">
-                  Scan via aplikasi m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet apa saja, atau klik Pakasir Pay untuk transfer bank.
-                </p>
-              </div>
+              ) : (
+                <div className="space-y-3.5 animate-in fade-in duration-150">
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-600 block mb-1.5 uppercase tracking-wider">
+                      Pilih Bank Tujuan:
+                    </label>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                      {SUPPORTED_BANKS.map((bank) => (
+                        <button
+                          key={bank.id}
+                          type="button"
+                          onClick={() => setSelectedBank(bank.id)}
+                          className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                            selectedBank === bank.id
+                              ? 'border-[#FF9B71] bg-[#FFF1EB] text-[#964825] shadow-2xs font-extrabold'
+                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {bank.code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-[#FFD9CA] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-600">{activeBankObj.name}</span>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#FFF1EB] text-[#964825] border border-[#FFD9CA]">
+                        Virtual Account
+                      </span>
+                    </div>
+
+                    <div className="bg-[#FAFAFA] p-3 rounded-xl border border-gray-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-gray-400 font-semibold block uppercase">
+                          Nomor Virtual Account
+                        </span>
+                        <span className="font-mono text-lg font-extrabold text-gray-900 tracking-wider">
+                          {currentVaNumber}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(currentVaNumber, 'va')}
+                        className="py-1.5 px-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                      >
+                        {copiedVa ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-green-600" />
+                            <span className="text-green-600">Tersalin</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Salin VA</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                      <div>
+                        <span className="text-[10px] text-gray-400 block font-medium">Nama Penerima:</span>
+                        <span className="font-bold text-gray-800 text-[11px]">MITRA MUDA ESCROW</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-gray-400 block font-medium">Total Transfer:</span>
+                        <div className="flex items-center justify-end gap-1">
+                          <span className="font-extrabold text-[#964825] text-xs">{formatRupiah(actualTotal)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(actualTotal.toString(), 'nominal')}
+                            className="text-gray-400 hover:text-gray-700 cursor-pointer"
+                            title="Salin Nominal"
+                          >
+                            {copiedNominal ? (
+                              <Check className="w-3 h-3 text-green-600" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-100 text-[11px] text-gray-500 space-y-1">
+                      <p className="font-bold text-gray-700 flex items-center gap-1">
+                        <ChevronRight className="w-3 h-3 text-[#FF9B71]" />
+                        <span>Petunjuk Pembayaran {activeBankObj.code}:</span>
+                      </p>
+                      <p className="pl-4 text-[10px] leading-relaxed">
+                        1. Buka aplikasi m-Banking atau ATM {activeBankObj.code}.
+                      </p>
+                      <p className="pl-4 text-[10px] leading-relaxed">
+                        2. Pilih menu Transfer &gt; Virtual Account, masukkan nomor di atas.
+                      </p>
+                      <p className="pl-4 text-[10px] leading-relaxed">
+                        3. Pastikan nominal dan nama penerima sesuai, lalu konfirmasi pembayaran.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {errorMsg && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
@@ -261,7 +427,7 @@ export default function PakasirPaymentModal({
 
               <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-100 text-[11px] text-blue-900 leading-relaxed">
                 <span className="font-extrabold block mb-0.5">Verifikasi Otomatis Tanpa Upload Bukti:</span>
-                Sistem secara otomatis mendeteksi saat pembayaran Anda berhasil. Saldo langsung masuk tanpa perlu konfirmasi manual atau unggah struk transfer.
+                Sistem secara otomatis mendeteksi saat pembayaran Anda berhasil via QRIS maupun Virtual Account. Saldo langsung masuk tanpa perlu konfirmasi manual.
               </div>
             </>
           )}

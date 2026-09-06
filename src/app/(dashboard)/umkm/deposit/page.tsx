@@ -17,7 +17,7 @@ import {
   CreditCard,
   Check
 } from 'lucide-react'
-import { formatRupiah, formatDate, formatThousand, parseThousand, calculatePakasirFee } from '@/lib/utils'
+import { formatRupiah, formatDate, formatThousand, parseThousand, calculatePakasirFee, SUPPORTED_BANKS } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, syncEscrowWithDB } from '@/lib/escrow-store'
 import PakasirPaymentModal from '@/components/pakasir-payment-modal'
@@ -57,6 +57,8 @@ export default function UMKMSaldoDepositPage() {
 
   const [selectedNominal, setSelectedNominal] = useState<number>(1000000)
   const [customNominal, setCustomNominal] = useState<string>('')
+  const [selectedMethod, setSelectedMethod] = useState<'qris' | 'bank'>('qris')
+  const [selectedBank, setSelectedBank] = useState<string>('bca')
   const [isSuccessModal, setIsSuccessModal] = useState<boolean>(false)
   const [successInfo, setSuccessInfo] = useState<{ title: string; desc: string } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -69,6 +71,9 @@ export default function UMKMSaldoDepositPage() {
     qrisUrl: string
     qrisString?: string
     pakasirPaymentUrl: string
+    paymentMethod?: string
+    bankTujuan?: string
+    vaNumber?: string
   } | null>(null)
   const [isCreatingPayment, setIsCreatingPayment] = useState(false)
 
@@ -94,7 +99,9 @@ export default function UMKMSaldoDepositPage() {
           umkmId,
           namaUsaha: user?.namaUsaha || 'UMKM Mitra Muda',
           namaPemilik: user?.nama || 'Pemilik Usaha',
-          nominal: finalAmount
+          nominal: finalAmount,
+          paymentMethod: selectedMethod === 'qris' ? 'qris' : selectedBank,
+          bank: selectedBank
         })
       })
 
@@ -112,7 +119,10 @@ export default function UMKMSaldoDepositPage() {
         totalPayment: json.data.totalPayment,
         qrisUrl: json.data.qrisUrl,
         qrisString: json.data.qrisString,
-        pakasirPaymentUrl: json.data.pakasirPaymentUrl
+        pakasirPaymentUrl: json.data.pakasirPaymentUrl,
+        paymentMethod: json.data.paymentMethod,
+        bankTujuan: json.data.bankTujuan,
+        vaNumber: json.data.vaNumber
       })
     } catch {
       setErrorMessage('Terjadi kesalahan jaringan saat menghubungkan ke gateway Pakasir')
@@ -289,26 +299,96 @@ export default function UMKMSaldoDepositPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9CA]/80 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <QrCode className="w-4 h-4 text-[#FF9B71]" />
-                      <span className="font-extrabold text-xs text-gray-900">QRIS Dinamis Semua Bank & E-Wallet</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('qris')}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                      selectedMethod === 'qris'
+                        ? 'bg-white border-[#FF9B71] ring-2 ring-[#FF9B71]/30 shadow-xs'
+                        : 'bg-white/80 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                            selectedMethod === 'qris' ? 'bg-[#FF9B71] text-white' : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </div>
+                        <span className="font-extrabold text-xs text-gray-900">QRIS Dinamis</span>
+                      </div>
+                      <span
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          selectedMethod === 'qris' ? 'border-[#FF9B71] bg-[#FF9B71]' : 'border-gray-300'
+                        }`}
+                      >
+                        {selectedMethod === 'qris' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </span>
                     </div>
                     <p className="text-[10px] text-gray-500 leading-relaxed">
-                      Scan kode QR langsung dari BCA, Mandiri (Livin), BRI (BRImo), BNI, CIMB, Danamon, Permata, Jago, SeaBank, GoPay, OVO, DANA, ShopeePay, LinkAja.
+                      Scan instan via GoPay, OVO, DANA, ShopeePay, BCA, Mandiri, BRI, BNI.
                     </p>
-                  </div>
+                  </button>
 
-                  <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9CA]/80 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-[#FF9B71]" />
-                      <span className="font-extrabold text-xs text-gray-900">Transfer Bank & Virtual Account</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('bank')}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                      selectedMethod === 'bank'
+                        ? 'bg-white border-[#FF9B71] ring-2 ring-[#FF9B71]/30 shadow-xs'
+                        : 'bg-white/80 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                            selectedMethod === 'bank' ? 'bg-[#FF9B71] text-white' : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          <CreditCard className="w-4 h-4" />
+                        </div>
+                        <span className="font-extrabold text-xs text-gray-900">Transfer Bank & VA</span>
+                      </div>
+                      <span
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          selectedMethod === 'bank' ? 'border-[#FF9B71] bg-[#FF9B71]' : 'border-gray-300'
+                        }`}
+                      >
+                        {selectedMethod === 'bank' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </span>
                     </div>
                     <p className="text-[10px] text-gray-500 leading-relaxed">
-                      Pilihan nomor Virtual Account / rekening tujuan resmi via Pakasir Pay dengan verifikasi saldo instan detik itu juga.
+                      Virtual Account resmi (BCA, Mandiri, BNI, BRI, Permata) verifikasi otomatis.
                     </p>
-                  </div>
+                  </button>
                 </div>
+
+                {selectedMethod === 'bank' && (
+                  <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9CA]/80 space-y-2 animate-in fade-in duration-150">
+                    <span className="text-[11px] font-bold text-gray-700 block uppercase tracking-wider">
+                      Pilih Bank Virtual Account:
+                    </span>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {SUPPORTED_BANKS.map((bank) => (
+                        <button
+                          key={bank.id}
+                          type="button"
+                          onClick={() => setSelectedBank(bank.id)}
+                          className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                            selectedBank === bank.id
+                              ? 'border-[#FF9B71] bg-[#FFF1EB] text-[#964825] font-extrabold shadow-2xs'
+                              : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-white'
+                          }`}
+                        >
+                          {bank.code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-white p-4 rounded-2xl border border-[#FFD9CA]/80 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
@@ -321,6 +401,12 @@ export default function UMKMSaldoDepositPage() {
                       <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#964825] text-white">Otomatis</span>
                     </span>
                     <span className="font-extrabold text-[#964825]">{formatRupiah(feePakasir)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Kanal Pembayaran:</span>
+                    <span className="font-extrabold text-gray-900">
+                      {selectedMethod === 'qris' ? 'QRIS Dinamis' : `Virtual Account ${selectedBank.toUpperCase()}`}
+                    </span>
                   </div>
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
                     <span className="text-gray-700">Total Pembayaran:</span>
@@ -341,7 +427,13 @@ export default function UMKMSaldoDepositPage() {
                 className="w-full h-12 bg-[#FF9B71] text-white font-bold text-xs rounded-full hover:bg-[#F5865A] active:bg-[#E8754D] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
               >
                 <Zap className="w-4 h-4" />
-                <span>{isCreatingPayment ? 'Menghubungkan ke Pakasir Gateway...' : 'Bayar Sekarang via Pakasir (QRIS & Bank Transfer)'}</span>
+                <span>
+                  {isCreatingPayment
+                    ? 'Menghubungkan ke Pakasir Gateway...'
+                    : selectedMethod === 'qris'
+                    ? 'Bayar Sekarang via QRIS Dinamis'
+                    : `Bayar Sekarang via Virtual Account ${selectedBank.toUpperCase()}`}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -427,6 +519,10 @@ export default function UMKMSaldoDepositPage() {
           qrisUrl={pakasirModalData.qrisUrl}
           qrisString={pakasirModalData.qrisString}
           pakasirPaymentUrl={pakasirModalData.pakasirPaymentUrl}
+          initialPaymentMethod={pakasirModalData.paymentMethod || selectedMethod}
+          initialBank={selectedBank}
+          vaNumber={pakasirModalData.vaNumber}
+          bankTujuan={pakasirModalData.bankTujuan}
           onClose={() => setPakasirModalData(null)}
           onSuccess={() => {
             setPakasirModalData(null)

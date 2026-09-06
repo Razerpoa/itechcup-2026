@@ -133,3 +133,33 @@ export function calculatePakasirFee(amount: number): number {
   return Math.round(amount * 0.007 + 310)
 }
 
+export interface BankChannel {
+  id: string
+  name: string
+  code: string
+  prefix: string
+  pakasirMethod: string
+}
+
+export const SUPPORTED_BANKS: BankChannel[] = [
+  { id: 'bca', name: 'BCA (Bank Central Asia)', code: 'BCA', prefix: '88012', pakasirMethod: 'bca' },
+  { id: 'mandiri', name: 'Bank Mandiri', code: 'MANDIRI', prefix: '89012', pakasirMethod: 'mandiri' },
+  { id: 'bni', name: 'BNI (Bank Negara Indonesia)', code: 'BNI', prefix: '9881', pakasirMethod: 'bni_va' },
+  { id: 'bri', name: 'BRI (Bank Rakyat Indonesia)', code: 'BRI', prefix: '1280', pakasirMethod: 'bri_va' },
+  { id: 'permata', name: 'Bank Permata', code: 'PERMATA', prefix: '8528', pakasirMethod: 'permata_va' }
+]
+
+export function generateVirtualAccountNumber(bankCode: string, orderId: string): string {
+  const bank = SUPPORTED_BANKS.find(
+    (b) => b.id.toLowerCase() === bankCode.toLowerCase() || b.code.toLowerCase() === bankCode.toLowerCase()
+  )
+  const prefix = bank?.prefix || '88012'
+  let numStr = ''
+  for (let i = 0; i < orderId.length; i++) {
+    const code = orderId.charCodeAt(i)
+    numStr += (code % 10).toString()
+  }
+  const suffix = (numStr + '12345678').slice(0, 8)
+  return `${prefix}${suffix}`
+}
+
