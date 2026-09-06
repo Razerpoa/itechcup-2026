@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx src/lib/seed.ts",
+    "db:restore": "npx tsx src/lib/restore.ts",
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
