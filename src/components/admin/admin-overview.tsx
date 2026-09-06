@@ -26,6 +26,11 @@ import { formatRupiah, formatDate } from '@/lib/utils'
 import { ProyekItem } from '@/lib/projects-store'
 import { JasaItem } from '@/lib/jasa-store'
 import { AkadTransaksiItem } from '@/lib/akad-store'
+import {
+  AdminFinancialAreaChart,
+  AdminCategoryBarChart,
+  AdminAkadDonutChart
+} from './admin-charts'
 
 interface AdminOverviewProps {
   pelajarList: any[]
@@ -119,25 +124,7 @@ export default function AdminOverview({
     }))
   }, [projects])
 
-  const akadProgressStats = useMemo(() => {
-    const total = akads.length || 1
-    const done = akads.filter(a => a.step === 4).length
-    const review = akads.filter(a => a.step === 3).length
-    const working = akads.filter(a => a.step === 2).length
-    const start = akads.filter(a => a.step === 1).length
 
-    return {
-      done,
-      donePercent: Math.round((done / total) * 100),
-      review,
-      reviewPercent: Math.round((review / total) * 100),
-      working,
-      workingPercent: Math.round((working / total) * 100),
-      start,
-      startPercent: Math.round((start / total) * 100),
-      total: akads.length
-    }
-  }, [akads])
 
   const auditEvents = useMemo(() => {
     const list: {
@@ -418,94 +405,27 @@ export default function AdminOverview({
         </div>
       </div>
 
+      <AdminFinancialAreaChart
+        deposits={deposits}
+        withdrawals={withdrawals}
+        akads={akads}
+        totalDanaEscrow={totalDanaEscrow}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-[#E8E2DA] shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-            <div>
-              <h3 className="font-extrabold text-base text-[#2D2319]">Distribusi Kategori Proyek UMKM</h3>
-              <p className="text-xs text-[#8B7E74]">Peminatan kebutuhan jasa digital oleh mitra bisnis</p>
-            </div>
-            <span className="text-xs font-bold text-[#964825] bg-[#FFF4EC] border border-[#FFE0D2] px-3 py-1 rounded-full">
-              {projects.length} Total Proyek
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            {categoryStats.map((item) => (
-              <div key={item.name} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-[#2D2319]">
-                  <span>{item.name}</span>
-                  <span className="font-mono text-[#8B7E74]">
-                    {item.count} proyek ({item.percent}%)
-                  </span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#FF9B71] to-[#E8754D] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.max(item.percent, 3)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-[#8B7E74]">
-            <span className="font-medium">Kategori terpopuler: {categoryStats[0]?.name || 'Desain Grafis'}</span>
-            <button
-              onClick={() => onNavigateTab('proyek')}
-              className="text-[#964825] font-bold hover:underline cursor-pointer"
-            >
-              Lihat Detail Proyek
-            </button>
-          </div>
+        <div className="lg:col-span-7">
+          <AdminCategoryBarChart
+            categories={categoryStats}
+            totalProjects={projects.length}
+            onNavigateTab={onNavigateTab}
+          />
         </div>
 
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-[#E8E2DA] shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-            <div>
-              <h3 className="font-extrabold text-base text-[#2D2319]">Rasio Penyelesaian Transaksi</h3>
-              <p className="text-xs text-[#8B7E74]">Progres pengerjaan akad kerja sama siswa</p>
-            </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-              {akadProgressStats.total} Akad
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8E2DA] text-center">
-              <div className="text-2xl font-black text-emerald-700">{akadProgressStats.done}</div>
-              <div className="text-xs font-bold text-[#2D2319] mt-1">Selesai & Lunas</div>
-              <div className="text-[11px] text-[#8B7E74]">{akadProgressStats.donePercent}% dari total</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8E2DA] text-center">
-              <div className="text-2xl font-black text-blue-700">{akadProgressStats.review}</div>
-              <div className="text-xs font-bold text-[#2D2319] mt-1">Review Hasil</div>
-              <div className="text-[11px] text-[#8B7E74]">{akadProgressStats.reviewPercent}% dari total</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8E2DA] text-center">
-              <div className="text-2xl font-black text-amber-700">{akadProgressStats.working}</div>
-              <div className="text-xs font-bold text-[#2D2319] mt-1">Dalam Pengerjaan</div>
-              <div className="text-[11px] text-[#8B7E74]">{akadProgressStats.workingPercent}% dari total</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8E2DA] text-center">
-              <div className="text-2xl font-black text-gray-700">{akadProgressStats.start}</div>
-              <div className="text-xs font-bold text-[#2D2319] mt-1">Awal Akad</div>
-              <div className="text-[11px] text-[#8B7E74]">{akadProgressStats.startPercent}% dari total</div>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <button
-              onClick={() => onNavigateTab('escrows')}
-              className="w-full py-2.5 rounded-xl bg-[#F6F3EE] hover:bg-[#EDE7DE] text-xs font-bold text-[#2D2319] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span>Kelola Ruang Akad Transaksi</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className="lg:col-span-5">
+          <AdminAkadDonutChart
+            akads={akads}
+            onNavigateTab={onNavigateTab}
+          />
         </div>
       </div>
 
