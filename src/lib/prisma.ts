@@ -19,7 +19,7 @@ function getConnectionString(): string {
     } catch {}
   }
   if (!url) {
-    url = 'postgresql://postgres:RaffaRizqi2010@db.gstiwckeywnlfpoymavs.supabase.co:5432/postgres?sslmode=require'
+    url = 'postgresql://postgres.gstiwckeywnlfpoymavs:RaffaRizqi2010@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true'
   }
 
   url = url.replace(/["'\r\n\s]/g, '').trim()
