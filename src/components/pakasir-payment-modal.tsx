@@ -121,12 +121,12 @@ export default function PakasirPaymentModal({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-extrabold text-gray-900">QRIS Dinamis Pakasir</span>
+                <span className="text-xs font-extrabold text-gray-900">QRIS & Transfer Bank Pakasir</span>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#964825] text-white">
                   Otomatis
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500">Scan bayar dari semua bank & e-wallet</p>
+              <p className="text-[11px] text-gray-500">Scan QRIS m-Banking / E-Wallet atau Transfer Bank</p>
             </div>
           </div>
           <button
@@ -201,7 +201,7 @@ export default function PakasirPaymentModal({
                   <span>NMID: ID1024388192839 - MITRA MUDA ESCROW</span>
                 </p>
                 <p className="text-[10px] text-gray-400 text-center mt-0.5">
-                  Buka aplikasi m-Banking atau E-Wallet apa saja, pilih Scan QRIS, lalu konfirmasi pembayaran.
+                  Scan via aplikasi m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet apa saja, atau klik Pakasir Pay untuk transfer bank.
                 </p>
               </div>
 
@@ -219,7 +219,7 @@ export default function PakasirPaymentModal({
                   rel="noopener noreferrer"
                   className="w-full py-2.5 px-4 bg-[#FFF1EB] text-[#964825] border border-[#FFD9CA] font-bold text-xs rounded-full hover:bg-[#FFD9CA] transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <span>Buka Halaman Pembayaran Pakasir Pay</span>
+                  <span>Buka Pembayaran Transfer Bank / VA (Pakasir Pay)</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
 
@@ -235,8 +235,8 @@ export default function PakasirPaymentModal({
               </div>
 
               <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-100 text-[11px] text-blue-900 leading-relaxed">
-                <span className="font-extrabold block mb-0.5">Verifikasi Instan Tanpa Upload Bukti:</span>
-                Sistem secara otomatis mendeteksi ketika pembayaran Anda berhasil. Saldo langsung masuk tanpa perlu unggah struk transfer.
+                <span className="font-extrabold block mb-0.5">Verifikasi Otomatis Tanpa Upload Bukti:</span>
+                Sistem secara otomatis mendeteksi saat pembayaran Anda berhasil. Saldo langsung masuk tanpa perlu konfirmasi manual atau unggah struk transfer.
               </div>
             </>
           )}

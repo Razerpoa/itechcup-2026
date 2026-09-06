@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     let qrisString = ''
     let qrisUrl = ''
-    const pakasirPaymentUrl = `https://app.pakasir.com/pay/${slug}/${calculatedNominal}?order_id=${orderId}&qris_only=1`
+    const pakasirPaymentUrl = `https://app.pakasir.com/pay/${slug}/${calculatedNominal}?order_id=${orderId}`
 
     if (apiKey && slug) {
       try {
