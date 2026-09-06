@@ -14,12 +14,14 @@ import {
   X,
   AlertCircle
 } from 'lucide-react'
-import { formatRupiah } from '@/lib/utils'
+import { formatRupiah, calculatePakasirFee } from '@/lib/utils'
 import { syncEscrowWithDB } from '@/lib/escrow-store'
 
 interface PakasirPaymentModalProps {
   orderId: string
   nominal: number
+  fee?: number
+  totalPayment?: number
   qrisUrl: string
   qrisString?: string
   pakasirPaymentUrl: string
@@ -30,6 +32,8 @@ interface PakasirPaymentModalProps {
 export default function PakasirPaymentModal({
   orderId,
   nominal,
+  fee,
+  totalPayment,
   qrisUrl,
   pakasirPaymentUrl,
   onClose,
@@ -40,6 +44,9 @@ export default function PakasirPaymentModal({
   const [isSimulating, setIsSimulating] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const actualFee = fee !== undefined ? fee : calculatePakasirFee(nominal)
+  const actualTotal = totalPayment || (nominal + actualFee)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -138,7 +145,7 @@ export default function PakasirPaymentModal({
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="p-6 overflow-y-auto space-y-4">
           {isPaid ? (
             <div className="py-8 text-center space-y-3 animate-in zoom-in-95 duration-200">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -146,7 +153,7 @@ export default function PakasirPaymentModal({
               </div>
               <h3 className="text-xl font-extrabold text-gray-900">Pembayaran Berhasil!</h3>
               <p className="text-xs text-gray-600 max-w-xs mx-auto">
-                Dana sebesar <span className="font-extrabold text-emerald-700">{formatRupiah(nominal)}</span> telah diverifikasi otomatis oleh sistem Pakasir dan saldo escrow Anda bertambah.
+                Dana deposit sebesar <span className="font-extrabold text-emerald-700">{formatRupiah(nominal)}</span> telah diverifikasi otomatis oleh sistem Pakasir dan saldo rekber UMKM Anda telah bertambah.
               </p>
             </div>
           ) : (
@@ -157,17 +164,35 @@ export default function PakasirPaymentModal({
                     Total Pembayaran
                   </span>
                   <span className="text-2xl font-extrabold text-[#964825]">
-                    {formatRupiah(nominal)}
+                    {formatRupiah(actualTotal)}
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 justify-end">
                     <Clock className="w-3.5 h-3.5" />
                     <span>Sisa Waktu</span>
                   </div>
                   <span className="font-mono text-sm font-extrabold text-gray-900">
                     {formattedTime}
                   </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FFF7F3] rounded-2xl p-3.5 border border-[#FFD9CA]/80 space-y-2 text-xs">
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>Nominal Masuk Saldo:</span>
+                  <span className="font-extrabold text-gray-900">{formatRupiah(nominal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <span>Biaya Layanan Pakasir:</span>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#964825] text-white">Otomatis</span>
+                  </span>
+                  <span className="font-extrabold text-[#964825]">{formatRupiah(actualFee)}</span>
+                </div>
+                <div className="pt-2 border-t border-[#FFD9CA]/70 flex items-center justify-between font-extrabold text-gray-900">
+                  <span>Total Tagihan:</span>
+                  <span className="text-sm font-extrabold text-[#964825]">{formatRupiah(actualTotal)}</span>
                 </div>
               </div>
 

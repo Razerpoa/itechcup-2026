@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { generateNoResi } from '@/lib/utils'
+import { generateNoResi, calculatePakasirFee } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
 
     let qrisString = ''
     let qrisUrl = ''
+    let fee = 0
     const pakasirPaymentUrl = `https://app.pakasir.com/pay/${slug}/${calculatedNominal}?order_id=${orderId}`
 
     if (apiKey && slug) {
@@ -42,13 +43,26 @@ export async function POST(request: NextRequest) {
           if (paymentData?.qr_image || paymentData?.payment_url) {
             qrisUrl = paymentData.qr_image || paymentData.payment_url
           }
+          if (paymentData?.fee !== undefined && !isNaN(Number(paymentData.fee))) {
+            fee = Math.round(Number(paymentData.fee))
+          } else if (paymentData?.total_payment && Number(paymentData.total_payment) > calculatedNominal) {
+            fee = Math.round(Number(paymentData.total_payment) - calculatedNominal)
+          } else if (paymentData?.total_amount && Number(paymentData.total_amount) > calculatedNominal) {
+            fee = Math.round(Number(paymentData.total_amount) - calculatedNominal)
+          }
         }
       } catch {
       }
     }
 
+    if (!fee) {
+      fee = calculatePakasirFee(calculatedNominal)
+    }
+
+    const totalPayment = calculatedNominal + fee
+
     if (!qrisString) {
-      qrisString = `00020101021226680016ID.CO.PAKASIR.WWW011893600918${orderId}02150000000000000010303UMI51440014ID.LINKAJA.WWW02150000000000000010303UMI52045812530336054${calculatedNominal.toString().length < 10 ? '0' + calculatedNominal.toString().length : calculatedNominal.toString().length}${calculatedNominal}5802ID5918MITRA MUDA ESCROW6007JAKARTA61051234062330118${orderId}0703A016304`
+      qrisString = `00020101021226680016ID.CO.PAKASIR.WWW011893600918${orderId}02150000000000000010303UMI51440014ID.LINKAJA.WWW02150000000000000010303UMI52045812530336054${totalPayment.toString().length < 10 ? '0' + totalPayment.toString().length : totalPayment.toString().length}${totalPayment}5802ID5918MITRA MUDA ESCROW6007JAKARTA61051234062330118${orderId}0703A016304`
     }
 
     if (!qrisUrl) {
@@ -67,7 +81,8 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         qrisUrl,
         qrisString,
-        pakasirPaymentUrl
+        pakasirPaymentUrl,
+        catatanAdmin: `Biaya Layanan Pakasir: Rp ${fee.toLocaleString('id-ID')} | Total: Rp ${totalPayment.toLocaleString('id-ID')}`
       }
     })
 
@@ -79,6 +94,8 @@ export async function POST(request: NextRequest) {
         id: newDeposit.id,
         orderId,
         nominal: calculatedNominal,
+        fee,
+        totalPayment,
         qrisUrl,
         qrisString,
         pakasirPaymentUrl,

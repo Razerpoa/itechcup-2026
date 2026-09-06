@@ -17,7 +17,7 @@ import {
   CreditCard,
   Check
 } from 'lucide-react'
-import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
+import { formatRupiah, formatDate, formatThousand, parseThousand, calculatePakasirFee } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { useEscrowStore, syncEscrowWithDB } from '@/lib/escrow-store'
 import PakasirPaymentModal from '@/components/pakasir-payment-modal'
@@ -64,6 +64,8 @@ export default function UMKMSaldoDepositPage() {
   const [pakasirModalData, setPakasirModalData] = useState<{
     orderId: string
     nominal: number
+    fee: number
+    totalPayment: number
     qrisUrl: string
     qrisString?: string
     pakasirPaymentUrl: string
@@ -73,6 +75,8 @@ export default function UMKMSaldoDepositPage() {
   const nominalPresets = [500000, 1000000, 2500000, 5000000, 10000000]
 
   const finalAmount = customNominal ? parseThousand(customNominal) : selectedNominal
+  const feePakasir = calculatePakasirFee(finalAmount)
+  const totalBayar = finalAmount + feePakasir
 
   const handlePakasirPayment = async () => {
     setErrorMessage(null)
@@ -104,6 +108,8 @@ export default function UMKMSaldoDepositPage() {
       setPakasirModalData({
         orderId: json.data.orderId,
         nominal: json.data.nominal,
+        fee: json.data.fee,
+        totalPayment: json.data.totalPayment,
         qrisUrl: json.data.qrisUrl,
         qrisString: json.data.qrisString,
         pakasirPaymentUrl: json.data.pakasirPaymentUrl
@@ -306,22 +312,25 @@ export default function UMKMSaldoDepositPage() {
 
                 <div className="bg-white p-4 rounded-2xl border border-[#FFD9CA]/80 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">Nominal Deposit:</span>
+                    <span className="text-gray-500">Nominal Deposit Masuk Saldo:</span>
                     <span className="font-extrabold text-gray-900">{formatRupiah(finalAmount)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">Biaya Administrasi:</span>
-                    <span className="font-extrabold text-emerald-700">Rp 0 (Gratis)</span>
+                    <span className="text-gray-500 flex items-center gap-1.5">
+                      <span>Biaya Layanan Pakasir:</span>
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-[#964825] text-white">Otomatis</span>
+                    </span>
+                    <span className="font-extrabold text-[#964825]">{formatRupiah(feePakasir)}</span>
                   </div>
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
                     <span className="text-gray-700">Total Pembayaran:</span>
-                    <span className="text-base font-extrabold text-[#964825]">{formatRupiah(finalAmount)}</span>
+                    <span className="text-base font-extrabold text-[#964825]">{formatRupiah(totalBayar)}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-[11px] text-gray-600 bg-white/70 px-3.5 py-2 rounded-xl border border-[#FFD9CA]/50">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Saldo rekening bersama langsung bertambah secara real-time begitu pembayaran berhasil diselesaikan.</span>
+                  <span>Biaya layanan dihitung otomatis sesuai ketentuan Pakasir. Saldo masuk ke rekening bersama sebesar nominal deposit yang dipilih.</span>
                 </div>
               </div>
 
@@ -413,6 +422,8 @@ export default function UMKMSaldoDepositPage() {
         <PakasirPaymentModal
           orderId={pakasirModalData.orderId}
           nominal={pakasirModalData.nominal}
+          fee={pakasirModalData.fee}
+          totalPayment={pakasirModalData.totalPayment}
           qrisUrl={pakasirModalData.qrisUrl}
           qrisString={pakasirModalData.qrisString}
           pakasirPaymentUrl={pakasirModalData.pakasirPaymentUrl}

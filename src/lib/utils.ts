@@ -125,3 +125,11 @@ export function generateNoResi(prefix = 'MTU', customYear?: number): string {
 
 export const generateDepositId = generateNoResi
 
+export function calculatePakasirFee(amount: number): number {
+  if (!amount || amount <= 0) return 0
+  if (amount > 105000) {
+    return Math.round(amount * 0.01)
+  }
+  return Math.round(amount * 0.007 + 310)
+}
+
