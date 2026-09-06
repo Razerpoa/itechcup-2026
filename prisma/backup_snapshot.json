@@ -1807,17 +1807,17 @@
       "namaPemilik": "pak kris",
       "nominal": 1000000,
       "paymentMethod": "qris",
-      "status": "PENDING",
+      "status": "APPROVED",
       "qrisUrl": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME52047929530336054101010000.005802ID5907Pakasir6012KAB.%20KEBUMEN6105543926222051815514626298912990963040022",
       "qrisString": "00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME52047929530336054101010000.005802ID5907Pakasir6012KAB. KEBUMEN6105543926222051815514626298912990963040022",
       "pakasirPaymentUrl": "https://app.pakasir.com/pay/suntik/1000000?order_id=MTU-2026-XLAS&qris_only=1",
       "bankTujuan": null,
       "nomorPengirim": null,
       "buktiTransferUrl": null,
-      "catatanAdmin": null,
-      "approvedAt": null,
+      "catatanAdmin": "Disetujui oleh Master Admin Escrow",
+      "approvedAt": "2026-09-06T14:43:01.303Z",
       "createdAt": "2026-09-05T11:39:55.299Z",
-      "updatedAt": "2026-09-05T11:39:55.299Z"
+      "updatedAt": "2026-09-06T14:43:01.538Z"
     },
     {
       "id": "MTU-2026-XJVJ",
@@ -1827,17 +1827,17 @@
       "namaPemilik": "pak kris",
       "nominal": 10000,
       "paymentMethod": "qris",
-      "status": "PENDING",
+      "status": "REJECTED",
       "qrisUrl": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME520479295303360540810380.005802ID5907Pakasir6012KAB.%20KEBUMEN610554392622205181319517514888860736304D524",
       "qrisString": "00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME520479295303360540810380.005802ID5907Pakasir6012KAB. KEBUMEN610554392622205181319517514888860736304D524",
       "pakasirPaymentUrl": "https://app.pakasir.com/pay/suntik/10000?order_id=MTU-2026-XJVJ&qris_only=1",
       "bankTujuan": null,
       "nomorPengirim": null,
       "buktiTransferUrl": null,
-      "catatanAdmin": null,
+      "catatanAdmin": "Bukti transfer tidak jelas / dana belum masuk",
       "approvedAt": null,
       "createdAt": "2026-09-05T11:40:34.808Z",
-      "updatedAt": "2026-09-05T11:40:34.808Z"
+      "updatedAt": "2026-09-06T14:43:07.554Z"
     },
     {
       "id": "MTU-2026-YG7P",
@@ -1847,17 +1847,17 @@
       "namaPemilik": "pak kris",
       "nominal": 10000,
       "paymentMethod": "qris",
-      "status": "PENDING",
+      "status": "APPROVED",
       "qrisUrl": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME520479295303360540810380.005802ID5907Pakasir6012KAB.%20KEBUMEN6105543926222051814360259125755926563042690",
       "qrisString": "00020101021226610016ID.CO.SHOPEE.WWW01189360091800216005230208216005230303UME51440014ID.CO.QRIS.WWW0215ID10243228429300303UME520479295303360540810380.005802ID5907Pakasir6012KAB. KEBUMEN6105543926222051814360259125755926563042690",
       "pakasirPaymentUrl": "https://app.pakasir.com/pay/suntik/10000?order_id=MTU-2026-YG7P&qris_only=1",
       "bankTujuan": null,
       "nomorPengirim": null,
       "buktiTransferUrl": null,
-      "catatanAdmin": null,
-      "approvedAt": null,
+      "catatanAdmin": "Diverifikasi otomatis oleh sistem gateway Pakasir",
+      "approvedAt": "2026-09-06T14:47:49.054Z",
       "createdAt": "2026-09-05T11:40:42.479Z",
-      "updatedAt": "2026-09-05T11:40:42.479Z"
+      "updatedAt": "2026-09-06T14:47:49.910Z"
     },
     {
       "id": "MTU-2026-KX4T",
@@ -1867,17 +1867,17 @@
       "namaPemilik": "pak kris",
       "nominal": 1000,
       "paymentMethod": "qris",
-      "status": "PENDING",
+      "status": "APPROVED",
       "qrisUrl": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=00020101021226670016COM.NOBUBANK.WWW01189360050312600001650214260626000008100303UME51440014ID.CO.QRIS.WWW0303UME0215ID202654019181752047372530336054071317.005802ID5906WEBKUS6007KEBUMEN61055439162700108MATUUROW0617webkusp_tviqszxia0703A010804POSP991800020001082026090563042BA0",
       "qrisString": "00020101021226670016COM.NOBUBANK.WWW01189360050312600001650214260626000008100303UME51440014ID.CO.QRIS.WWW0303UME0215ID202654019181752047372530336054071317.005802ID5906WEBKUS6007KEBUMEN61055439162700108MATUUROW0617webkusp_tviqszxia0703A010804POSP991800020001082026090563042BA0",
       "pakasirPaymentUrl": "https://app.pakasir.com/pay/suntik/1000?order_id=MTU-2026-KX4T&qris_only=1",
       "bankTujuan": null,
       "nomorPengirim": null,
       "buktiTransferUrl": null,
-      "catatanAdmin": null,
-      "approvedAt": null,
+      "catatanAdmin": "Diverifikasi otomatis oleh sistem gateway Pakasir",
+      "approvedAt": "2026-09-06T14:47:49.054Z",
       "createdAt": "2026-09-05T11:49:37.903Z",
-      "updatedAt": "2026-09-05T11:49:37.903Z"
+      "updatedAt": "2026-09-06T14:47:49.910Z"
     }
   ],
   "withdrawalTransaction": [
@@ -1888,11 +1888,11 @@
       "nominal": 500000,
       "eWalletType": "GoPay",
       "eWalletNomor": "0812-3456-7890",
-      "status": "PENDING",
-      "catatanAdmin": null,
-      "approvedAt": null,
+      "status": "APPROVED",
+      "catatanAdmin": "Pencairan diproses ke e-wallet",
+      "approvedAt": "2026-09-06T14:44:27.944Z",
       "createdAt": "2026-09-05T11:44:10.281Z",
-      "updatedAt": "2026-09-05T11:44:10.281Z"
+      "updatedAt": "2026-09-06T14:44:28.409Z"
     },
     {
       "id": "WD-2026-6O8K",
@@ -1901,11 +1901,11 @@
       "nominal": 1000000,
       "eWalletType": "GoPay",
       "eWalletNomor": "085803380980",
-      "status": "PENDING",
-      "catatanAdmin": null,
-      "approvedAt": null,
+      "status": "APPROVED",
+      "catatanAdmin": "Pencairan diproses ke e-wallet",
+      "approvedAt": "2026-09-06T14:44:28.740Z",
       "createdAt": "2026-09-05T11:44:25.539Z",
-      "updatedAt": "2026-09-05T11:44:25.539Z"
+      "updatedAt": "2026-09-06T14:44:29.188Z"
     }
   ]
 }

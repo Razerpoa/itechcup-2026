@@ -191,12 +191,13 @@ export async function POST(request: NextRequest) {
       const createdDeposit = await prisma.depositTransaction.upsert({
         where: { id: depositId },
         update: {
-          status: payload.status || 'PENDING',
+          status: payload.status || 'APPROVED',
           nominal: Number(payload.nominal) || 500000,
           bankTujuan: payload.bankTujuan || 'BCA',
           nomorPengirim: payload.nomorPengirim,
           buktiTransferUrl: payload.buktiTransferUrl,
-          catatanAdmin: payload.catatanAdmin
+          catatanAdmin: payload.catatanAdmin || 'Diverifikasi otomatis oleh sistem',
+          approvedAt: new Date()
         },
         create: {
           id: depositId,
@@ -209,7 +210,9 @@ export async function POST(request: NextRequest) {
           bankTujuan: payload.bankTujuan || 'BCA',
           nomorPengirim: payload.nomorPengirim,
           buktiTransferUrl: payload.buktiTransferUrl,
-          status: payload.status || 'PENDING'
+          status: payload.status || 'APPROVED',
+          catatanAdmin: 'Diverifikasi otomatis oleh sistem',
+          approvedAt: new Date()
         }
       })
 

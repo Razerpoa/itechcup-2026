@@ -188,8 +188,8 @@ export default function UMKMSaldoDepositPage() {
     })
 
     setSuccessInfo({
-      title: 'Konfirmasi Deposit Terkirim!',
-      desc: `Bukti transfer deposit Anda dengan ID Deposit ${depositId} telah diteruskan ke Master Admin Escrow. Saldo Anda akan otomatis bertambah setelah verifikasi disetujui.`
+      title: 'Deposit Berhasil Terverifikasi Otomatis!',
+      desc: `Deposit Anda sebesar ${formatRupiah(finalAmount)} dengan ID Deposit ${depositId} telah berhasil diverifikasi otomatis oleh sistem. Saldo rekber UMKM Anda langsung bertambah secara instan.`
     })
     setIsSuccessModal(true)
     setCustomNominal('')
@@ -387,12 +387,12 @@ export default function UMKMSaldoDepositPage() {
                       </div>
                       <span className="font-extrabold text-sm">Transfer Manual</span>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">
-                      Verifikasi Admin
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      Konfirmasi Instan
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed">
-                    Transfer langsung ke rekening penampungan bank admin dan unggah bukti transfer.
+                    Transfer langsung ke rekening resmi penampungan, saldo rekber langsung bertambah otomatis.
                   </p>
                 </button>
               </div>

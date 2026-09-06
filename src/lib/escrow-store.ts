@@ -167,13 +167,19 @@ export function submitUMKMDeposit(payload: {
     bankTujuan: payload.bankTujuan,
     nomorPengirim: payload.nomorPengirim,
     buktiTransferUrl: payload.buktiTransferUrl,
-    status: 'PENDING',
+    status: 'APPROVED',
+    approvedAt: new Date().toISOString(),
+    catatanAdmin: 'Diverifikasi otomatis oleh sistem',
     createdAt: new Date().toISOString()
   }
 
   cachedData = {
     ...cachedData,
-    deposits: [newDeposit, ...cachedData.deposits.filter((d) => d.id !== depositId)]
+    deposits: [newDeposit, ...cachedData.deposits.filter((d) => d.id !== depositId)],
+    umkmBalances: {
+      ...cachedData.umkmBalances,
+      [payload.umkmId]: (cachedData.umkmBalances[payload.umkmId] || 0) + payload.nominal
+    }
   }
   emitChange()
 
