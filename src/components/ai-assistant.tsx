@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Bot, X, Send, Headphones, MessageCircle, Mail, Sparkles, PhoneCall, AlertCircle } from 'lucide-react'
 import { useAuthUser } from '@/lib/auth-client'
 
@@ -92,6 +93,8 @@ function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
 
 export default function AiAssistant() {
   const user = useAuthUser()
+  const pathname = usePathname()
+  const isAkadRoom = pathname?.includes('/transaksi')
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat')
   const [messages, setMessages] = useState<MessageItem[]>([
@@ -109,13 +112,19 @@ export default function AiAssistant() {
     if (isOpen && activeTab === 'chat') {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages, isOpen, activeTab])
+  }, [isOpen, activeTab, messages])
 
   const handleSend = async (textToSend?: string) => {
-    const query = textToSend || input
-    if (!query.trim() || isLoading) return
-    const userMsg: MessageItem = { id: Date.now().toString(), role: 'user', text: query.trim() }
-    setMessages((prev) => [...prev, userMsg])
+    const messageText = textToSend || input.trim()
+    if (!messageText || isLoading) return
+
+    const userMessage: MessageItem = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: messageText
+    }
+
+    setMessages((prev) => [...prev, userMessage])
     if (!textToSend) setInput('')
     setIsLoading(true)
 
@@ -124,7 +133,7 @@ export default function AiAssistant() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: userMsg.text,
+          message: userMessage.text,
           history: messages,
           userRole: user?.role || 'pengunjung',
           userNama: user?.nama
@@ -182,7 +191,9 @@ export default function AiAssistant() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Buka Asisten Mitra Muda"
-        className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] active:scale-95 text-white shadow-xl flex items-center justify-center cursor-pointer transition-all duration-200"
+        className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] active:scale-95 text-white shadow-xl items-center justify-center cursor-pointer transition-all duration-200 ${
+          isAkadRoom ? 'hidden md:flex' : 'flex'
+        }`}
       >
         {isOpen ? (
           <X className="w-6 h-6" />

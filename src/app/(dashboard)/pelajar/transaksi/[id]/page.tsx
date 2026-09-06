@@ -279,32 +279,34 @@ export default function PelajarTransaksiRoomPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100dvh-5rem)] min-h-[580px] max-h-[900px] flex flex-col bg-white rounded-3xl shadow-xs border border-[#EAEAEA] overflow-hidden">
-      <header className="px-6 py-4 border-b border-[#EAEAEA] bg-gray-50/70 flex flex-col gap-3 sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="max-w-4xl mx-auto h-[calc(100dvh-5rem)] sm:h-[calc(100dvh-6rem)] md:h-[calc(100dvh-7rem)] min-h-[480px] sm:min-h-[560px] max-h-[900px] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-[#EAEAEA] overflow-hidden">
+      <header className="px-3.5 sm:px-6 py-3 sm:py-4 border-b border-[#EAEAEA] bg-gray-50/70 flex flex-col gap-2.5 sm:gap-3 sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
             <Link
               href="/pelajar"
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 cursor-pointer"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 cursor-pointer shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-lg text-gray-900">{activeAkad.judulProyek}</h1>
-                <span className="bg-[#FFF1EB] text-[#964825] px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border border-[#FFD9CA]">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center flex-wrap gap-1.5">
+                <h1 className="font-extrabold text-base sm:text-lg text-gray-900 truncate max-w-[200px] sm:max-w-none">
+                  {activeAkad.judulProyek}
+                </h1>
+                <span className="bg-[#FFF1EB] text-[#964825] px-2 py-0.5 rounded-full text-[10px] font-extrabold border border-[#FFD9CA] shrink-0">
                   Rekber Terlindungi
                 </span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-[11px] sm:text-xs text-gray-500 truncate">
                 Penyelenggara: <strong className="text-gray-900">{activeAkad.namaUsaha}</strong>
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 self-start sm:self-auto pl-9 sm:pl-0">
             <button
               onClick={() => setShowCertificate(true)}
-              className="text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="text-[11px] sm:text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
               title="Cetak Surat Keterangan Pengalaman Kerja Resmi"
             >
               <Award className="w-3.5 h-3.5 text-amber-600" />
@@ -316,45 +318,45 @@ export default function PelajarTransaksiRoomPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="text-[11px] sm:text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">WA UMKM</span>
+              <span>WA UMKM</span>
             </a>
-            <div className="bg-[#FFF1EB] text-[#964825] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-extrabold text-xs sm:text-sm border border-[#FFD9CA]">
+            <div className="bg-[#FFF1EB] text-[#964825] px-2.5 sm:px-4 py-1 sm:py-2 rounded-full font-extrabold text-[11px] sm:text-sm border border-[#FFD9CA] shrink-0">
               {formatRupiah(activeAkad.nominalTotal)}
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span className="font-bold text-gray-800">Status Akad Proyek:</span>
+        <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-bold text-gray-800 text-[11px] sm:text-xs">Status Akad:</span>
             {step === 4 ? (
-              <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-200 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs border border-emerald-200 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                 <span>Proyek Telah Selesai & Dana Cair</span>
               </span>
             ) : step === 3 ? (
-              <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-extrabold border border-blue-200 flex items-center gap-1">
-                <Clock className="w-3 h-3 text-blue-600 animate-pulse" />
+              <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs border border-blue-200 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-blue-600 animate-pulse shrink-0" />
                 <span>Karya Diserahkan & Sedang Ditinjau UMKM</span>
               </span>
             ) : (
-              <span className="bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full font-extrabold border border-amber-200 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3 text-amber-600" />
+              <span className="bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs border border-amber-200 flex items-center gap-1">
+                <RefreshCw className="w-3 h-3 text-amber-600 shrink-0" />
                 <span>Pengerjaan Proyek / Revisi Diminta</span>
               </span>
             )}
           </div>
-          <span className="text-[11px] text-gray-500 font-semibold">
+          <span className="text-[10px] sm:text-[11px] text-gray-500 font-semibold pl-6 sm:pl-0 shrink-0">
             {activeAkad.deliverables.length} Berkas Karya Diserahkan
           </span>
         </div>
       </header>
 
-      <main className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#FAFAFA]">
+      <main className="flex-1 p-3.5 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4 bg-[#FAFAFA]">
         {step === 4 && (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
@@ -559,7 +561,7 @@ export default function PelajarTransaksiRoomPage() {
         <div ref={chatBottomRef} />
       </main>
 
-      <footer className="p-4 bg-white border-t border-[#EAEAEA] flex flex-col gap-2">
+      <footer className="p-2.5 sm:p-4 bg-white border-t border-[#EAEAEA] flex flex-col gap-2">
         {chatAttachment && (
           <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -584,14 +586,14 @@ export default function PelajarTransaksiRoomPage() {
                 if (chatImageInputRef.current) chatImageInputRef.current.value = ''
                 if (chatFileInputRef.current) chatFileInputRef.current.value = ''
               }}
-              className="p-1 rounded-full hover:bg-gray-200 text-gray-500 cursor-pointer"
+              className="p-1 rounded-full hover:bg-gray-200 text-gray-500 cursor-pointer shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 sm:gap-2">
           <input
             type="file"
             ref={chatImageInputRef}
@@ -610,7 +612,7 @@ export default function PelajarTransaksiRoomPage() {
           <button
             type="button"
             onClick={() => chatImageInputRef.current?.click()}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Pilih Foto dari Galeri / Kamera Langsung"
           >
             <Camera className="w-4 h-4" />
@@ -619,7 +621,7 @@ export default function PelajarTransaksiRoomPage() {
           <button
             type="button"
             onClick={() => chatFileInputRef.current?.click()}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Pilih Berkas / Dokumen dari Folder Langsung"
           >
             <Paperclip className="w-4 h-4" />
@@ -629,20 +631,20 @@ export default function PelajarTransaksiRoomPage() {
             type="text"
             value={inputMsg}
             onChange={(e) => setInputMsg(e.target.value)}
-            placeholder="Tulis pesan atau lampirkan foto/file..."
-            className="flex-1 h-11 bg-[#F5F5F5] rounded-full px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
+            placeholder="Tulis pesan atau lampirkan berkas..."
+            className="flex-1 min-w-0 h-10 sm:h-11 bg-[#F5F5F5] rounded-full px-3 sm:px-4 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#FF9B71]"
           />
           <button
             type="submit"
             disabled={!inputMsg.trim() && !chatAttachment}
-            className="w-11 h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+            className="w-10 h-10 sm:w-11 sm:h-11 bg-[#FF9B71] hover:bg-[#F5865A] text-white rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </button>
         </form>
 
         {step === 4 ? (
-          <div className="w-full py-2.5 px-4 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2 shadow-2xs">
+          <div className="w-full py-2.5 px-3 sm:px-4 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 text-center shadow-2xs">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Karya Telah Disetujui & Dana Lunas Masuk ke Dompet Digital</span>
           </div>
@@ -650,10 +652,10 @@ export default function PelajarTransaksiRoomPage() {
           <div className="pt-1">
             <button
               onClick={() => setShowUploadModal(true)}
-              className="w-full py-2.5 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              className="w-full py-2.5 px-3 rounded-full bg-[#FF9B71] hover:bg-[#F5865A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
-              <UploadCloud className="w-4 h-4" />
-              <span>Unggah Foto / Berkas Hasil Karya Final (Tanpa Batas)</span>
+              <UploadCloud className="w-4 h-4 shrink-0" />
+              <span className="truncate">Unggah Foto / Berkas Hasil Karya Final</span>
             </button>
           </div>
         )}
@@ -661,7 +663,7 @@ export default function PelajarTransaksiRoomPage() {
 
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 max-w-lg w-full shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-extrabold text-gray-900">Unggah Berkas Deliverable Karya</h3>
