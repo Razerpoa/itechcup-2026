@@ -92,6 +92,7 @@ export default function PelajarTransaksiRoomPage() {
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [fileSizeStr, setFileSizeStr] = useState('1.5 MB')
   const [fileTypeStr, setFileTypeStr] = useState('image')
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -146,6 +147,12 @@ export default function PelajarTransaksiRoomPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto chat melebihi batas maksimal 5MB. Silakan pilih foto yang lebih kecil agar pengiriman pesan tidak mental.')
+      if (chatImageInputRef.current) chatImageInputRef.current.value = ''
+      return
+    }
+
     try {
       const { dataUrl, sizeStr } = await compressImageFile(file, 1200, 0.75)
       setChatAttachment({
@@ -171,6 +178,12 @@ export default function PelajarTransaksiRoomPage() {
   const handleChatFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran berkas chat melebihi batas maksimal 5MB. Silakan sematkan tautan Google Drive / Dropbox agar pengiriman pesan tidak mental.')
+      if (chatFileInputRef.current) chatFileInputRef.current.value = ''
+      return
+    }
 
     if (file.type.startsWith('image/')) {
       try {
@@ -228,6 +241,17 @@ export default function PelajarTransaksiRoomPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    setUploadError(null)
+
+    if (file.size > 5 * 1024 * 1024) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
+      setUploadError(`Ukuran berkas (${sizeMB} MB) melebihi batas maksimal 5MB. Agar tidak mental dan pengiriman karya tersimpan lancar, silakan kompres berkas atau gunakan tab "Tautan Drive / Figma / ZIP" di atas.`)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      setFileNameInput('')
+      setFilePreview(null)
+      return
+    }
+
     setFileNameInput(file.name)
     const sizeInMB = file.size / (1024 * 1024)
     setFileSizeStr(sizeInMB < 1 ? `${Math.round(file.size / 1024)} KB` : `${sizeInMB.toFixed(1)} MB`)
@@ -275,6 +299,7 @@ export default function PelajarTransaksiRoomPage() {
     setFileLinkInput('')
     setFileCatatan('')
     setFilePreview(null)
+    setUploadError(null)
     setShowUploadModal(false)
   }
 
@@ -707,9 +732,24 @@ export default function PelajarTransaksiRoomPage() {
             <form onSubmit={handleUploadDeliverable} className="space-y-4">
               {uploadType === 'file' ? (
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-2">
-                    Pilih Berkas atau Foto Langsung dari Perangkat:
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-gray-700 block">
+                      Pilih Berkas atau Foto Langsung dari Perangkat:
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Maks. 5MB
+                    </span>
+                  </div>
+
+                  {uploadError && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <span className="font-extrabold text-red-800 block">Berkas Melebihi Batas 5MB</span>
+                        <p className="text-[11px] leading-relaxed text-red-700/90">{uploadError}</p>
+                      </div>
+                    </div>
+                  )}
 
                   <input
                     type="file"
@@ -764,7 +804,7 @@ export default function PelajarTransaksiRoomPage() {
                         {fileNameInput ? fileNameInput : 'Atau klik area ini untuk memilih berkas karya'}
                       </p>
                       <p className="text-[10px] text-gray-500 mt-0.5">
-                        Mendukung Gambar, PDF, ZIP, PSD, Figma (Ukuran Bebas)
+                        Maksimal 5MB per berkas (Gambar, PDF, ZIP, PSD). Berkas &gt;5MB disarankan menggunakan tab Tautan Drive.
                       </p>
                     </div>
                   </div>

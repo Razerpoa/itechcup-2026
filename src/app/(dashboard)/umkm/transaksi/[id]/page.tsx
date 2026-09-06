@@ -150,6 +150,12 @@ export default function UmkmTransaksiRoomPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto chat melebihi batas maksimal 5MB. Silakan pilih foto dengan ukuran lebih kecil agar pesan tidak mental.')
+      if (chatImageInputRef.current) chatImageInputRef.current.value = ''
+      return
+    }
+
     try {
       const { dataUrl, sizeStr } = await compressImageFile(file, 1200, 0.75)
       setChatAttachment({
@@ -175,6 +181,12 @@ export default function UmkmTransaksiRoomPage() {
   const handleChatFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran berkas chat melebihi batas maksimal 5MB. Silakan gunakan tautan Google Drive / Dropbox agar pesan tidak mental.')
+      if (chatFileInputRef.current) chatFileInputRef.current.value = ''
+      return
+    }
 
     if (file.type.startsWith('image/')) {
       try {
