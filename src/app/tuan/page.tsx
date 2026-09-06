@@ -9,7 +9,7 @@ import {
   Building2, Store, Wallet, ArrowUpRight, ArrowRight,
   ShieldAlert, AlertTriangle, CheckCircle2, 
   GraduationCap, MessageCircle, ShieldCheck, Check, RotateCcw,
-  Loader2, Clock
+  Loader2, Clock, Briefcase, Sparkles, FileSpreadsheet, Filter
 } from 'lucide-react'
 import TwoFactorModal from '@/components/two-factor-modal'
 import { formatRupiah, formatDate } from '@/lib/utils'
@@ -38,14 +38,29 @@ import {
   updateAkadStatusDirectly,
   AkadTransaksiItem
 } from '@/lib/akad-store'
+import { useProjects, syncProjectsWithDB } from '@/lib/projects-store'
+import { useJasaStore, syncJasaWithDB } from '@/lib/jasa-store'
+import AdminOverview from '@/components/admin/admin-overview'
+import AdminProjectsTable from '@/components/admin/admin-projects-table'
+import AdminJasaTable from '@/components/admin/admin-jasa-table'
+import AdminExportModal from '@/components/admin/admin-export-modal'
 
 export default function MasterAdminEscrowPage() {
   const router = useRouter()
   const escrowState = useEscrowStore()
   const adminVerifs = useAdminVerifications()
   const akadState = useAkadStore()
+  const allProjects = useProjects()
+  const allJasa = useJasaStore()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'pelajar' | 'sekolah' | 'umkm' | 'deposits' | 'withdrawals' | 'escrows'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'proyek' | 'jasa' | 'pelajar' | 'sekolah' | 'umkm' | 'deposits' | 'withdrawals' | 'escrows'>('overview')
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [pelajarFilter, setPelajarFilter] = useState('ALL')
+  const [sekolahFilter, setSekolahFilter] = useState('ALL')
+  const [umkmFilter, setUmkmFilter] = useState('ALL')
+  const [depositFilter, setDepositFilter] = useState('ALL')
+  const [withdrawalFilter, setWithdrawalFilter] = useState('ALL')
+  const [akadFilter, setAkadFilter] = useState('ALL')
   const [selectedProofImg, setSelectedProofImg] = useState<{ url: string; title: string } | null>(null)
 
   const handleOpenDoc = async (url: string, title: string, fetchUrl?: string) => {
@@ -337,12 +352,16 @@ export default function MasterAdminEscrowPage() {
     syncAdminUsersFromDB()
     syncEscrowWithDB()
     syncAkadWithDB()
+    syncProjectsWithDB()
+    syncJasaWithDB()
 
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
       syncAdminUsersFromDB()
       syncEscrowWithDB()
       syncAkadWithDB()
+      syncProjectsWithDB()
+      syncJasaWithDB()
     }, 25000)
 
     const handleFocus = () => {
@@ -350,6 +369,8 @@ export default function MasterAdminEscrowPage() {
         syncAdminUsersFromDB()
         syncEscrowWithDB()
         syncAkadWithDB()
+        syncProjectsWithDB()
+        syncJasaWithDB()
       }
     }
 
@@ -418,36 +439,59 @@ export default function MasterAdminEscrowPage() {
     setTimeout(() => setActionSuccess(null), 4000)
   }
 
-  const filteredPelajar = adminVerifs.pelajarList.filter((p) =>
-    p.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.asalSekolah.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.nis && p.nis.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const filteredPelajar = adminVerifs.pelajarList.filter((p) => {
+    const matchSearch =
+      p.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.asalSekolah.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.nis && p.nis.toLowerCase().includes(searchTerm.toLowerCase()))
+    if (!matchSearch) return false
+    if (pelajarFilter === 'ALL') return true
+    return p.verificationStatus === pelajarFilter
+  })
 
-  const filteredSekolah = adminVerifs.sekolahList.filter((s) =>
-    s.namaSekolah.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.npsn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.emailResmi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.namaPenanggungJawab.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredSekolah = adminVerifs.sekolahList.filter((s) => {
+    const matchSearch =
+      s.namaSekolah.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.npsn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.emailResmi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.namaPenanggungJawab.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!matchSearch) return false
+    if (sekolahFilter === 'ALL') return true
+    if (sekolahFilter === 'PENDING') return s.verificationStatus === 'PENDING_REVIEW' || s.verificationStatus === 'UNVERIFIED'
+    return s.verificationStatus === sekolahFilter
+  })
 
-  const filteredUMKM = adminVerifs.umkmList.filter((u) =>
-    u.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.namaPemilik.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.nomorWa.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredUMKM = adminVerifs.umkmList.filter((u) => {
+    const matchSearch =
+      u.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.namaPemilik.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.nomorWa.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!matchSearch) return false
+    if (umkmFilter === 'ALL') return true
+    if (umkmFilter === 'VERIFIED') return u.isVerified
+    if (umkmFilter === 'PENDING') return !u.isVerified
+    return true
+  })
 
-  const filteredDeposits = escrowState.deposits.filter((d) => 
-    d.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.namaPemilik.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredDeposits = escrowState.deposits.filter((d) => {
+    const matchSearch =
+      d.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.namaPemilik.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!matchSearch) return false
+    if (depositFilter === 'ALL') return true
+    return d.status === depositFilter
+  })
 
-  const filteredWithdrawals = escrowState.withdrawals.filter((w) => 
-    w.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.eWalletType.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredWithdrawals = escrowState.withdrawals.filter((w) => {
+    const matchSearch =
+      w.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.eWalletType.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!matchSearch) return false
+    if (withdrawalFilter === 'ALL') return true
+    return w.status === withdrawalFilter
+  })
 
   const filteredEscrows = escrowState.escrows.filter((e) => 
     e.judulProyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -455,11 +499,19 @@ export default function MasterAdminEscrowPage() {
     e.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredAkads = akadState.akadList.filter((a) =>
-    a.judulProyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredAkads = akadState.akadList.filter((a) => {
+    const matchSearch =
+      a.judulProyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.namaPelajar.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!matchSearch) return false
+    if (akadFilter === 'ALL') return true
+    if (akadFilter === 'SELESAI') return a.step === 4
+    if (akadFilter === 'REVIEW') return a.step === 3
+    if (akadFilter === 'PENGERJAAN') return a.step === 2
+    if (akadFilter === 'AWAL') return a.step === 1
+    return true
+  })
 
   type NavItem = {
     id: string;
@@ -470,6 +522,8 @@ export default function MasterAdminEscrowPage() {
 
   const navItems: NavItem[] = [
     { id: 'overview', label: 'Ringkasan', icon: Activity },
+    { id: 'proyek', label: 'Monitoring Proyek', icon: Briefcase, badge: allProjects.length },
+    { id: 'jasa', label: 'Katalog Jasa Siswa', icon: Sparkles, badge: allJasa.length },
     { id: 'pelajar', label: 'Verifikasi Pelajar', icon: GraduationCap, badge: pendingPelajar.length },
     { id: 'sekolah', label: 'Verifikasi Sekolah', icon: Building2, badge: pendingSekolah.length },
     { id: 'umkm', label: 'Verifikasi UMKM', icon: Store, badge: unverifiedUMKM.length },
@@ -568,6 +622,15 @@ export default function MasterAdminEscrowPage() {
               />
             </div>
             <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center gap-1.5 bg-[#2D2319] hover:bg-[#3D3229] text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              title="Pusat Ekspor Laporan Data CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#FF9B71]" />
+              <span className="hidden sm:inline">Ekspor CSV</span>
+            </button>
+
+            <button
               onClick={() => setIs2FAModalOpen(true)}
               className="flex items-center gap-1.5 bg-[#FF9B71]/10 hover:bg-[#FF9B71]/15 text-[#964825] px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
@@ -603,110 +666,82 @@ export default function MasterAdminEscrowPage() {
           )}
 
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold text-[#2D2319] tracking-tight">Ringkasan Operasional</h2>
-                <p className="text-xs text-[#8B7E74] mt-0.5">Pemantauan aktivitas real-time ekosistem talenta dan transaksi Mitra Muda</p>
-              </div>
+            <AdminOverview
+              pelajarList={adminVerifs.pelajarList}
+              sekolahList={adminVerifs.sekolahList}
+              umkmList={adminVerifs.umkmList}
+              deposits={escrowState.deposits}
+              withdrawals={escrowState.withdrawals}
+              escrows={escrowState.escrows}
+              akads={akadState.akadList}
+              projects={allProjects}
+              jasaList={allJasa}
+              totalDanaEscrow={totalDanaEscrow}
+              pendingPelajar={pendingPelajar}
+              pendingSekolah={pendingSekolah}
+              unverifiedUMKM={unverifiedUMKM}
+              pendingDeposits={pendingDeposits}
+              pendingWithdrawals={pendingWithdrawals}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              onOpenExportModal={() => setIsExportModalOpen(true)}
+            />
+          )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
-                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#FFF4EC] border border-[#FFE0D2] flex items-center justify-center">
-                      <GraduationCap className="w-5 h-5 text-[#964825]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Pelajar</span>
-                  </div>
-                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingPelajar.length}</div>
-                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">Menunggu validasi dokumen</p>
-                  {pendingPelajar.length > 0 && (
-                    <button onClick={() => setActiveTab('pelajar')} className="mt-3 text-xs text-[#964825] font-bold hover:underline cursor-pointer flex items-center gap-1">
-                      <span>Tinjau sekarang</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
+          {activeTab === 'proyek' && (
+            <AdminProjectsTable
+              projects={allProjects}
+              onSuccessMessage={(msg) => {
+                setActionSuccess(msg)
+                setTimeout(() => setActionSuccess(null), 4000)
+              }}
+            />
+          )}
 
-                
-                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-emerald-700" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Sekolah</span>
-                  </div>
-                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingSekolah.length}</div>
-                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">NPSN perlu verifikasi manual</p>
-                  {pendingSekolah.length > 0 && (
-                    <button onClick={() => setActiveTab('sekolah')} className="mt-3 text-xs text-emerald-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
-                      <span>Tinjau sekarang</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-
-                
-                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-                      <ShieldAlert className="w-5 h-5 text-blue-700" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Escrow</span>
-                  </div>
-                  <div className="text-2xl font-extrabold text-[#2D2319] tracking-tight tabular-nums">{formatRupiah(totalDanaEscrow)}</div>
-                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">Dana tertahan di rekening bersama</p>
-                </div>
-
-                
-                <div className="bg-white rounded-2xl p-5 border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
-                      <Wallet className="w-5 h-5 text-amber-700" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#8B7E74] tracking-wider uppercase bg-[#F6F3EE] px-2 py-0.5 rounded-md">Antrean Dana</span>
-                  </div>
-                  <div className="text-3xl font-extrabold text-[#2D2319] tracking-tight">{pendingDeposits.length + pendingWithdrawals.length}</div>
-                  <p className="text-xs text-[#8B7E74] mt-1 font-medium">{pendingDeposits.length} deposit · {pendingWithdrawals.length} pencairan</p>
-                  {(pendingDeposits.length + pendingWithdrawals.length) > 0 && (
-                    <button onClick={() => setActiveTab('deposits')} className="mt-3 text-xs text-amber-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
-                      <span>Tinjau sekarang</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {pendingDeposits.length > 0 && (
-                <div className="bg-white border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-[#2D2319]">{pendingDeposits.length} permohonan deposit UMKM menunggu validasi</p>
-                      <p className="text-xs text-[#8B7E74] mt-0.5">Periksa bukti transfer dan mutasi sebelum mengonfirmasi penambahan saldo.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('deposits')}
-                    className="px-4 py-2.5 bg-[#2D2319] hover:bg-[#3D3229] text-white text-xs font-bold rounded-xl transition-all shadow-xs whitespace-nowrap cursor-pointer shrink-0"
-                  >
-                    Tinjau Antrean Deposit
-                  </button>
-                </div>
-              )}
-            </div>
+          {activeTab === 'jasa' && (
+            <AdminJasaTable
+              jasaList={allJasa}
+              onSuccessMessage={(msg) => {
+                setActionSuccess(msg)
+                setTimeout(() => setActionSuccess(null), 4000)
+              }}
+            />
           )}
 
           {activeTab === 'pelajar' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Talenta Pelajar</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Daftar siswa terdaftar beserta kelengkapan kartu pelajar & data diri</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredPelajar.length} Siswa</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">{adminVerifs.pelajarList.length} Total Siswa</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${adminVerifs.pelajarList.length})` },
+                    { id: 'PENDING', label: `Menunggu (${pendingPelajar.length})` },
+                    { id: 'VERIFIED', label: 'Terverifikasi' },
+                    { id: 'REJECTED', label: 'Ditolak' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setPelajarFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        pelajarFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredPelajar.length}</strong> siswa
+                </span>
               </div>
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
@@ -863,12 +898,39 @@ export default function MasterAdminEscrowPage() {
 
           {activeTab === 'sekolah' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Lembaga Sekolah</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Validasi legalitas institusi pendidikan dan penanggung jawab resmi</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredSekolah.length} Sekolah</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">{adminVerifs.sekolahList.length} Total Sekolah</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${adminVerifs.sekolahList.length})` },
+                    { id: 'PENDING', label: `Menunggu (${pendingSekolah.length})` },
+                    { id: 'VERIFIED', label: 'Terverifikasi' },
+                    { id: 'REJECTED', label: 'Ditolak' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setSekolahFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        sekolahFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredSekolah.length}</strong> sekolah
+                </span>
               </div>
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
@@ -975,12 +1037,38 @@ export default function MasterAdminEscrowPage() {
 
           {activeTab === 'umkm' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Verifikasi Mitra UMKM</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Kelola verifikasi legalitas usaha dan verifikasi nomor operasional WhatsApp</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredUMKM.length} UMKM</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">{adminVerifs.umkmList.length} Total UMKM</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${adminVerifs.umkmList.length})` },
+                    { id: 'PENDING', label: `Menunggu (${unverifiedUMKM.length})` },
+                    { id: 'VERIFIED', label: 'Terverifikasi' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setUmkmFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        umkmFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredUMKM.length}</strong> UMKM
+                </span>
               </div>
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
@@ -1071,12 +1159,39 @@ export default function MasterAdminEscrowPage() {
 
           {activeTab === 'deposits' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Deposit Saldo UMKM</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Konfirmasi penambahan modal escrow dari transfer bank UMKM</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredDeposits.length} Deposit</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">{escrowState.deposits.length} Total Deposit</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${escrowState.deposits.length})` },
+                    { id: 'PENDING', label: `Menunggu (${pendingDeposits.length})` },
+                    { id: 'APPROVED', label: 'Disetujui' },
+                    { id: 'REJECTED', label: 'Ditolak' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setDepositFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        depositFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredDeposits.length}</strong> deposit
+                </span>
               </div>
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
@@ -1152,12 +1267,39 @@ export default function MasterAdminEscrowPage() {
 
           {activeTab === 'withdrawals' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Pencairan Dana Pelajar</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Validasi pengiriman reward ke dompet digital (Gopay / OVO / DANA) pelajar</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">{filteredWithdrawals.length} Penarikan</span>
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">{escrowState.withdrawals.length} Total Penarikan</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${escrowState.withdrawals.length})` },
+                    { id: 'PENDING', label: `Menunggu (${pendingWithdrawals.length})` },
+                    { id: 'APPROVED', label: 'Dicairkan' },
+                    { id: 'REJECTED', label: 'Ditolak' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setWithdrawalFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        withdrawalFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredWithdrawals.length}</strong> penarikan
+                </span>
               </div>
               <div className="bg-white rounded-2xl border border-[#E8E2DA] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                 <div className="overflow-x-auto">
@@ -1217,13 +1359,41 @@ export default function MasterAdminEscrowPage() {
 
           {activeTab === 'escrows' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-[#2D2319] tracking-tight">Akad Transaksi Proyek & Escrow</h3>
                   <p className="text-xs text-[#8B7E74] mt-0.5">Kontrol status pengerjaan karya siswa, permintaan revisi, serta persetujuan penyelesaian (Done) & pencairan saldo siswa.</p>
                 </div>
-                <span className="text-xs font-bold bg-white text-[#2D2319] px-3 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs">
-                  {filteredAkads.length} Transaksi Proyek
+                <span className="text-xs font-bold bg-white text-[#2D2319] px-3.5 py-1.5 rounded-xl border border-[#E8E2DA] shadow-xs self-start sm:self-auto">
+                  {akadState.akadList.length} Total Transaksi
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8E2DA] shadow-2xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <Filter className="w-3.5 h-3.5 text-[#8B7E74] shrink-0 mr-1" />
+                  {[
+                    { id: 'ALL', label: `Semua (${akadState.akadList.length})` },
+                    { id: 'SELESAI', label: 'Selesai & Lunas' },
+                    { id: 'REVIEW', label: 'Review Hasil' },
+                    { id: 'PENGERJAAN', label: 'Pengerjaan / Revisi' },
+                    { id: 'AWAL', label: 'Tahap Awal' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setAkadFilter(f.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        akadFilter === f.id
+                          ? 'bg-[#2D2319] text-white'
+                          : 'bg-white text-[#8B7E74] border border-[#E8E2DA] hover:bg-[#F6F3EE]'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-[#8B7E74] whitespace-nowrap">
+                  Menampilkan <strong className="text-[#2D2319]">{filteredAkads.length}</strong> transaksi
                 </span>
               </div>
 
@@ -1535,6 +1705,20 @@ export default function MasterAdminEscrowPage() {
           </div>
         </div>
       )}
+
+      <AdminExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        pelajarList={adminVerifs.pelajarList}
+        sekolahList={adminVerifs.sekolahList}
+        umkmList={adminVerifs.umkmList}
+        deposits={escrowState.deposits}
+        withdrawals={escrowState.withdrawals}
+        escrows={escrowState.escrows}
+        akads={akadState.akadList}
+        projects={allProjects}
+        jasaList={allJasa}
+      />
     </div>
   )
 }
