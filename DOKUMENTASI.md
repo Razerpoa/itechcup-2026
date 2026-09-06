@@ -141,20 +141,71 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
   - **Pruning Payload Base64 pada Query List:** Endpoint list (`GET /api/pelajar`, `GET /api/umkm`, `GET /api/deposit`) mengganti data Base64 dokumen yang besar dengan penanda `ATTACHED`. Dokumen lengkap kartu pelajar, legalitas UMKM, dan struk transfer hanya dimuat secara on-demand saat admin mengklik tombol pratinjau dokumen via endpoint detail (`/[id]`), memangkas transfer data dari ukuran megabyte menjadi kilobyte.
   - **Penghapusan Loop Re-Upsert Chat Redundan:** `syncAkadWithDB` kini menggunakan metode `GET /api/chat` tanpa melakukan operasi penulisan `upsert` berulang ke database PostgreSQL untuk pesan chat yang telah ada.
 
+### L. Biaya Layanan Otomatis Pakasir & Penghapusan Transfer Manual
+- **Lokasi:** `src/lib/utils.ts`, `src/app/(dashboard)/umkm/deposit/page.tsx`, `src/components/pakasir-payment-modal.tsx`, `src/app/api/payment/pakasir/create/route.ts`
+- **Spesifikasi:**
+  - Menghapus seluruh alur transfer bank manual yang membutuhkan verifikasi manual admin. Semua pengisian saldo deposit rekber UMKM kini sepenuhnya otomatis melalui gateway Pakasir (QRIS Dinamis, Virtual Account, dan E-Wallet).
+  - Mengimplementasikan fungsi kalkulasi biaya resmi Pakasir (`calculatePakasirFee`):
+    - Nominal transaksi di atas Rp 105.000: 1% dari nominal transaksi.
+    - Nominal transaksi sampai dengan Rp 105.000: 0,7% + Rp 310.
+  - Menampilkan kalkulasi rincian biaya secara transparan dan dinamis pada form deposit UMKM (Nominal Masuk Saldo, Biaya Layanan Pakasir, dan Total Pembayaran Tagihan).
+  - Menyimpan rincian biaya layanan dan total tagihan pada entitas database `DepositTransaction`.
+
+### M. Validasi Maksimum Ukuran Berkas 5MB pada Akad Transaksi
+- **Lokasi:** `src/app/(dashboard)/pelajar/transaksi/[id]/page.tsx`
+- **Spesifikasi:**
+  - Penerapan validasi sisi klien yang ketat terhadap berkas serah terima karya siswa dengan batas maksimal 5MB per berkas.
+  - Mencegah peramban mengalami kegagalan memori, pembekuan antarmuka, atau terputusnya pengunggahan berkas berukuran terlalu besar.
+  - Memberikan dialog notifikasi interaktif yang informatif jika berkas yang dipilih melebihi batasan 5MB.
+
+### N. Ekspansi Pilihan Kategori & Bidang Keahlian Komprehensif
+- **Lokasi:** `src/app/(auth)/register/pelajar/page.tsx`, `src/app/marketplace/page.tsx`, `src/app/(dashboard)/pelajar/jasa/buat/page.tsx`
+- **Spesifikasi:**
+  - Memperluas pilihan bidang minat, keahlian vokasi, dan filter marketplace dari yang sebelumnya terbatas menjadi mencakup spektrum industri digital modern:
+    - Web Development & Frontend/Backend
+    - Desain Grafis, Branding & Identitas Visual
+    - UI/UX Design & Prototyping
+    - Video Editing, Motion Graphics & Animasi 2D/3D
+    - Manajemen Media Sosial & Digital Marketing
+    - Penulisan Konten, Copywriting & Terjemahan
+    - Fotografi, Videografi & Voice Over
+    - Pemrograman Aplikasi Mobile (Android/iOS)
+    - Data Entry & Pengolahan Data
+    - Jaringan Komputer, IoT & Layanan TI
+
+### O. Kalkulasi Perputaran Modal Riil & Visualisasi Grafik Interaktif
+- **Lokasi:** `src/app/(marketing)/page.tsx`, `src/components/admin/admin-overview.tsx`
+- **Spesifikasi:**
+  - Mengganti angka estimasi statis menjadi kalkulasi riil 100% dari basis data:
+    `Total Akumulasi Perputaran = Total Deposit Terverifikasi (APPROVED) + Total Nilai Akad Proyek Aktif/Selesai`
+  - Menyediakan visualisasi grafik perputaran modal yang dinamis untuk memberikan transparansi perputaran ekonomi ekosistem kepada calon mitra dan publik.
+
+### P. Pengamanan Ketat Endpoint XHR / API (Anti-Kebocoran Data & Otorisasi)
+- **Lokasi:** `src/app/api/siswa/[id]/route.ts`, `src/app/api/pelajar/[id]/route.ts`, `src/app/api/deposit/route.ts`, `src/app/api/deposit/[id]/route.ts`, `src/app/api/chat/route.ts`, `src/app/api/proyek/[id]/route.ts`, `src/app/api/auth/admin-login/route.ts`, `src/app/api/admin/reset-db/route.ts`, `src/lib/jwt.ts`
+- **Spesifikasi:**
+  - **Sanitasi Hash Password:** Menghapus properti password secara rekursif dari data profil siswa dan institusi sekolah pada `GET /api/siswa/[id]` dan `GET /api/pelajar/[id]`.
+  - **Penyamaran PII & Informasi Finansial Publik:** Menyamarkan nomor kontak e-wallet dan nomor rekening pengirim (`0858****980`, `MTU-****X4T`) serta menyembunyikan bukti transfer pada endpoint `GET /api/deposit` dan `GET /api/deposit/[id]` bagi pengguna publik atau pihak ketiga yang tidak memiliki hak kepemilikan transaksi.
+  - **Proteksi Akses Persetujuan Transaksi:** Mengunci endpoint `PATCH /api/deposit/[id]` dengan autentikasi sesi admin berbasis HMAC-SHA256 JWT, mencegah pengguna publik menyetujui transaksi deposit atau penarikan secara mandiri via XHR.
+  - **Pencegahan Pengerukan Obrolan (Chat Scraping):** Membatasi respons `GET /api/chat` hanya pada percakapan yang melibatkan identitas pengguna yang terautentikasi. Permintaan anonim tanpa sesi mengembalikan daftar kosong.
+  - **Validasi Otorisasi Penghapusan Proyek:** Mengunci `DELETE /api/proyek/[id]` agar hanya pemilik proyek (UMKM yang menerbitkan) atau admin master yang diizinkan menghapus data lowongan.
+  - **Kriptografi Sesi Admin:** Mengganti format Base64 biasa pada cookie admin dengan JSON Web Token yang ditandatangani secara kriptografis menggunakan algoritma HS256 dan secret key server.
+
 ---
 
 ## 4. Standar Keamanan Data & Server (Security SSS-Tier)
 
 1. **Zero Credential Exposure:** Kunci API disimpan di server environment (`process.env`) dan disaring pada seluruh output.
-2. **Zero Password Exposure:** Field password tidak pernah disertakan dalam payload response API.
-3. **Enterprise HTTP Security Headers (`next.config.ts`):**
+2. **Zero Password & Hash Exposure:** Field password dan hash bcrypt tidak pernah disertakan dalam payload response API.
+3. **Data Masking pada Endpoint Publik:** Nomor rekening perbankan dan nomor telepon e-wallet disamarkan secara otomatis bagi pengguna non-pemilik untuk mencegah eksploitasi data pribadi melalui inspeksi jaringan (XHR).
+4. **Proteksi Otorisasi Berlapis (RBAC & Ownership Guard):** Seluruh mutasi data sensitif (approval deposit, hapus proyek, akses percakapan) diverifikasi melalui tanda tangan JWT dan pencocokan kepemilikan pengguna.
+5. **Enterprise HTTP Security Headers (`next.config.ts`):**
    - `X-Frame-Options: SAMEORIGIN`
    - `X-Content-Type-Options: nosniff`
    - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - `Permissions-Policy` (blokir akses kamera/mikrofon tanpa izin)
    - `Cache-Control: no-store, max-age=0` pada seluruh endpoint `/api/*`
-4. **Rate Limiting Berlapis:**
+6. **Rate Limiting Berlapis:**
    - Login admin: 5 percobaan / 10 menit dengan lockout otomatis.
    - Asisten AI: 12 request / menit per IP address.
 
@@ -163,6 +214,11 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ## 5. Changelog Pengembangan
 
 ### Sesi September 2026:
+- **security:** Audit komprehensif seluruh endpoint XHR / Fetch API terhadap kebocoran data sensitif: eliminasi kebocoran hash password pelajar & sekolah, masking otomatis nomor rekening & e-wallet, proteksi otorisasi admin pada approval transaksi, pembatasan scraping chat privat, validasi kepemilikan pada penghapusan proyek, dan penguatan sesi admin dengan HMAC-SHA256 JWT.
+- **feat:** Otomatisasi biaya layanan resmi gateway pembayaran Pakasir (> Rp 105.000 = 1%, <= Rp 105.000 = 0,7% + Rp 310) dengan kalkulasi real-time transparan dan peniadaan transfer manual.
+- **feat:** Batasan ukuran unggah berkas karya pada ruang akad transaksi maksimal 5MB dengan notifikasi interaktif untuk mencegah pemborosan memori peramban.
+- **feat:** Perluasan taksonomi kategori dan bidang keahlian registrasi pelajar dan marketplace (web dev, UI/UX, desain grafis, video editing, animasi, digital marketing, content writing, mobile dev, data entry, IoT).
+- **feat:** Integrasi perputaran modal riil dari akumulasi transaksi database terverifikasi dan visualisasi grafik dinamis pada landing page dan overview admin.
 - **perf & fix:** Optimasi menyeluruh konsumsi egress database Supabase (visibility gating peramban, penurunan interval polling ke 25-30 detik, pemangkasan payload Base64 pada query list menjadi on-demand per ID, dan penghapusan loop re-upsert obrolan).
 - **feat:** Integrasi langsung gateway pembayaran Pakasir mode production (proyek `suntik`) dengan QRIS dinamis resmi `payment.payment_number`, verifikasi otomatis tanpa webhook, dukungan webhook callback, dan nomor resi standar `MTU-2026-XXXX`.
 - **feat:** Migrasi penuh sistem deposit dan rekber ke tabel PostgreSQL Supabase (`DepositTransaction` & `WithdrawalTransaction`), meniadakan dependensi `localStorage`.

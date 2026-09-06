@@ -75,6 +75,11 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 ### Fitur Tambahan & Kepatuhan Publik
 * **Gateway QRIS Dinamis Pakasir & Dual Verification:** Pengisian deposit rekber UMKM otomatis via scan QRIS dinamis resmi dari seluruh m-Banking & e-Wallet nasional, dilengkapi auto-polling status tanpa webhook serta webhook callback resmi.
+* **Otomatisasi Biaya Layanan Pakasir:** Perhitungan biaya layanan payment gateway transparan secara otomatis (> Rp 105.000 = 1%, <= Rp 105.000 = 0,7% + Rp 310) dengan penghapusan transfer bank manual secara menyeluruh.
+* **Visualisasi Perputaran Modal Riil:** Menampilkan akumulasi transaksi riil dari database PostgreSQL yang terverifikasi (deposit APPROVED dan akad proyek) dengan grafik interaktif dinamis pada landing page dan dashboard admin.
+* **Keamanan XHR & Sanitasi Data Sensitif (Anti-Bocor):** Perlindungan data komprehensif pada seluruh endpoint API: sanitasi rekursif hash password bcrypt siswa dan sekolah, masking nomor rekening dan kontak e-wallet pada respons publik, proteksi otorisasi sesi admin berbasis HMAC-SHA256 JWT, dan pencegahan public chat scraping.
+* **Validasi Berkas Karya 5MB:** Pembatasan berkas serah terima karya siswa maksimal 5MB pada ruang akad digital untuk menjaga keandalan pengunggahan dan mencegah peramban kehabisan memori.
+* **Ekspansi Kategori Bidang Keahlian:** Mendukung ragam profesi digital vokasi (Web Dev, UI/UX, Desain Grafis, Video Editing, Animasi, Copywriting, Mobile Dev, Data Entry, Jaringan/IoT).
 * **Optimasi Bandwidth & Efisiensi Database:** Perlindungan konsumsi egress Supabase dengan sistem visibility gating (auto-pause di background), interval polling cerdas 25-30s, dan pemuatan dokumen on-demand per ID.
 * **Kepatuhan Regulasi UU PDP No. 27/2022:** Perlindungan ketat data pribadi pelajar di bawah umur, enkripsi database, dan jaminan tanpa penjualan data ke pihak ketiga (`/kebijakan-privasi`).
 * **Pedoman Perlindungan Talenta Pelajar:** Perlindungan jam wajib belajar sekolah, etika interaksi profesional, larangan eksploitasi kerja, dan hotline darurat (`/perlindungan-pelajar`).
@@ -427,10 +432,16 @@ npm run lint
 * `POST /api/proyek` — Menerbitkan lowongan proyek baru dari pihak UMKM.
 
 #### Gateway Pembayaran Pakasir (QRIS Dinamis)
-* `POST /api/payment/pakasir/create` — Menghasilkan tagihan deposit dan kode QRIS dinamis resmi (`payment.payment_number`) dari Pakasir.
+* `POST /api/payment/pakasir/create` — Menghasilkan tagihan deposit dan kode QRIS dinamis resmi (`payment.payment_number`) dari Pakasir lengkap dengan kalkulasi biaya layanan otomatis.
 * `GET  /api/payment/pakasir/status?orderId={id}` — Memeriksa status verifikasi pembayaran langsung ke API Pakasir (auto-approval tanpa webhook).
 * `POST /api/payment/pakasir/webhook` — Endpoint callback penerima notifikasi instan dari server Pakasir.
 * `POST /api/payment/pakasir/simulate` — Endpoint simulasi bayar instan untuk keperluan pengujian dan demonstrasi penjurian.
+
+#### Manajemen Escrow, Chat & Transaksi (Terproteksi)
+* `GET   /api/deposit` — Mengambil status brankas rekber dengan penyamaran otomatis PII nomor rekening & e-wallet untuk non-owner.
+* `PATCH /api/deposit/{id}` — Aksi persetujuan/penolakan deposit atau penarikan dana terproteksi sesi JWT admin.
+* `GET   /api/chat` — Riwayat obrolan privat terproteksi sesi pengguna aktif (mencegah scraping publik).
+* `DELETE /api/proyek/{id}` — Menghapus lowongan proyek terproteksi kepemilikan UMKM atau admin.
 
 #### AI Virtual Assistant
 * `POST /api/ai/assistant` — Konsultasi chatbot terproteksi rate-limiter dengan eskalasi model Google Gemini.

@@ -235,15 +235,20 @@ src/
 ## Standar Keamanan Data & Server (Security SSS-Tier)
 
 1. **Zero Credential Exposure:** Kunci API disimpan di server environment (`process.env`) dan disaring pada seluruh output.
-2. **Zero Password Exposure:** Field password tidak pernah disertakan dalam payload response API.
-3. **Enterprise HTTP Security Headers (`next.config.ts`):**
+2. **Zero Password & Hash Exposure:** Field password dan hash bcrypt dilarang keras disertakan dalam payload response API apa pun (`GET /api/siswa/[id]`, `GET /api/pelajar/[id]`).
+3. **Data Masking pada Endpoint Publik:** Nomor rekening bank pengirim dan nomor kontak e-wallet wajib dimasking (`0858****980`, `MTU-****X4T`) untuk pemanggil publik atau non-pemilik data.
+4. **Proteksi Otorisasi Mutasi & IDOR:** Seluruh aksi manipulasi status transaksi (`PATCH /api/deposit/[id]`) dan penghapusan data (`DELETE /api/proyek/[id]`) wajib memvalidasi sesi JWT dan memastikan hak akses pengguna/admin.
+5. **Autentikasi Kriptografis Sesi Admin:** Sesi admin wajib menggunakan JWT yang ditandatangani dengan algoritma HMAC-SHA256 (`signJwt` / `verifyJwt`) dengan secret server.
+6. **Validasi Ukuran Berkas:** Pengunggahan dokumen atau berkas hasil pekerjaan pada ruang akad dibatasi maksimal 5MB untuk mencegah beban memori peramban.
+7. **Gateway Pembayaran Otomatis:** Seluruh transaksi deposit UMKM wajib menggunakan gateway Pakasir dengan skema biaya resmi (`calculatePakasirFee`) tanpa transfer bank manual.
+8. **Enterprise HTTP Security Headers (`next.config.ts`):**
    - `X-Frame-Options: SAMEORIGIN`
    - `X-Content-Type-Options: nosniff`
    - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - `Permissions-Policy` (blokir kamera/mikrofon tanpa izin)
    - `Cache-Control: no-store, max-age=0` pada seluruh `/api/*`
-4. **Rate Limiting Berlapis:**
+9. **Rate Limiting Berlapis:**
    - Login admin: 5 percobaan / 10 menit dengan lockout otomatis.
    - Asisten AI: 12 request / menit per IP address.
 
@@ -263,8 +268,8 @@ src/
 ## Pengujian & Testing
 
 ```bash
-# Jalankan seluruh unit test suite
-npm run dev
+# Jalankan seluruh unit test suite otomatis
+npm test
 
 # Jalankan pengujian spesifik
 npx tsx --test src/lib/kemendikdasmen.test.ts
@@ -279,6 +284,7 @@ npx tsx --test src/lib/compare-school-names.test.ts
 - Normalisasi akronim (`SMKN` -> `SMK NEGERI`).
 - Rate limit memory tracking & sliding window.
 - Validasi format 8-digit NPSN.
+- Total 44 unit tests berstatus PASS.
 
 ---
 
