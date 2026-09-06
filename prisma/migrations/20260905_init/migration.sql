@@ -1,22 +1,15 @@
--- CreateEnum
 CREATE TYPE "VerificationStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
 
--- CreateEnum
 CREATE TYPE "ProyekStatus" AS ENUM ('DRAFT', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 
--- CreateEnum
 CREATE TYPE "LamaranStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN');
 
--- CreateEnum
 CREATE TYPE "TransaksiStatus" AS ENUM ('MENUNGGU_PEMBAYARAN', 'DP_DIBAYAR', 'DIKERJAKAN', 'MENUNGGU_REVIEW', 'SELESAI', 'DIBATALKAN');
 
--- CreateEnum
 CREATE TYPE "JenisKelamin" AS ENUM ('LAKI_LAKI', 'PEREMPUAN');
 
--- CreateEnum
 CREATE TYPE "UkuranBisnis" AS ENUM ('MIKRO', 'KECIL', 'MENENGAH');
 
--- CreateTable
 CREATE TABLE "Sekolah" (
     "id" TEXT NOT NULL,
     "namaSekolah" TEXT NOT NULL,
@@ -41,7 +34,6 @@ CREATE TABLE "Sekolah" (
     CONSTRAINT "Sekolah_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Pelajar" (
     "id" TEXT NOT NULL,
     "namaLengkap" TEXT NOT NULL,
@@ -63,7 +55,6 @@ CREATE TABLE "Pelajar" (
     CONSTRAINT "Pelajar_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "PelajarProfile" (
     "id" TEXT NOT NULL,
     "pelajarId" TEXT NOT NULL,
@@ -91,7 +82,6 @@ CREATE TABLE "PelajarProfile" (
     CONSTRAINT "PelajarProfile_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "UMKM" (
     "id" TEXT NOT NULL,
     "namaPemilik" TEXT NOT NULL,
@@ -121,7 +111,6 @@ CREATE TABLE "UMKM" (
     CONSTRAINT "UMKM_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Proyek" (
     "id" TEXT NOT NULL,
     "umkmId" TEXT NOT NULL,
@@ -143,7 +132,6 @@ CREATE TABLE "Proyek" (
     CONSTRAINT "Proyek_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Jasa" (
     "id" TEXT NOT NULL,
     "pelajarId" TEXT NOT NULL,
@@ -166,7 +154,6 @@ CREATE TABLE "Jasa" (
     CONSTRAINT "Jasa_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Lamaran" (
     "id" TEXT NOT NULL,
     "proyekId" TEXT NOT NULL,
@@ -181,7 +168,6 @@ CREATE TABLE "Lamaran" (
     CONSTRAINT "Lamaran_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Transaksi" (
     "id" TEXT NOT NULL,
     "proyekId" TEXT NOT NULL,
@@ -200,7 +186,6 @@ CREATE TABLE "Transaksi" (
     CONSTRAINT "Transaksi_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "ChatMessage" (
     "id" TEXT NOT NULL,
     "proyekId" TEXT NOT NULL,
@@ -218,7 +203,6 @@ CREATE TABLE "ChatMessage" (
     CONSTRAINT "ChatMessage_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "DeliverableWork" (
     "id" TEXT NOT NULL,
     "proyekId" TEXT NOT NULL,
@@ -234,7 +218,6 @@ CREATE TABLE "DeliverableWork" (
     CONSTRAINT "DeliverableWork_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "DepositTransaction" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
@@ -258,7 +241,6 @@ CREATE TABLE "DepositTransaction" (
     CONSTRAINT "DepositTransaction_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "WithdrawalTransaction" (
     "id" TEXT NOT NULL,
     "pelajarId" TEXT NOT NULL,
@@ -275,7 +257,6 @@ CREATE TABLE "WithdrawalTransaction" (
     CONSTRAINT "WithdrawalTransaction_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
 CREATE UNIQUE INDEX "Sekolah_npsn_key" ON "Sekolah"("npsn");
 CREATE UNIQUE INDEX "Sekolah_emailResmi_key" ON "Sekolah"("emailResmi");
 CREATE UNIQUE INDEX "Pelajar_email_key" ON "Pelajar"("email");
@@ -293,7 +274,6 @@ CREATE INDEX "DepositTransaction_umkmId_idx" ON "DepositTransaction"("umkmId");
 CREATE INDEX "DepositTransaction_orderId_idx" ON "DepositTransaction"("orderId");
 CREATE INDEX "WithdrawalTransaction_pelajarId_idx" ON "WithdrawalTransaction"("pelajarId");
 
--- AddForeignKey
 ALTER TABLE "Pelajar" ADD CONSTRAINT "Pelajar_sekolahId_fkey" FOREIGN KEY ("sekolahId") REFERENCES "Sekolah"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "PelajarProfile" ADD CONSTRAINT "PelajarProfile_pelajarId_fkey" FOREIGN KEY ("pelajarId") REFERENCES "Pelajar"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Proyek" ADD CONSTRAINT "Proyek_umkmId_fkey" FOREIGN KEY ("umkmId") REFERENCES "UMKM"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

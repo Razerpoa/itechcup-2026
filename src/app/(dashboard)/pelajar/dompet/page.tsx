@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import { Lock, ShieldCheck, AlertCircle, Clock, CheckCircle2, X, Sparkles, Check, ArrowRight } from 'lucide-react'
 import { formatRupiah, formatDate, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
@@ -240,11 +241,13 @@ export default function DompetPage() {
                     }`}
                   >
                     <div className="w-full h-10 bg-white rounded-xl border border-gray-100 p-1 flex items-center justify-center overflow-hidden shadow-2xs">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={w.image}
                         alt={w.name}
+                        width={60}
+                        height={28}
                         className="h-full w-auto max-w-full object-contain"
+                        unoptimized
                       />
                     </div>
                     <div className="text-center">

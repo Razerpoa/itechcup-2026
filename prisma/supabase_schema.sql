@@ -1,8 +1,3 @@
--- =========================================================
--- MITRA MUDA - SUPABASE DATABASE SCHEMA (POSTGRESQL)
--- Project: https://tqjgcmjgyndtkwejtuqp.supabase.co
--- =========================================================
-
 DO $$ BEGIN
   CREATE TYPE "VerificationStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
 EXCEPTION
