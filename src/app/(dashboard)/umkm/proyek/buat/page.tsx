@@ -20,6 +20,7 @@ import {
 import { cn, formatRupiah, formatThousand, parseThousand } from '@/lib/utils'
 import { addProject } from '@/lib/projects-store'
 import { useAuthUser } from '@/lib/auth-client'
+import { PROJECT_SERVICE_CATEGORIES } from '@/lib/skills-data'
 
 export default function BuatProyekPage() {
   const router = useRouter()
@@ -48,15 +49,20 @@ export default function BuatProyekPage() {
 
   const availableTags = [
     'Desain Grafis',
-    'Logo',
-    'Branding',
-    'Web Dev',
-    'React',
-    'UI/UX',
+    'Logo & Branding',
+    'Kemasan Produk',
+    'Web Development',
+    'Landing Page',
+    'WordPress',
+    'React & Next.js',
+    'UI/UX Design',
+    'Mobile App',
     'Video Editor',
-    'TikTok',
+    'TikTok & Reels',
+    'Fotografi Produk',
     'Copywriting',
-    'Instagram'
+    'Admin Medsos',
+    'Excel & Data Entry'
   ]
 
   const toggleTag = (tag: string) => {
@@ -199,11 +205,11 @@ export default function BuatProyekPage() {
                 onChange={(e) => setKategori(e.target.value)}
                 className="w-full bg-[#F5F5F5] border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:bg-white focus:border-[#FF9B71] focus:ring-2 focus:ring-[#FFD9CA] outline-none cursor-pointer"
               >
-                <option value="Desain Grafis">Desain Grafis & Branding</option>
-                <option value="Web Development">Web Development & Frontend</option>
-                <option value="UI/UX Design">UI/UX Design Mobile & Web</option>
-                <option value="Video & Animasi">Video Editing & Reels/TikTok</option>
-                <option value="Copywriting">Copywriting & Social Media</option>
+                {PROJECT_SERVICE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
 

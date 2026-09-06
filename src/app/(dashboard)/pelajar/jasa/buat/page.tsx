@@ -21,6 +21,7 @@ import {
 import { cn, formatRupiah, formatThousand, parseThousand } from '@/lib/utils'
 import { useAuthUser } from '@/lib/auth-client'
 import { addJasa } from '@/lib/jasa-store'
+import { PROJECT_SERVICE_CATEGORIES } from '@/lib/skills-data'
 
 export default function BuatJasaPelajarPage() {
   const router = useRouter()
@@ -48,15 +49,25 @@ export default function BuatJasaPelajarPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
-  const kategoriOptions = [
-    'Desain Grafis',
-    'Web Dev',
-    'Video Editor',
+  const kategoriOptions = PROJECT_SERVICE_CATEGORIES
+
+  const recommendedTags = [
+    'Logo',
+    'Branding',
+    'Packaging',
+    'WordPress',
+    'Landing Page',
+    'React',
+    'Next.js',
+    'Figma',
+    'Canva',
+    'Reels / TikTok',
+    'Video Editing',
+    'Fotografi',
     'Copywriting',
-    'UI/UX',
-    'Mobile App',
-    '3D Illustration',
-    'Digital Marketing'
+    'Social Media',
+    'Excel / Sheets',
+    'Data Entry'
   ]
 
   const handleAddTag = () => {
@@ -274,6 +285,35 @@ export default function BuatJasaPelajarPage() {
                       </button>
                     </span>
                   ))}
+                </div>
+
+                <div className="mt-2.5 pt-2.5 border-t border-gray-100">
+                  <span className="text-[11px] font-bold text-gray-400 block mb-1.5">Saran Tag Cepat:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recommendedTags.map((rec) => {
+                      const isSelected = selectedTags.includes(rec)
+                      return (
+                        <button
+                          key={rec}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              handleRemoveTag(rec)
+                            } else {
+                              setSelectedTags([...selectedTags, rec])
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#FF9B71] text-white shadow-2xs'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {isSelected ? `- ${rec}` : `+ ${rec}`}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>

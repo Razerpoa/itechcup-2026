@@ -19,11 +19,14 @@ import {
   CheckCircle2,
   Share2,
   School,
-  Search
+  Search,
+  Plus,
+  X
 } from 'lucide-react'
 import { setCurrentUser } from '@/lib/auth-client'
 import { useRedirectIfLoggedIn } from '@/hooks/use-auth-guard'
 import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter'
+import { SKILL_CATEGORIES, ALL_SKILLS } from '@/lib/skills-data'
 
 export default function RegisterPelajarPage() {
   const router = useRouter()
@@ -78,16 +81,8 @@ export default function RegisterPelajarPage() {
     }
   }, [])
 
-  const skillOptions = [
-    'Web Dev',
-    'UI/UX',
-    'Desain Grafis',
-    'Video Editor',
-    'Copywriting',
-    'Mobile App',
-    '3D Illustration',
-    'Digital Marketing'
-  ]
+  const [skillSearch, setSkillSearch] = useState('')
+  const [activeSkillCategory, setActiveSkillCategory] = useState('ALL')
 
   const toggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
@@ -96,6 +91,28 @@ export default function RegisterPelajarPage() {
       setSelectedSkills([...selectedSkills, skill])
     }
   }
+
+  const handleAddCustomSkill = (customName: string) => {
+    const trimmed = customName.trim()
+    if (!trimmed) return
+    if (!selectedSkills.includes(trimmed)) {
+      setSelectedSkills([...selectedSkills, trimmed])
+    }
+    setSkillSearch('')
+  }
+
+  const displayedSkills = React.useMemo(() => {
+    let pool = ALL_SKILLS
+    if (activeSkillCategory !== 'ALL') {
+      const group = SKILL_CATEGORIES.find((c) => c.id === activeSkillCategory)
+      if (group) pool = group.skills
+    }
+    if (skillSearch.trim()) {
+      const query = skillSearch.toLowerCase().trim()
+      return pool.filter((s) => s.toLowerCase().includes(query))
+    }
+    return pool
+  }, [activeSkillCategory, skillSearch])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -677,29 +694,140 @@ export default function RegisterPelajarPage() {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-2 sm:col-span-2">
-                    <label className="font-bold text-xs text-gray-700 uppercase tracking-wider">
-                      Bidang Keahlian Utama (Pilih min. 1 yang dikuasai)
-                    </label>
-                    <div className="flex flex-wrap gap-2.5">
-                      {skillOptions.map((skill) => {
-                        const isSelected = selectedSkills.includes(skill)
-                        return (
-                          <button
+                  <div className="flex flex-col gap-3 sm:col-span-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div>
+                        <label className="font-bold text-xs text-gray-700 uppercase tracking-wider">
+                          Bidang Keahlian Utama (Pilih min. 1 yang dikuasai)
+                        </label>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Pilih keahlian atau profesi digital yang Anda kuasai untuk memudahkan mitra UMKM menemukan Anda.
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-[#964825] bg-[#FFF4EC] border border-[#FFE0D2] px-3 py-1 rounded-full self-start sm:self-auto shrink-0">
+                        {selectedSkills.length} keahlian dipilih
+                      </span>
+                    </div>
+
+                    {selectedSkills.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-2xl bg-[#FFF9F6] border border-[#FFE0D2]">
+                        <span className="text-[11px] font-bold text-[#964825] mr-1">Keahlian Anda:</span>
+                        {selectedSkills.map((skill) => (
+                          <span
                             key={skill}
-                            type="button"
-                            onClick={() => toggleSkill(skill)}
-                            className={`px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                              isSelected
-                                ? 'bg-[#FF9B71] text-white shadow-xs'
-                                : 'bg-[#F5F5F5] text-gray-600 hover:bg-gray-200'
-                            }`}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF9B71] text-white text-xs font-bold shadow-2xs"
                           >
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
                             <span>{skill}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleSkill(skill)}
+                              className="hover:bg-[#E8754D] rounded-full p-0.5 cursor-pointer transition-colors"
+                              aria-label={`Hapus ${skill}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-2.5">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Cari keahlian (contoh: WordPress, Reels, Kemasan, Flutter, Excel)..."
+                          value={skillSearch}
+                          onChange={(e) => setSkillSearch(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              if (skillSearch.trim()) {
+                                handleAddCustomSkill(skillSearch)
+                              }
+                            }
+                          }}
+                          className="h-11 w-full bg-[#F5F5F5] border border-transparent focus:border-[#FF9B71] focus:bg-white focus:ring-2 focus:ring-[#FFD9CA] rounded-xl pl-10 pr-24 text-xs sm:text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
+                        />
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        {skillSearch.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => handleAddCustomSkill(skillSearch)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#2D2319] hover:bg-[#403429] text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Tambah</span>
                           </button>
-                        )
-                      })}
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setActiveSkillCategory('ALL')}
+                          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            activeSkillCategory === 'ALL'
+                              ? 'bg-[#2D2319] text-white shadow-2xs'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Semua ({ALL_SKILLS.length})
+                        </button>
+                        {SKILL_CATEGORIES.map((cat) => {
+                          const isActive = activeSkillCategory === cat.id
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setActiveSkillCategory(cat.id)}
+                              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+                                isActive
+                                  ? 'bg-[#2D2319] text-white shadow-2xs'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              {cat.name} ({cat.skills.length})
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto p-1 pr-2">
+                        {displayedSkills.map((skill) => {
+                          const isSelected = selectedSkills.includes(skill)
+                          return (
+                            <button
+                              key={skill}
+                              type="button"
+                              onClick={() => toggleSkill(skill)}
+                              className={`px-3.5 py-1.5 rounded-full font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                                isSelected
+                                  ? 'bg-[#FF9B71] text-white shadow-xs scale-102'
+                                  : 'bg-[#F5F5F5] text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3.5 h-3.5" />}
+                              <span>{skill}</span>
+                            </button>
+                          )
+                        })}
+
+                        {displayedSkills.length === 0 && skillSearch.trim() && (
+                          <div className="w-full py-4 text-center">
+                            <p className="text-xs text-gray-500 mb-2">
+                              Keahlian &ldquo;<strong>{skillSearch}</strong>&rdquo; belum ada di daftar.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleAddCustomSkill(skillSearch)}
+                              className="inline-flex items-center gap-1.5 bg-[#FF9B71] hover:bg-[#F5865A] text-white px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Gunakan &ldquo;{skillSearch}&rdquo; Sebagai Keahlian Anda</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

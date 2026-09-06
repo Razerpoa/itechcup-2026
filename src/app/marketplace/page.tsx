@@ -111,7 +111,7 @@ export default function MarketplacePage() {
     router.push('/login')
   }
 
-  const categories = ['Semua', 'Desain Grafis', 'Web Dev', 'Video & Animasi', 'Medsos & Marketing', 'Fotografi', 'Copywriting', 'UI/UX']
+  const categories = ['Semua', 'Desain Grafis', 'Web Dev', 'UI/UX', 'Video & Animasi', 'Medsos & Marketing', 'Fotografi', 'Copywriting', 'Mobile App', 'Data & Admin']
 
   const activeFilterCount = useMemo(() => {
     let count = 0
