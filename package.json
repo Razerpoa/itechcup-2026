@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "npx tsx --test src/**/*.test.ts",
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx src/lib/seed.ts",
     "db:restore": "npx tsx src/lib/restore.ts",

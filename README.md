@@ -367,7 +367,7 @@ npm run build
 npm run start
 
 # Menjalankan seluruh pengujian unit
-node --import ./tsx-hooks.mjs --test (Get-ChildItem test -Recurse -Filter *.test.ts).FullName
+npm test
 
 # Pemeriksaan kualitas sintaksis
 npm run lint
@@ -462,11 +462,11 @@ console.log(result);
 ## 🧪 Testing
 
 ### Running Tests
-Mitra Muda mengimplementasikan pengujian unit komprehensif menggunakan modul bawaan performa tinggi `node:test` dan `tsx-hooks.mjs`:
+Mitra Muda mengimplementasikan pengujian unit komprehensif menggunakan modul bawaan performa tinggi `node:test` dan `tsx`:
 
 ```bash
 # Menjalankan seluruh rangkaian tes otomatis
-node --import ./tsx-hooks.mjs --test (Get-ChildItem test -Recurse -Filter *.test.ts).FullName
+npm test
 ```
 
 ### Test Coverage
