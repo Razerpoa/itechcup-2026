@@ -52,9 +52,12 @@ export default function AuthCallbackPage() {
           }
         }
 
-        if (typeof window !== 'undefined' && !authType) {
+        if (typeof window !== 'undefined') {
           const searchParams = new URLSearchParams(window.location.search)
-          authType = searchParams.get('type')
+          if (!authType) authType = searchParams.get('type')
+          if (!email && searchParams.get('email')) {
+            email = decodeURIComponent(searchParams.get('email')!)
+          }
         }
 
         if (!email) {
