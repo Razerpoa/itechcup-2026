@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyJwt } from '@/lib/jwt'
+import { AUTH_COOKIE_NAME } from '@/lib/auth-server'
 
 export interface ChatAttachment {
   name: string
@@ -71,6 +73,36 @@ export async function GET(request: NextRequest) {
 
     if (proyekId) {
       merged = merged.filter((c) => c.proyekId === proyekId)
+    }
+
+    if (!proyekId && !recipientId && !senderId) {
+      const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
+      const user = token ? verifyJwt(token) : null
+      const adminCookie = request.cookies.get('mitra_muda_admin_session')?.value
+      let isAdmin = false
+      if (adminCookie) {
+        const verified = verifyJwt(adminCookie)
+        if (verified?.role === 'admin') isAdmin = true
+        if (!isAdmin) {
+          try {
+            const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+            if (decoded.role === 'admin') isAdmin = true
+          } catch {}
+        }
+      }
+
+      if (isAdmin) {
+        return NextResponse.json({ data: merged })
+      }
+
+      if (user) {
+        const userChats = merged.filter(
+          (c) => c.senderId === user.id || c.recipientId === user.id || (user.role === 'umkm' && c.recipientId === 'umkm-default')
+        )
+        return NextResponse.json({ data: userChats })
+      }
+
+      return NextResponse.json({ data: [] })
     }
 
     if (recipientId || senderId) {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateDepositId } from '@/lib/utils'
+import { verifyJwt } from '@/lib/jwt'
+import { AUTH_COOKIE_NAME } from '@/lib/auth-server'
 
 export interface ApiDepositItem {
   id: string
@@ -92,10 +94,61 @@ async function getFullEscrowState(): Promise<ApiEscrowState> {
   return { deposits, withdrawals, umkmBalances, pelajarBalances }
 }
 
-export async function GET(_request: NextRequest) {
+function maskSensitiveIdentifier(val?: string): string {
+  if (!val) return ''
+  if (val.length <= 4) return '***'
+  return val.slice(0, 4) + '****' + val.slice(-3)
+}
+
+export async function GET(request: NextRequest) {
   try {
+    const adminCookie = request.cookies.get('mitra_muda_admin_session')?.value
+    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
+    const user = token ? verifyJwt(token) : null
+
+    let isAdmin = false
+    if (adminCookie) {
+      const verified = verifyJwt(adminCookie)
+      if (verified?.role === 'admin') isAdmin = true
+      if (!isAdmin) {
+        try {
+          const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+          if (decoded.role === 'admin') isAdmin = true
+        } catch {}
+      }
+    }
+
     const state = await getFullEscrowState()
-    return NextResponse.json({ success: true, data: state })
+
+    if (isAdmin) {
+      return NextResponse.json({ success: true, data: state })
+    }
+
+    const sanitizedDeposits = state.deposits.map((d) => {
+      const isOwner = user && user.id === d.umkmId
+      return {
+        ...d,
+        nomorPengirim: isOwner ? d.nomorPengirim : maskSensitiveIdentifier(d.nomorPengirim),
+        buktiTransferUrl: isOwner ? d.buktiTransferUrl : undefined
+      }
+    })
+
+    const sanitizedWithdrawals = state.withdrawals.map((w) => {
+      const isOwner = user && user.id === w.pelajarId
+      return {
+        ...w,
+        eWalletNomor: isOwner ? w.eWalletNomor : maskSensitiveIdentifier(w.eWalletNomor)
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...state,
+        deposits: sanitizedDeposits,
+        withdrawals: sanitizedWithdrawals
+      }
+    })
   } catch {
     return NextResponse.json({
       success: true,

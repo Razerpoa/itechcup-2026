@@ -5,7 +5,7 @@ const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'mitra-muda-super-secret-key-i
 export interface JwtPayload {
   id: string
   email: string
-  role: 'pelajar' | 'umkm' | 'sekolah'
+  role: 'pelajar' | 'umkm' | 'sekolah' | 'admin'
   nama?: string
   iat?: number
   exp?: number

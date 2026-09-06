@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyJwt } from '@/lib/jwt'
+import { AUTH_COOKIE_NAME } from '@/lib/auth-server'
+
+function maskSensitive(val?: string): string {
+  if (!val) return ''
+  if (val.length <= 4) return '***'
+  return val.slice(0, 4) + '****' + val.slice(-3)
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -7,6 +15,29 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const adminCookie = request.cookies.get('mitra_muda_admin_session')?.value
+    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
+    const user = token ? verifyJwt(token) : null
+
+    let isAdmin = false
+    if (adminCookie) {
+      const verified = verifyJwt(adminCookie)
+      if (verified?.role === 'admin') isAdmin = true
+      if (!isAdmin) {
+        try {
+          const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+          if (decoded.role === 'admin') isAdmin = true
+        } catch {}
+      }
+    }
+
+    if (!isAdmin && user?.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Hanya admin yang memiliki izin mengubah status transaksi' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { action, status, catatanAdmin } = body
     const newStatus = status || (action === 'APPROVE' ? 'APPROVED' : 'REJECTED')
@@ -36,7 +67,7 @@ export async function PATCH(
           namaUsaha: updatedDeposit.namaUsaha,
           namaPemilik: updatedDeposit.namaPemilik,
           nominal: updatedDeposit.nominal,
-          bankTujuan: updatedDeposit.bankTujuan || 'BCA',
+          bankTujuan: updatedDeposit.bankTujuan || 'QRIS Pakasir',
           nomorPengirim: updatedDeposit.nomorPengirim || updatedDeposit.orderId,
           buktiTransferUrl: updatedDeposit.buktiTransferUrl || updatedDeposit.qrisUrl || undefined,
           status: updatedDeposit.status,
@@ -85,11 +116,27 @@ export async function PATCH(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const adminCookie = request.cookies.get('mitra_muda_admin_session')?.value
+    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
+    const user = token ? verifyJwt(token) : null
+
+    let isAdmin = false
+    if (adminCookie) {
+      const verified = verifyJwt(adminCookie)
+      if (verified?.role === 'admin') isAdmin = true
+      if (!isAdmin) {
+        try {
+          const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+          if (decoded.role === 'admin') isAdmin = true
+        } catch {}
+      }
+    }
+
     const existingDeposit = await prisma.depositTransaction.findFirst({
       where: {
         OR: [{ id }, { orderId: id }]
@@ -97,6 +144,7 @@ export async function GET(
     })
 
     if (existingDeposit) {
+      const isOwner = user && user.id === existingDeposit.umkmId
       return NextResponse.json({
         data: {
           id: existingDeposit.id,
@@ -105,8 +153,8 @@ export async function GET(
           namaPemilik: existingDeposit.namaPemilik,
           nominal: existingDeposit.nominal,
           bankTujuan: existingDeposit.bankTujuan || 'QRIS Pakasir',
-          nomorPengirim: existingDeposit.nomorPengirim || existingDeposit.orderId,
-          buktiTransferUrl: existingDeposit.buktiTransferUrl || existingDeposit.qrisUrl || undefined,
+          nomorPengirim: (isAdmin || isOwner) ? (existingDeposit.nomorPengirim || existingDeposit.orderId) : maskSensitive(existingDeposit.nomorPengirim || existingDeposit.orderId),
+          buktiTransferUrl: (isAdmin || isOwner) ? (existingDeposit.buktiTransferUrl || existingDeposit.qrisUrl || undefined) : undefined,
           status: existingDeposit.status,
           catatanAdmin: existingDeposit.catatanAdmin,
           createdAt: existingDeposit.createdAt.toISOString(),

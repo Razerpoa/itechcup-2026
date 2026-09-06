@@ -57,6 +57,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const safeData = { ...raw }
     delete (safeData as Record<string, unknown>).password
+    if (safeData.sekolah && typeof safeData.sekolah === 'object') {
+      const safeSekolah = { ...(safeData.sekolah as Record<string, unknown>) }
+      delete safeSekolah.password
+      safeData.sekolah = safeSekolah as any
+    }
 
     return NextResponse.json({ data: safeData })
   } catch {

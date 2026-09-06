@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { RateLimiter } from '@/lib/rate-limiter'
-
+import { signJwt } from '@/lib/jwt'
 
 const adminRateLimiter = new RateLimiter({ windowMs: 10 * 60_000, maxRequests: 5 })
 
@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
     request.headers.get('x-real-ip') ||
     'unknown'
 
-  
   if (!adminRateLimiter.isAllowed(ip)) {
     const retryAfter = Math.ceil(adminRateLimiter.getRetryAfterMs(ip) / 1000)
     return NextResponse.json(
@@ -54,11 +53,12 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  
-  
-  const sessionToken = Buffer.from(
-    JSON.stringify({ role: 'admin', ts: Date.now(), ip })
-  ).toString('base64')
+  const sessionToken = signJwt({
+    id: 'admin-master',
+    email: 'tuan@mitramuda.id',
+    role: 'admin',
+    nama: 'Master Admin'
+  }, 8 * 60 * 60)
 
   const response = NextResponse.json({ success: true })
   const isProd = process.env.NODE_ENV === 'production'
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     secure: isProd,
     sameSite: 'lax',
     path: '/',
-    maxAge: 8 * 60 * 60 
+    maxAge: 8 * 60 * 60
   })
 
   return response

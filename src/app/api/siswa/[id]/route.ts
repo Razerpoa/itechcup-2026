@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { VerificationStatus } from '@prisma/client'
 
+function sanitizeSiswa(data: unknown) {
+  if (!data || typeof data !== 'object') return null
+  const safe = { ...(data as Record<string, unknown>) }
+  delete safe.password
+  if (safe.sekolah && typeof safe.sekolah === 'object') {
+    const safeSekolah = { ...(safe.sekolah as Record<string, unknown>) }
+    delete safeSekolah.password
+    safe.sekolah = safeSekolah
+  }
+  return safe
+}
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -14,7 +26,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Siswa tidak ditemukan' }, { status: 404 })
     }
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: sanitizeSiswa(data) })
   } catch {
     return NextResponse.json({ error: 'Gagal mengambil data siswa' }, { status: 500 })
   }
@@ -42,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       include: { sekolah: true, profil: true },
     })
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: sanitizeSiswa(data) })
   } catch (error) {
     if (error instanceof Object && 'code' in error && error.code === 'P2002') {
       return NextResponse.json({ error: 'NIS sudah digunakan' }, { status: 409 })

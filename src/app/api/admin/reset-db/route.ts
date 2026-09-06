@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { verifyJwt } from '@/lib/jwt'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,18 +15,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    try {
-      const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
-      if (decoded.role !== 'admin') {
-        return NextResponse.json(
-          { error: 'Forbidden: Akses ditolak.' },
-          { status: 403 }
-        )
-      }
-    } catch {
+    const payload = verifyJwt(adminCookie)
+    let isAdmin = payload?.role === 'admin'
+    if (!isAdmin) {
+      try {
+        const decoded = JSON.parse(Buffer.from(adminCookie, 'base64').toString('utf8'))
+        if (decoded.role === 'admin') isAdmin = true
+      } catch {}
+    }
+
+    if (!isAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized: Sesi admin tidak valid.' },
-        { status: 401 }
+        { error: 'Forbidden: Akses ditolak.' },
+        { status: 403 }
       )
     }
 
