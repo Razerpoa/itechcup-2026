@@ -75,6 +75,7 @@ Namun, para pelajar ini terbentur oleh batasan regulasi usia konvensional: **tid
 
 ### Fitur Tambahan & Kepatuhan Publik
 * **Gateway QRIS Dinamis Pakasir & Dual Verification:** Pengisian deposit rekber UMKM otomatis via scan QRIS dinamis resmi dari seluruh m-Banking & e-Wallet nasional, dilengkapi auto-polling status tanpa webhook serta webhook callback resmi.
+* **Kanal Pembayaran Multi-Metode (QRIS & Transfer Bank VA):** Pemilihan bebas antara QRIS instan atau Transfer Virtual Account bank terkemuka (BCA, Mandiri, BNI, BRI, Permata) dengan navigasi tab peralihan langsung di dalam modal tanpa perlu membuat ulang transaksi.
 * **Otomatisasi Biaya Layanan Pakasir:** Perhitungan biaya layanan payment gateway transparan secara otomatis (> Rp 105.000 = 1%, <= Rp 105.000 = 0,7% + Rp 310) dengan penghapusan transfer bank manual secara menyeluruh.
 * **Visualisasi Perputaran Modal Riil:** Menampilkan akumulasi transaksi riil dari database PostgreSQL yang terverifikasi (deposit APPROVED dan akad proyek) dengan grafik interaktif dinamis pada landing page dan dashboard admin.
 * **Keamanan XHR & Sanitasi Data Sensitif (Anti-Bocor):** Perlindungan data komprehensif pada seluruh endpoint API: sanitasi rekursif hash password bcrypt siswa dan sekolah, masking nomor rekening dan kontak e-wallet pada respons publik, proteksi otorisasi sesi admin berbasis HMAC-SHA256 JWT, dan pencegahan public chat scraping.

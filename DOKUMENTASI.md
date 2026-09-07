@@ -214,6 +214,7 @@ Sistem database dirancang secara relasional (RDBMS) untuk mendukung 3 entitas pe
 ## 5. Changelog Pengembangan
 
 ### Sesi September 2026:
+- **feat:** Penambahan pemilih kanal multi-metode pembayaran interaktif (QRIS Dinamis vs Transfer Bank Virtual Account BCA, Mandiri, BNI, BRI, Permata) pada formulir deposit UMKM serta navigasi tab peralihan langsung di dalam modal Pakasir.
 - **security:** Audit komprehensif seluruh endpoint XHR / Fetch API terhadap kebocoran data sensitif: eliminasi kebocoran hash password pelajar & sekolah, masking otomatis nomor rekening & e-wallet, proteksi otorisasi admin pada approval transaksi, pembatasan scraping chat privat, validasi kepemilikan pada penghapusan proyek, dan penguatan sesi admin dengan HMAC-SHA256 JWT.
 - **feat:** Otomatisasi biaya layanan resmi gateway pembayaran Pakasir (> Rp 105.000 = 1%, <= Rp 105.000 = 0,7% + Rp 310) dengan kalkulasi real-time transparan dan peniadaan transfer manual.
 - **feat:** Batasan ukuran unggah berkas karya pada ruang akad transaksi maksimal 5MB dengan notifikasi interaktif untuk mencegah pemborosan memori peramban.
